@@ -1,0 +1,68 @@
+{
+  "name": "safer-eval",
+  "version": "1.3.3",
+  "description": "a safer eval",
+  "keywords": [
+    "eval",
+    "safe"
+  ],
+  "bugs": {
+    "url": "https://github.com/commenthol/safer-eval/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/commenthol/safer-eval.git"
+  },
+  "license": "MIT",
+  "author": "commenthol <commenthol@gmail.com>",
+  "main": "./lib/index.js",
+  "browser": {
+    "./lib/index.js": "./lib/browser.js"
+  },
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "all": "npm run clean && npm run lint && npm run transpile && npm test",
+    "clean": "rimraf lib",
+    "coverage": "nyc -r html -r text npm test",
+    "karma": "karma start",
+    "lint": "eslint --fix \"**/*.js\"",
+    "prepublishOnly": "npm run all",
+    "test": "mocha",
+    "transpile": "babel -d lib src",
+    "zuul": "zuul --no-coverage --local 3000 -- test/*.js"
+  },
+  "dependencies": {
+    "clones": "^1.2.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.4",
+    "@babel/preset-env": "^7.4.4",
+    "babel-loader": "^8.0.6",
+    "eslint": "^5.16.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.17.2",
+    "eslint-plugin-node": "^9.0.1",
+    "eslint-plugin-promise": "^4.1.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "karma": "^4.1.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-firefox-launcher": "^1.1.0",
+    "karma-mocha": "^1.3.0",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-spec-reporter": "~0.0.32",
+    "karma-webpack": "^3.0.5",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.1",
+    "rimraf": "^2.6.3",
+    "webpack": "^4.31.0"
+  },
+  "_devDependencies": {
+    "zuul": "^3.11.1"
+  },
+  "engines": {
+    "node": ">=6.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "jsonapi-client",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "author": "Nathan Uphoff",
+  "license": "MIT",
+  "dependencies": {
+    "typescript": "3.7.0-beta"
+  },
+  "devDependencies": {
+    "isntnt": "^1.0.2"
+  }
+}

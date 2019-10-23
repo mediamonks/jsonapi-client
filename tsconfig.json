@@ -1,0 +1,16 @@
+{
+  "exclude": ["node_modules", "**/*.spec.ts", "/examples"],
+  "compilerOptions": {
+    "target": "esnext",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "module": "es6",
+    "outDir": "dist"
+  }
+}
