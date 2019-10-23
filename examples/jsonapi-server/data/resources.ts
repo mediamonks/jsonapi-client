@@ -135,30 +135,6 @@ const defineResource = <T extends string>(
         const included = Object.values(resources).flatMap(
           (resource) => resource.store,
         )
-        // const addIncludedResource = (identifier: ResourceIdentifier<any>) => {
-        //   if (
-        //     !included.find(
-        //       (element) =>
-        //         element.type === resource.type &&
-        //         element.id === id &&
-        //         element.type === identifier.type &&
-        //         element.id === identifier.id,
-        //     )
-        //   ) {
-        //     const includedResource = resources[identifier.type]
-        //     const includedItem = includedResource.getResource(identifier.id)
-        //     console.log('include', includedItem)
-        //     included.push(includedItem)
-        //   }
-        // }
-
-        // Object.values(resource.relationships).forEach((field) => {
-        //   if (isArray(field.data)) {
-        //     field.data.forEach(addIncludedResource)
-        //   } else if (isAnyResourceIdentifier(field.data)) {
-        //     addIncludedResource(field.data)
-        //   }
-        // })
         return {
           data,
           included,

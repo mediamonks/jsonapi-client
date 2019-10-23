@@ -120,13 +120,6 @@ export class ApiController<S extends Partial<ApiSetup>> {
             } else if (isUndefined(includeParam[name])) {
               result[name] = value
             } else {
-              // console.log(
-              //   'include to one',
-              //   Resource.type,
-              //   field.name,
-              //   value.type,
-              //   includeParam[field.name],
-              // )
               const relationshipResource = this.getResource(value.type)
               const relationshipData = this.getIncludedResourceData(
                 value,
@@ -138,7 +131,6 @@ export class ApiController<S extends Partial<ApiSetup>> {
                 included,
                 fieldsParam,
                 includeParam[field.name] || emptyObject,
-                // includeParam[field.name] === ('12' as any),
               )
             }
           }
@@ -151,12 +143,6 @@ export class ApiController<S extends Partial<ApiSetup>> {
               if (isUndefined(includeParam[name])) {
                 result[name] = value
               } else {
-                // console.log(
-                //   'include to many',
-                //   Resource.type,
-                //   field.name,
-                //   includeParam,
-                // )
                 result[name] = value.map((identifier) => {
                   const relationshipResource = this.getResource(identifier.type)
                   const relationshipData = this.getIncludedResourceData(
@@ -169,7 +155,6 @@ export class ApiController<S extends Partial<ApiSetup>> {
                     included,
                     fieldsParam,
                     includeParam[field.name] || emptyObject,
-                    // includeParam[field.name] === ('12' as any),
                   )
                 })
               }

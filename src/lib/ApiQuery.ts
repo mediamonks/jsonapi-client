@@ -8,19 +8,19 @@ import {
   isNone,
   isSome,
 } from 'isntnt'
-import { NonEmptyArray, ValuesOf } from '../types/util'
 
+import { NonEmptyArray, ValuesOf } from '../types/util'
 import { Api } from './Api'
 import { ApiSortRule } from './ApiSortRule'
 import { CreatePageQuery, ApiSetup } from './ApiSetup'
-import { AnyResource, ResourceAttributeNames, resource } from './Resource'
+import { AnyResource, ResourceAttributeNames } from './Resource'
 import { RelationshipValue } from './ResourceRelationship'
 import { ResourceIdentifierKey } from './ResourceIdentifier'
 import { ResourceFieldName } from './ResourceField'
 
-const isPage = literal('page')
-const isSort = literal('sort')
-const isInclude = literal('include')
+const isPageParameter = literal('page')
+const isSortParameter = literal('sort')
+const isIncludeParameter = literal('include')
 
 export type PageQueryParameter<
   T extends Partial<ApiSetup>
@@ -72,41 +72,6 @@ export type IncludeQueryParameters<R extends AnyResource> = {
   [K in keyof R]: BaseRelationshipResource<R[K]>
 }
 
-class A extends resource('a')<A> {
-  b!: B | null
-}
-
-class B extends resource('b')<B> {
-  c!: C | null
-}
-
-class C extends resource('c')<C> {
-  d!: D | null
-}
-
-class D extends resource('d')<D> {
-  e!: E | null
-}
-
-class E extends resource('e')<E> {
-  f!: F | null
-}
-
-class F extends resource('f')<F> {
-  g!: G | null
-}
-
-class G extends resource('g')<G> {
-  a!: A | null
-}
-
-const x: Partial<BaseFieldsQueryParameters<F>> = {
-  a: ['b'],
-  b: ['c'],
-  f: ['g'],
-  g: ['a'],
-}
-
 export type FetchQueryParameters<
   R extends AnyResource,
   S extends Partial<ApiSetup>
@@ -152,13 +117,13 @@ const parseApiQuery = <T extends FetchQueryParameters<any, any>>(
   values: T,
 ): string => {
   const parameters: Array<string> = Object.keys(values).flatMap((name) => {
-    if (isPage(name)) {
+    if (isPageParameter(name)) {
       return parseApiQueryParameter(
         name,
         api.setup.createPageQuery(values[name]),
       )
     }
-    if (isSort(name)) {
+    if (isSortParameter(name)) {
       return parseApiQueryParameter(
         name,
         parseApiQueryParameterArray(
@@ -166,7 +131,7 @@ const parseApiQuery = <T extends FetchQueryParameters<any, any>>(
         ),
       )
     }
-    if (isInclude(name)) {
+    if (isIncludeParameter(name)) {
       return parseIncludeParameter(name, values[name]!)
     }
     return parseApiQueryParameter(name, (values as any)[name])
@@ -241,3 +206,38 @@ const parseApiQueryParameterArray = (value: Array<string | number>): string => {
     )
     .join(',')
 }
+
+// class A extends resource('a')<A> {
+//   b!: B | null
+// }
+
+// class B extends resource('b')<B> {
+//   c!: C | null
+// }
+
+// class C extends resource('c')<C> {
+//   d!: D | null
+// }
+
+// class D extends resource('d')<D> {
+//   e!: E | null
+// }
+
+// class E extends resource('e')<E> {
+//   f!: F | null
+// }
+
+// class F extends resource('f')<F> {
+//   g!: G | null
+// }
+
+// class G extends resource('g')<G> {
+//   a!: A | null
+// }
+
+// const x: Partial<BaseFieldsQueryParameters<F>> = {
+//   a: ['b'],
+//   b: ['c'],
+//   f: ['g'],
+//   g: ['a'],
+// }

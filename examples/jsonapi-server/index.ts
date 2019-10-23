@@ -69,7 +69,7 @@ const api = new Api(url, {
 api.register(City)
 
 const people = api.endpoint('people', Person)
-const countries = api.endpoint('country', Country)
+const countries = api.endpoint('countries', Country)
 
 people.create({
   id: 'test',
@@ -84,13 +84,13 @@ countries
   .fetch({
     include: {
       citizens: {
-        city: null,
+        city: {
+          country: null,
+        },
       },
     },
   })
-  .then((q) => {
-    q[0]['citizens'][0]['city']
-  })
+  .then(console.log)
 
 people
   .fetch({

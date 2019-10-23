@@ -8837,30 +8837,7 @@ var defineResource = function defineResource(type, createAttributes, createRelat
       if (isAnyResource(data)) {
         var included = Object.values(resources).flatMap(function (resource) {
           return resource.store;
-        }); // const addIncludedResource = (identifier: ResourceIdentifier<any>) => {
-        //   if (
-        //     !included.find(
-        //       (element) =>
-        //         element.type === resource.type &&
-        //         element.id === id &&
-        //         element.type === identifier.type &&
-        //         element.id === identifier.id,
-        //     )
-        //   ) {
-        //     const includedResource = resources[identifier.type]
-        //     const includedItem = includedResource.getResource(identifier.id)
-        //     console.log('include', includedItem)
-        //     included.push(includedItem)
-        //   }
-        // }
-        // Object.values(resource.relationships).forEach((field) => {
-        //   if (isArray(field.data)) {
-        //     field.data.forEach(addIncludedResource)
-        //   } else if (isAnyResourceIdentifier(field.data)) {
-        //     addIncludedResource(field.data)
-        //   }
-        // })
-
+        });
         return {
           data: data,
           included: included
@@ -9677,193 +9654,7 @@ var getRelationshipData = function getRelationshipData(relationships, field) {
 };
 
 exports.getRelationshipData = getRelationshipData;
-},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/lib/ResourceIdentifier.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.ResourceIdentifier = void 0;
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var ResourceIdentifier =
-/*#__PURE__*/
-function () {
-  function ResourceIdentifier(type, id) {
-    _classCallCheck(this, ResourceIdentifier);
-
-    this.type = type;
-    this.id = id;
-  }
-
-  _createClass(ResourceIdentifier, null, [{
-    key: "isResource",
-    value: function isResource(value) {
-      return value instanceof ResourceIdentifier;
-    }
-  }]);
-
-  return ResourceIdentifier;
-}();
-
-exports.ResourceIdentifier = ResourceIdentifier;
-},{}],"../../src/lib/Resource.ts":[function(require,module,exports) {
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.resource = void 0;
-
-var _ResourceIdentifier2 = require("./ResourceIdentifier");
-
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-var resource = function resource(type) {
-  var _a;
-
-  return _a =
-  /*#__PURE__*/
-  function (_ResourceIdentifier) {
-    _inherits(Resource, _ResourceIdentifier);
-
-    function Resource(data) {
-      var _this;
-
-      _classCallCheck(this, Resource);
-
-      _this = _possibleConstructorReturn(this, _getPrototypeOf(Resource).call(this, data.type, data.id));
-      Object.assign(_assertThisInitialized(_this), data);
-      return _this;
-    }
-
-    return Resource;
-  }(_ResourceIdentifier2.ResourceIdentifier), _a.type = type, _a.fields = Object.create(null), _a;
-};
-
-exports.resource = resource;
-
-var A =
-/*#__PURE__*/
-function (_resource) {
-  _inherits(A, _resource);
-
-  function A() {
-    _classCallCheck(this, A);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(A).apply(this, arguments));
-  }
-
-  return A;
-}(resource('a'));
-
-var B =
-/*#__PURE__*/
-function (_resource2) {
-  _inherits(B, _resource2);
-
-  function B() {
-    _classCallCheck(this, B);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(B).apply(this, arguments));
-  }
-
-  return B;
-}(resource('b'));
-
-var C =
-/*#__PURE__*/
-function (_resource3) {
-  _inherits(C, _resource3);
-
-  function C() {
-    _classCallCheck(this, C);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(C).apply(this, arguments));
-  }
-
-  return C;
-}(resource('c'));
-
-var D =
-/*#__PURE__*/
-function (_resource4) {
-  _inherits(D, _resource4);
-
-  function D() {
-    _classCallCheck(this, D);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(D).apply(this, arguments));
-  }
-
-  return D;
-}(resource('d'));
-
-var E =
-/*#__PURE__*/
-function (_resource5) {
-  _inherits(E, _resource5);
-
-  function E() {
-    _classCallCheck(this, E);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(E).apply(this, arguments));
-  }
-
-  return E;
-}(resource('e'));
-
-var F =
-/*#__PURE__*/
-function (_resource6) {
-  _inherits(F, _resource6);
-
-  function F() {
-    _classCallCheck(this, F);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(F).apply(this, arguments));
-  }
-
-  return F;
-}(resource('f'));
-
-var G =
-/*#__PURE__*/
-function (_resource7) {
-  _inherits(G, _resource7);
-
-  function G() {
-    _classCallCheck(this, G);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(G).apply(this, arguments));
-  }
-
-  return G;
-}(resource('g'));
-
-var a = new A({
-  type: 'a',
-  id: 'x',
-  b: null
-}); // TEMP
-},{"./ResourceIdentifier":"../../src/lib/ResourceIdentifier.ts"}],"../../src/lib/ApiQuery.ts":[function(require,module,exports) {
+},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/lib/ApiQuery.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9873,134 +9664,15 @@ exports.ApiQuery = void 0;
 
 var _isntnt = require("isntnt");
 
-var _Resource = require("./Resource");
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-var isPage = (0, _isntnt.literal)('page');
-var isSort = (0, _isntnt.literal)('sort');
-var isInclude = (0, _isntnt.literal)('include');
-
-var A =
-/*#__PURE__*/
-function (_resource) {
-  _inherits(A, _resource);
-
-  function A() {
-    _classCallCheck(this, A);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(A).apply(this, arguments));
-  }
-
-  return A;
-}((0, _Resource.resource)('a'));
-
-var B =
-/*#__PURE__*/
-function (_resource2) {
-  _inherits(B, _resource2);
-
-  function B() {
-    _classCallCheck(this, B);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(B).apply(this, arguments));
-  }
-
-  return B;
-}((0, _Resource.resource)('b'));
-
-var C =
-/*#__PURE__*/
-function (_resource3) {
-  _inherits(C, _resource3);
-
-  function C() {
-    _classCallCheck(this, C);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(C).apply(this, arguments));
-  }
-
-  return C;
-}((0, _Resource.resource)('c'));
-
-var D =
-/*#__PURE__*/
-function (_resource4) {
-  _inherits(D, _resource4);
-
-  function D() {
-    _classCallCheck(this, D);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(D).apply(this, arguments));
-  }
-
-  return D;
-}((0, _Resource.resource)('d'));
-
-var E =
-/*#__PURE__*/
-function (_resource5) {
-  _inherits(E, _resource5);
-
-  function E() {
-    _classCallCheck(this, E);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(E).apply(this, arguments));
-  }
-
-  return E;
-}((0, _Resource.resource)('e'));
-
-var F =
-/*#__PURE__*/
-function (_resource6) {
-  _inherits(F, _resource6);
-
-  function F() {
-    _classCallCheck(this, F);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(F).apply(this, arguments));
-  }
-
-  return F;
-}((0, _Resource.resource)('f'));
-
-var G =
-/*#__PURE__*/
-function (_resource7) {
-  _inherits(G, _resource7);
-
-  function G() {
-    _classCallCheck(this, G);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(G).apply(this, arguments));
-  }
-
-  return G;
-}((0, _Resource.resource)('g'));
-
-var x = {
-  a: ['b'],
-  b: ['c'],
-  f: ['g'],
-  g: ['a']
-};
+var isPageParameter = (0, _isntnt.literal)('page');
+var isSortParameter = (0, _isntnt.literal)('sort');
+var isIncludeParameter = (0, _isntnt.literal)('include');
 
 var ApiQuery =
 /*#__PURE__*/
@@ -10026,15 +9698,15 @@ exports.ApiQuery = ApiQuery;
 
 var parseApiQuery = function parseApiQuery(api, values) {
   var parameters = Object.keys(values).flatMap(function (name) {
-    if (isPage(name)) {
+    if (isPageParameter(name)) {
       return parseApiQueryParameter(name, api.setup.createPageQuery(values[name]));
     }
 
-    if (isSort(name)) {
+    if (isSortParameter(name)) {
       return parseApiQueryParameter(name, parseApiQueryParameterArray(values[name].map(String)));
     }
 
-    if (isInclude(name)) {
+    if (isIncludeParameter(name)) {
       return parseIncludeParameter(name, values[name]);
     }
 
@@ -10095,8 +9767,34 @@ var parseApiQueryParameterArray = function parseApiQueryParameterArray(value) {
   return value.filter(function (item) {
     return (0, _isntnt.isString)(item) && item.length || (0, _isntnt.isSerializableNumber)(item);
   }).join(',');
-};
-},{"isntnt":"../../node_modules/isntnt/dist/index.js","./Resource":"../../src/lib/Resource.ts"}],"../../src/lib/ApiEndpoint.ts":[function(require,module,exports) {
+}; // class A extends resource('a')<A> {
+//   b!: B | null
+// }
+// class B extends resource('b')<B> {
+//   c!: C | null
+// }
+// class C extends resource('c')<C> {
+//   d!: D | null
+// }
+// class D extends resource('d')<D> {
+//   e!: E | null
+// }
+// class E extends resource('e')<E> {
+//   f!: F | null
+// }
+// class F extends resource('f')<F> {
+//   g!: G | null
+// }
+// class G extends resource('g')<G> {
+//   a!: A | null
+// }
+// const x: Partial<BaseFieldsQueryParameters<F>> = {
+//   a: ['b'],
+//   b: ['c'],
+//   f: ['g'],
+//   g: ['a'],
+// }
+},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/lib/ApiEndpoint.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10162,19 +9860,43 @@ function () {
     value: function () {
       var _get = _asyncToGenerator(
       /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee2(id, selection) {
+      regeneratorRuntime.mark(function _callee2(id) {
+        var query,
+            controller,
+            queryParameters,
+            url,
+            response,
+            resource,
+            _args2 = arguments;
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
+                query = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : defaultFetchQueryParameters;
+                controller = _ApiController.ApiController.get(this.api);
+                queryParameters = this.createQuery(query);
+                url = new URL(String(queryParameters), this.toURL());
+                _context2.next = 6;
+                return fetch(url.href);
+
+              case 6:
+                response = _context2.sent;
+                _context2.next = 9;
+                return response.json();
+
+              case 9:
+                resource = _context2.sent;
+                return _context2.abrupt("return", controller.decodeResource(this.Resource, resource.data, resource.included, query.fields || {}, query.include));
+
+              case 11:
               case "end":
                 return _context2.stop();
             }
           }
-        }, _callee2);
+        }, _callee2, this);
       }));
 
-      function get(_x2, _x3) {
+      function get(_x2) {
         return _get.apply(this, arguments);
       }
 
@@ -10355,13 +10077,6 @@ function () {
             } else if ((0, _isntnt.isUndefined)(includeParam[name])) {
               result[name] = value;
             } else {
-              // console.log(
-              //   'include to one',
-              //   Resource.type,
-              //   field.name,
-              //   value.type,
-              //   includeParam[field.name],
-              // )
               var relationshipResource = _this.getResource(value.type);
 
               var relationshipData = _this.getIncludedResourceData(value, included);
@@ -10375,12 +10090,6 @@ function () {
               if ((0, _isntnt.isUndefined)(includeParam[name])) {
                 result[name] = value;
               } else {
-                // console.log(
-                //   'include to many',
-                //   Resource.type,
-                //   field.name,
-                //   includeParam,
-                // )
                 result[name] = value.map(function (identifier) {
                   var relationshipResource = _this.getResource(identifier.type);
 
@@ -10576,7 +10285,193 @@ var descend = function descend(name) {
 };
 
 exports.descend = descend;
-},{}],"../../src/constants/resourceFieldPropertyDescriptor.ts":[function(require,module,exports) {
+},{}],"../../src/lib/ResourceIdentifier.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.ResourceIdentifier = void 0;
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var ResourceIdentifier =
+/*#__PURE__*/
+function () {
+  function ResourceIdentifier(type, id) {
+    _classCallCheck(this, ResourceIdentifier);
+
+    this.type = type;
+    this.id = id;
+  }
+
+  _createClass(ResourceIdentifier, null, [{
+    key: "isResource",
+    value: function isResource(value) {
+      return value instanceof ResourceIdentifier;
+    }
+  }]);
+
+  return ResourceIdentifier;
+}();
+
+exports.ResourceIdentifier = ResourceIdentifier;
+},{}],"../../src/lib/Resource.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.resource = void 0;
+
+var _ResourceIdentifier2 = require("./ResourceIdentifier");
+
+function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
+
+function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
+
+function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
+
+function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
+
+var resource = function resource(type) {
+  var _a;
+
+  return _a =
+  /*#__PURE__*/
+  function (_ResourceIdentifier) {
+    _inherits(Resource, _ResourceIdentifier);
+
+    function Resource(data) {
+      var _this;
+
+      _classCallCheck(this, Resource);
+
+      _this = _possibleConstructorReturn(this, _getPrototypeOf(Resource).call(this, data.type, data.id));
+      Object.assign(_assertThisInitialized(_this), data);
+      return _this;
+    }
+
+    return Resource;
+  }(_ResourceIdentifier2.ResourceIdentifier), _a.type = type, _a.fields = Object.create(null), _a;
+};
+
+exports.resource = resource;
+
+var A =
+/*#__PURE__*/
+function (_resource) {
+  _inherits(A, _resource);
+
+  function A() {
+    _classCallCheck(this, A);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(A).apply(this, arguments));
+  }
+
+  return A;
+}(resource('a'));
+
+var B =
+/*#__PURE__*/
+function (_resource2) {
+  _inherits(B, _resource2);
+
+  function B() {
+    _classCallCheck(this, B);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(B).apply(this, arguments));
+  }
+
+  return B;
+}(resource('b'));
+
+var C =
+/*#__PURE__*/
+function (_resource3) {
+  _inherits(C, _resource3);
+
+  function C() {
+    _classCallCheck(this, C);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(C).apply(this, arguments));
+  }
+
+  return C;
+}(resource('c'));
+
+var D =
+/*#__PURE__*/
+function (_resource4) {
+  _inherits(D, _resource4);
+
+  function D() {
+    _classCallCheck(this, D);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(D).apply(this, arguments));
+  }
+
+  return D;
+}(resource('d'));
+
+var E =
+/*#__PURE__*/
+function (_resource5) {
+  _inherits(E, _resource5);
+
+  function E() {
+    _classCallCheck(this, E);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(E).apply(this, arguments));
+  }
+
+  return E;
+}(resource('e'));
+
+var F =
+/*#__PURE__*/
+function (_resource6) {
+  _inherits(F, _resource6);
+
+  function F() {
+    _classCallCheck(this, F);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(F).apply(this, arguments));
+  }
+
+  return F;
+}(resource('f'));
+
+var G =
+/*#__PURE__*/
+function (_resource7) {
+  _inherits(G, _resource7);
+
+  function G() {
+    _classCallCheck(this, G);
+
+    return _possibleConstructorReturn(this, _getPrototypeOf(G).apply(this, arguments));
+  }
+
+  return G;
+}(resource('g'));
+
+var a = new A({
+  type: 'a',
+  id: 'x',
+  b: null
+}); // TEMP
+},{"./ResourceIdentifier":"../../src/lib/ResourceIdentifier.ts"}],"../../src/constants/resourceFieldPropertyDescriptor.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11297,7 +11192,7 @@ var api = new src_1.default(url, {
 });
 api.register(City);
 var people = api.endpoint('people', Person);
-var countries = api.endpoint('country', Country);
+var countries = api.endpoint('countries', Country);
 people.create({
   id: 'test',
   type: 'person',
@@ -11309,12 +11204,12 @@ people.create({
 countries.fetch({
   include: {
     citizens: {
-      city: null
+      city: {
+        country: null
+      }
     }
   }
-}).then(function (q) {
-  q[0]['citizens'][0]['city'];
-});
+}).then(console.log);
 people.fetch({
   page: 12,
   sort: [src_1.ascend('name'), src_1.descend('age')],

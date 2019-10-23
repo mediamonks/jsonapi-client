@@ -22,7 +22,24 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     return new this.Resource(data)
   }
 
-  async get(id: string, selection: any) {}
+  async get<Q extends FetchQueryParameters<R, S>>(
+    id: string,
+    query: Q = defaultFetchQueryParameters as Q,
+  ): Promise<FilteredResource<R, S, Q>[]> {
+    const controller = ApiController.get(this.api)
+    const queryParameters = this.createQuery(query)
+    const url = new URL(String(queryParameters), this.toURL())
+    const response = await fetch(url.href)
+    const resource = await response.json()
+
+    return controller.decodeResource(
+      this.Resource,
+      resource.data,
+      resource.included,
+      query.fields || {},
+      query.include as any,
+    ) as any
+  }
 
   async fetch<Q extends FetchQueryParameters<R, S>>(
     query: Q = defaultFetchQueryParameters as Q,
@@ -71,7 +88,7 @@ type ResourceIncludes<R, I, F> = R extends AnyResource
   ? {
       [K in keyof R]: R[K] extends Array<AnyResource>
         ? K extends keyof I
-          ? FilteredToManyRelationship<R[K], I, F>
+          ? FilteredToManyRelationship<R[K], I[K], F>
           : ToManyRelationshipIdentifier<R[K]>
         : R[K] extends AnyResource | null
         ? K extends keyof I
@@ -93,7 +110,18 @@ type BaseFilteredResource<R, I, F> = R extends AnyResource
 
 type FilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
   ? Array<BaseFilteredResource<R[number], I, F>>
-  : never
+  : NotAResourceWarning<R>[]
+
+// test: use ApiEndpoint as ResourceFilter
+type FilterEndpointResource<
+  E extends ApiEndpoint<any, any>,
+  Q extends FetchQueryParameters<
+    InstanceType<E['Resource']>,
+    ApiSetupValues<E['api']>
+  >
+> = FilteredResource<InstanceType<E['Resource']>, ApiSetupValues<E['api']>, Q>
+
+type ApiSetupValues<A extends Api<any>> = A extends Api<infer S> ? S : never
 
 type FilteredResource<
   R extends AnyResource,
