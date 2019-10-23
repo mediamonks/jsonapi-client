@@ -1,4 +1,4 @@
-import { or, isAny, isNull, array, and, at, literal, Predicate } from 'isntnt'
+import { or, isAny, isNull, array, at, literal, Predicate } from 'isntnt'
 
 import { resourceFieldPropertyDescriptor } from '../constants/resourceFieldPropertyDescriptor'
 import {

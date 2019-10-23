@@ -15,8 +15,8 @@ import Api, {
 } from '../../src/'
 
 // x
-;(window as any).fetch = (href: string, options?: any): Promise<any> => {
-  console.log('fetched', href)
+;(window as any).fetch = (href: string, options: any = {}): Promise<any> => {
+  console.log('fetched', href, options)
   const url = new URL(href)
   const [path, id] = url.pathname
     .split('/')

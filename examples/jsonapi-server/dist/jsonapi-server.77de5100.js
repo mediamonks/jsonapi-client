@@ -11182,8 +11182,9 @@ var resources_1 = __importDefault(require("./data/resources"));
 
 var src_1 = __importStar(require("../../src/"));
 
-window.fetch = function (href, options) {
-  console.log('fetched', href);
+window.fetch = function (href) {
+  var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  console.log('fetched', href, options);
   var url = new URL(href);
 
   var _url$pathname$split$f = url.pathname.split('/').filter(Boolean).slice(-2),

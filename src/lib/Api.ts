@@ -1,4 +1,3 @@
-import { createEmptyObject } from '../utils/data'
 import { ApiController } from './ApiController'
 import {
   mergeApiDefaultSetup,
