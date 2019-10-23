@@ -1,10 +1,6 @@
-import { NonEmptyArray, ValuesOf, ExtendsOrNever } from '../types/util'
+import { ValuesOf, ExtendsOrNever } from '../types/util'
 import { ResourceFields, ResourceField } from './ResourceField'
-import {
-  AnyResourceIdentifier,
-  ResourceIdentifier,
-  ResourceIdentifierKey,
-} from './ResourceIdentifier'
+import { ResourceIdentifier, ResourceIdentifierKey } from './ResourceIdentifier'
 import { RelationshipValue } from './ResourceRelationship'
 import { AttributeValue } from './ResourceAttribute'
 
@@ -52,10 +48,10 @@ type ResourceFieldsModel<F extends ResourceFields<any>> = {
 }
 
 export type ResourceRelationship<T> = null extends T
-  ? T extends AnyResourceIdentifier
-    ? Extract<T, AnyResourceIdentifier>
+  ? T extends AnyResource
+    ? Extract<T, AnyResource>
     : never
-  : T extends Array<AnyResourceIdentifier>
+  : T extends Array<AnyResource>
   ? T[number]
   : never
 
@@ -80,69 +76,69 @@ export type ResourceConstructor<R extends AnyResource> = {
   new (data: R): R
 }
 
-class A extends resource('a')<A> {
-  b!: B | null
-}
+// class A extends resource('a')<A> {
+//   b!: B | null
+// }
 
-class B extends resource('b')<B> {
-  c!: C | null
-}
+// class B extends resource('b')<B> {
+//   c!: C | null
+// }
 
-class C extends resource('c')<C> {
-  d!: D | null
-}
+// class C extends resource('c')<C> {
+//   d!: D | null
+// }
 
-class D extends resource('d')<D> {
-  e!: E | null
-}
+// class D extends resource('d')<D> {
+//   e!: E | null
+// }
 
-class E extends resource('e')<E> {
-  f!: F | null
-}
+// class E extends resource('e')<E> {
+//   f!: F | null
+// }
 
-class F extends resource('f')<F> {
-  g!: G | null
-}
+// class F extends resource('f')<F> {
+//   g!: G | null
+// }
 
-class G extends resource('g')<G> {
-  a!: A | null
-}
+// class G extends resource('g')<G> {
+//   a!: A | null
+// }
 
-const a = new A({
-  type: 'a',
-  id: 'x',
-  b: null,
-})
+// const a = new A({
+//   type: 'a',
+//   id: 'x',
+//   b: null,
+// })
 
-type Xaf = ResourceModels<A>
+// type Xaf = ResourceModels<A>
 
-type RT<T> = T extends AnyResource
-  ? {
-      [K in T['type']]: NonEmptyArray<
-        Exclude<keyof Extract<T, { type: K }>, ResourceIdentifierKey>
-      >
-    }
-  : never
+// type RT<T> = T extends AnyResource
+//   ? {
+//       [K in T['type']]: NonEmptyArray<
+//         Exclude<keyof Extract<T, { type: K }>, ResourceIdentifierKey>
+//       >
+//     }
+//   : never
 
-type Xo<T> = RT<ResourceModels<T>>
+// type Xo<T> = RT<ResourceModels<T>>
 
-type Xo2 = Xo<A>
+// type Xo2 = Xo<A>
 
-type ResourceModels<T, X = T> = T extends AnyResource
-  ?
-      | T
-      | ValuesOf<
-          {
-            [K in keyof T]: Exclude<T[K], null> extends AnyResource
-              ? Exclude<T[K], null> extends X
-                ? never
-                : ResourceModels<Exclude<T[K], null>, X | T>
-              : T[K] extends Array<AnyResource>
-              ? T[K][any] extends X
-                ? never
-                : ResourceModels<T[K][any], X | T>
-              : never
-          }
-        >
-  : never
-// TEMP
+// type ResourceModels<T, X = T> = T extends AnyResource
+//   ?
+//       | T
+//       | ValuesOf<
+//           {
+//             [K in keyof T]: Exclude<T[K], null> extends AnyResource
+//               ? Exclude<T[K], null> extends X
+//                 ? never
+//                 : ResourceModels<Exclude<T[K], null>, X | T>
+//               : T[K] extends Array<AnyResource>
+//               ? T[K][any] extends X
+//                 ? never
+//                 : ResourceModels<T[K][any], X | T>
+//               : never
+//           }
+//         >
+//   : never
+// // TEMP

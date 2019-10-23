@@ -46,4 +46,18 @@ export class ApiResult<
       ? this.data[Symbol.iterator]()
       : [this.data][Symbol.iterator]()
   }
+
+  static accept<
+    T extends ApiResponseData<AnyResource>,
+    M extends AnyApiResponseMeta
+  >(value: ApiSuccessResponse<T, M>): ApiResult<T, M> {
+    return new ApiResult((accept) => accept(value))
+  }
+
+  static reject<
+    T extends ApiResponseData<AnyResource>,
+    M extends AnyApiResponseMeta
+  >(value: ApiErrorResponse<T, M>): ApiResult<never, M> {
+    return new ApiResult((_, reject) => reject(value))
+  }
 }

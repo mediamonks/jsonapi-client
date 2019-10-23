@@ -1,11 +1,37 @@
+import { createDataValue } from '../utils/data'
+
 import { Api } from './Api'
 import { ApiQuery, FetchQueryParameters } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
 import { ApiController } from './ApiController'
+import { ApiResult } from './ApiResult'
 
 const defaultFetchQueryParameters: FetchQueryParameters<any, any> = {}
+
+const createGetRequestOptions = () =>
+  createDataValue({
+    method: 'GET',
+    headers: defaultGetRequestHeaders,
+  })
+
+export enum RequestHeader {
+  ACCEPT = 'Accept',
+  CONTENT_TYPE = 'Content-Type',
+  ACCESS_CONTROL_ALLOW_ORIGIN = 'Access-Control-Allow-Origin',
+}
+
+export const jsonApiContentType = 'application/vnd.api+json'
+
+export const defaultGetRequestHeaders = {
+  [RequestHeader.CONTENT_TYPE]: jsonApiContentType,
+}
+
+export const defaultPostRequestHeaders = {
+  [RequestHeader.ACCEPT]: jsonApiContentType,
+  [RequestHeader.CONTENT_TYPE]: jsonApiContentType,
+}
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly api: Api<S>
@@ -28,14 +54,17 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   ): Promise<FilteredResource<R, S, Q>[]> {
     const controller = ApiController.get(this.api)
     const queryParameters = this.createQuery(query)
-    const url = new URL(String(queryParameters), this.toURL())
-    const response = await fetch(url.href)
-    const resource = await response.json()
+    const url = new URL(
+      `${this.path}/${id}${String(queryParameters)}`,
+      this.api.url,
+    )
 
+    const options = createGetRequestOptions()
+    const response = await controller.handleRequest(url, options)
     return controller.decodeResource(
       this.Resource,
-      resource.data,
-      resource.included,
+      response.data,
+      response.included,
       query.fields || {},
       query.include as any,
     ) as any
@@ -47,16 +76,16 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     const controller = ApiController.get(this.api)
     const queryParameters = this.createQuery(query)
     const url = new URL(String(queryParameters), this.toURL())
-    return fetch(url.href).then((response: any) =>
-      // (console.log(response) as any) ||
-      response.data.map((data: any) =>
-        controller.decodeResource(
-          this.Resource,
-          data,
-          response.included,
-          query.fields || {},
-          query.include as any,
-        ),
+
+    const options = createGetRequestOptions()
+    const response = await controller.handleRequest(url, options)
+    return response.data.map((resource: any) =>
+      controller.decodeResource(
+        this.Resource,
+        resource,
+        response.included,
+        query.fields || {},
+        query.include as any,
       ),
     )
   }

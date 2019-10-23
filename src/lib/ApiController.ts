@@ -1,15 +1,18 @@
 import { isUndefined, isNone, Predicate } from 'isntnt'
 
+import { EMPTY_OBJECT } from '../constants/data'
 import {
   createEmptyObject,
   createBaseResource,
   getAttributeValue,
   getRelationshipData,
   keys,
+  createDataValue,
 } from '../utils/data'
 import { Api } from './Api'
 import { ApiEndpoint } from './ApiEndpoint'
 import { ApiSetup } from './ApiSetup'
+import { ApiQueryIncludeParameter, ApiQueryFieldsParameter } from './ApiQuery'
 import {
   AnyResource,
   ResourceConstructor,
@@ -22,21 +25,12 @@ import { ResourceIdentifier } from './ResourceIdentifier'
 type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
 
-type Fields = {
-  [key: string]: Array<string>
-}
-
-type Included = {
-  [key: string]: Included | null
-}
-
 type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
   attributes: ResourceAttributes<R>
   relationships: ResourceRelationships<R>
 }
 
 const controllers: Record<string, ApiController<any>> = createEmptyObject()
-const emptyObject = createEmptyObject()
 
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
@@ -74,6 +68,11 @@ export class ApiController<S extends Partial<ApiSetup>> {
     return new ApiEndpoint(this.api, path, Resource)
   }
 
+  async handleRequest(url: URL, options: any): Promise<any> {
+    const request = await fetch(url.href, options)
+    return request.json()
+  }
+
   getIncludedResourceData(
     identifier: ResourceIdentifier<any>,
     included: Array<ResourceData<any>>,
@@ -95,11 +94,16 @@ export class ApiController<S extends Partial<ApiSetup>> {
     Resource: ResourceConstructor<R>,
     data: ResourceData<R>,
     included: Array<ResourceData<any>>,
-    fieldsParam: Fields = emptyObject,
-    includeParam: Included = emptyObject,
+    fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
+    includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
     debug?: boolean,
   ) {
     // debug && console.info('decodeResource', Resource.type, data)
+
+    // Todo: should the data of a resource be added to the included data because
+    // a relationship MAY depend on it?
+    included.push(createDataValue(data))
+
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
     const result = fieldNames.reduce(
       (result, name) => {
@@ -117,7 +121,10 @@ export class ApiController<S extends Partial<ApiSetup>> {
             }
             if (isNone(value)) {
               result[name] = null
-            } else if (isUndefined(includeParam[name])) {
+            } else if (
+              isNone(includeParam) ||
+              isUndefined(includeParam[name])
+            ) {
               result[name] = value
             } else {
               const relationshipResource = this.getResource(value.type)
@@ -130,7 +137,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                 relationshipData,
                 included,
                 fieldsParam,
-                includeParam[field.name] || emptyObject,
+                includeParam[field.name],
               )
             }
           }
@@ -140,7 +147,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                 value,
               )
             ) {
-              if (isUndefined(includeParam[name])) {
+              if (isNone(includeParam) || isUndefined(includeParam[name])) {
                 result[name] = value
               } else {
                 result[name] = value.map((identifier) => {
@@ -154,7 +161,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                     relationshipData,
                     included,
                     fieldsParam,
-                    includeParam[field.name] || emptyObject,
+                    includeParam[field.name],
                   )
                 })
               }
@@ -177,7 +184,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   static add(api: Api<any>): void {
     const identifier = String(api.url)
     if (identifier in controllers) {
-      throw new Error(`Duplicate api`)
+      throw new Error(`Duplicate api href`)
     }
     controllers[identifier] = new ApiController(api)
   }

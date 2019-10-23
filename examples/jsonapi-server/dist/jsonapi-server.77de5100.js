@@ -9654,7 +9654,52 @@ var getRelationshipData = function getRelationshipData(relationships, field) {
 };
 
 exports.getRelationshipData = getRelationshipData;
-},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/lib/ApiQuery.ts":[function(require,module,exports) {
+},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/constants/data.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.PARAMETER_PREFIX = exports.PARAMETER_DELIMITER = exports.PARAMETERS_DELIMITER = exports.LIST_PARAMETER_VALUE_DELIMITER = exports.INCLUDE_PARAMETER_VALUE_DELIMITER = exports.EMPTY_STRING = exports.EMPTY_OBJECT = void 0;
+
+var _data = require("../utils/data");
+
+var EMPTY_OBJECT = (0, _data.createEmptyObject)();
+exports.EMPTY_OBJECT = EMPTY_OBJECT;
+var EMPTY_STRING = '';
+exports.EMPTY_STRING = EMPTY_STRING;
+var INCLUDE_PARAMETER_VALUE_DELIMITER = '.';
+exports.INCLUDE_PARAMETER_VALUE_DELIMITER = INCLUDE_PARAMETER_VALUE_DELIMITER;
+var LIST_PARAMETER_VALUE_DELIMITER = ',';
+exports.LIST_PARAMETER_VALUE_DELIMITER = LIST_PARAMETER_VALUE_DELIMITER;
+var PARAMETERS_DELIMITER = '&';
+exports.PARAMETERS_DELIMITER = PARAMETERS_DELIMITER;
+var PARAMETER_DELIMITER = '=';
+exports.PARAMETER_DELIMITER = PARAMETER_DELIMITER;
+var PARAMETER_PREFIX = '?';
+exports.PARAMETER_PREFIX = PARAMETER_PREFIX;
+},{"../utils/data":"../../src/utils/data.ts"}],"../../src/constants/jsonApi.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.jsonApiReservedParameterNames = exports.jsonApiVersions = void 0;
+
+var _jsonApiVersions;
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var jsonApiVersions = (_jsonApiVersions = {}, _defineProperty(_jsonApiVersions, '1_0', '1.0'), _defineProperty(_jsonApiVersions, '1_1', '1.1'), _jsonApiVersions);
+exports.jsonApiVersions = jsonApiVersions;
+var jsonApiReservedParameterNames = {
+  PAGE: 'page',
+  SORT: 'sort',
+  INCLUDE: 'include',
+  FIELDS: 'fields'
+};
+exports.jsonApiReservedParameterNames = jsonApiReservedParameterNames;
+},{}],"../../src/lib/ApiQuery.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9664,15 +9709,15 @@ exports.ApiQuery = void 0;
 
 var _isntnt = require("isntnt");
 
+var _data = require("../constants/data");
+
+var _jsonApi = require("../constants/jsonApi");
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var isPageParameter = (0, _isntnt.literal)('page');
-var isSortParameter = (0, _isntnt.literal)('sort');
-var isIncludeParameter = (0, _isntnt.literal)('include');
 
 var ApiQuery =
 /*#__PURE__*/
@@ -9698,21 +9743,21 @@ exports.ApiQuery = ApiQuery;
 
 var parseApiQuery = function parseApiQuery(api, values) {
   var parameters = Object.keys(values).flatMap(function (name) {
-    if (isPageParameter(name)) {
-      return parseApiQueryParameter(name, api.setup.createPageQuery(values[name]));
-    }
+    switch (name) {
+      case _jsonApi.jsonApiReservedParameterNames.PAGE:
+        return parseApiQueryParameter(name, api.setup.createPageQuery(values[name]));
 
-    if (isSortParameter(name)) {
-      return parseApiQueryParameter(name, parseApiQueryParameterArray(values[name].map(String)));
-    }
+      case _jsonApi.jsonApiReservedParameterNames.SORT:
+        return parseApiQueryParameter(name, parseApiQueryParameterArray(values[name].map(String)));
 
-    if (isIncludeParameter(name)) {
-      return parseIncludeParameter(name, values[name]);
-    }
+      case _jsonApi.jsonApiReservedParameterNames.INCLUDE:
+        return parseIncludeParameter(name, values[name] || _data.EMPTY_OBJECT);
 
-    return parseApiQueryParameter(name, values[name]);
+      default:
+        return parseApiQueryParameter(name, values[name]);
+    }
   });
-  return parameters.length ? "?".concat(parameters.join('&')) : '';
+  return parameters.length ? "".concat(_data.PARAMETER_PREFIX).concat(parameters.join(_data.PARAMETERS_DELIMITER)) : _data.EMPTY_STRING;
 };
 
 var parseParameterName = function parseParameterName(name, key) {
@@ -9720,17 +9765,16 @@ var parseParameterName = function parseParameterName(name, key) {
 };
 
 var getIncludeParameter = function getIncludeParameter(path, values) {
-  return Object.keys(values).map(function (name) {
+  return (0, _isntnt.isSome)(values) ? Object.keys(values).map(function (name) {
     var children = values[name];
     var childPath = path.concat(name);
-    var value = childPath.join('.');
-    return (0, _isntnt.isSome)(children) ? [value, getIncludeParameter(childPath, children)].join(',') : value;
-  });
+    var value = childPath.join(_data.INCLUDE_PARAMETER_VALUE_DELIMITER);
+    return (0, _isntnt.isSome)(children) ? [value, getIncludeParameter(childPath, children)].join(_data.LIST_PARAMETER_VALUE_DELIMITER) : value;
+  }) : [];
 };
 
-var parseIncludeParameter = function parseIncludeParameter(name) {
-  var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  return parseApiQueryParameterValue(name, getIncludeParameter([], value));
+var parseIncludeParameter = function parseIncludeParameter(name, value) {
+  return (0, _isntnt.isSome)(value) ? parseApiQueryParameterValue(name, getIncludeParameter([], value)) : [];
 };
 
 var parseApiQueryParameter = function parseApiQueryParameter(name, value) {
@@ -9753,7 +9797,7 @@ var parseApiQueryParameterValue = function parseApiQueryParameterValue(name, val
   }
 
   if ((0, _isntnt.isString)(value) && value.length || (0, _isntnt.isSerializableNumber)(value)) {
-    return ["".concat(name, "=").concat(value)];
+    return [[name, value].join(_data.PARAMETER_DELIMITER)];
   }
 
   if ((0, _isntnt.isArray)(value)) {
@@ -9766,45 +9810,23 @@ var parseApiQueryParameterValue = function parseApiQueryParameterValue(name, val
 var parseApiQueryParameterArray = function parseApiQueryParameterArray(value) {
   return value.filter(function (item) {
     return (0, _isntnt.isString)(item) && item.length || (0, _isntnt.isSerializableNumber)(item);
-  }).join(',');
-}; // class A extends resource('a')<A> {
-//   b!: B | null
-// }
-// class B extends resource('b')<B> {
-//   c!: C | null
-// }
-// class C extends resource('c')<C> {
-//   d!: D | null
-// }
-// class D extends resource('d')<D> {
-//   e!: E | null
-// }
-// class E extends resource('e')<E> {
-//   f!: F | null
-// }
-// class F extends resource('f')<F> {
-//   g!: G | null
-// }
-// class G extends resource('g')<G> {
-//   a!: A | null
-// }
-// const x: Partial<BaseFieldsQueryParameters<F>> = {
-//   a: ['b'],
-//   b: ['c'],
-//   f: ['g'],
-//   g: ['a'],
-// }
-},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/lib/ApiEndpoint.ts":[function(require,module,exports) {
+  }).join(_data.LIST_PARAMETER_VALUE_DELIMITER);
+};
+},{"isntnt":"../../node_modules/isntnt/dist/index.js","../constants/data":"../../src/constants/data.ts","../constants/jsonApi":"../../src/constants/jsonApi.ts"}],"../../src/lib/ApiEndpoint.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.ApiEndpoint = void 0;
+exports.ApiEndpoint = exports.defaultPostRequestHeaders = exports.defaultGetRequestHeaders = exports.jsonApiContentType = exports.RequestHeader = void 0;
+
+var _data = require("../utils/data");
 
 var _ApiQuery = require("./ApiQuery");
 
 var _ApiController = require("./ApiController");
+
+var _defaultPostRequestHe;
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
@@ -9816,7 +9838,34 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var defaultFetchQueryParameters = {};
+
+var createGetRequestOptions = function createGetRequestOptions() {
+  return (0, _data.createDataValue)({
+    method: 'GET',
+    headers: defaultGetRequestHeaders
+  });
+};
+
+var RequestHeader;
+exports.RequestHeader = RequestHeader;
+
+(function (RequestHeader) {
+  RequestHeader["ACCEPT"] = "Accept";
+  RequestHeader["CONTENT_TYPE"] = "Content-Type";
+  RequestHeader["ACCESS_CONTROL_ALLOW_ORIGIN"] = "Access-Control-Allow-Origin";
+})(RequestHeader || (exports.RequestHeader = RequestHeader = {}));
+
+var jsonApiContentType = 'application/vnd.api+json';
+exports.jsonApiContentType = jsonApiContentType;
+
+var defaultGetRequestHeaders = _defineProperty({}, RequestHeader.CONTENT_TYPE, jsonApiContentType);
+
+exports.defaultGetRequestHeaders = defaultGetRequestHeaders;
+var defaultPostRequestHeaders = (_defaultPostRequestHe = {}, _defineProperty(_defaultPostRequestHe, RequestHeader.ACCEPT, jsonApiContentType), _defineProperty(_defaultPostRequestHe, RequestHeader.CONTENT_TYPE, jsonApiContentType), _defaultPostRequestHe);
+exports.defaultPostRequestHeaders = defaultPostRequestHeaders;
 
 var ApiEndpoint =
 /*#__PURE__*/
@@ -9865,8 +9914,8 @@ function () {
             controller,
             queryParameters,
             url,
+            options,
             response,
-            resource,
             _args2 = arguments;
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
@@ -9875,20 +9924,16 @@ function () {
                 query = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : defaultFetchQueryParameters;
                 controller = _ApiController.ApiController.get(this.api);
                 queryParameters = this.createQuery(query);
-                url = new URL(String(queryParameters), this.toURL());
-                _context2.next = 6;
-                return fetch(url.href);
+                url = new URL("".concat(this.path, "/").concat(id).concat(String(queryParameters)), this.api.url);
+                options = createGetRequestOptions();
+                _context2.next = 7;
+                return controller.handleRequest(url, options);
 
-              case 6:
+              case 7:
                 response = _context2.sent;
-                _context2.next = 9;
-                return response.json();
+                return _context2.abrupt("return", controller.decodeResource(this.Resource, response.data, response.included, query.fields || {}, query.include));
 
               case 9:
-                resource = _context2.sent;
-                return _context2.abrupt("return", controller.decodeResource(this.Resource, resource.data, resource.included, query.fields || {}, query.include));
-
-              case 11:
               case "end":
                 return _context2.stop();
             }
@@ -9904,51 +9949,51 @@ function () {
     }()
   }, {
     key: "fetch",
-    value: function (_fetch) {
+    value: function () {
+      var _fetch = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee3() {
+        var _this = this;
+
+        var query,
+            controller,
+            queryParameters,
+            url,
+            options,
+            response,
+            _args3 = arguments;
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                query = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : defaultFetchQueryParameters;
+                controller = _ApiController.ApiController.get(this.api);
+                queryParameters = this.createQuery(query);
+                url = new URL(String(queryParameters), this.toURL());
+                options = createGetRequestOptions();
+                _context3.next = 7;
+                return controller.handleRequest(url, options);
+
+              case 7:
+                response = _context3.sent;
+                return _context3.abrupt("return", response.data.map(function (resource) {
+                  return controller.decodeResource(_this.Resource, resource, response.included, query.fields || {}, query.include);
+                }));
+
+              case 9:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
       function fetch() {
         return _fetch.apply(this, arguments);
       }
 
-      fetch.toString = function () {
-        return _fetch.toString();
-      };
-
       return fetch;
-    }(
-    /*#__PURE__*/
-    _asyncToGenerator(
-    /*#__PURE__*/
-    regeneratorRuntime.mark(function _callee3() {
-      var _this = this;
-
-      var query,
-          controller,
-          queryParameters,
-          url,
-          _args3 = arguments;
-      return regeneratorRuntime.wrap(function _callee3$(_context3) {
-        while (1) {
-          switch (_context3.prev = _context3.next) {
-            case 0:
-              query = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : defaultFetchQueryParameters;
-              controller = _ApiController.ApiController.get(this.api);
-              queryParameters = this.createQuery(query);
-              url = new URL(String(queryParameters), this.toURL());
-              return _context3.abrupt("return", fetch(url.href).then(function (response) {
-                return (// (console.log(response) as any) ||
-                  response.data.map(function (data) {
-                    return controller.decodeResource(_this.Resource, data, response.included, query.fields || {}, query.include);
-                  })
-                );
-              }));
-
-            case 5:
-            case "end":
-              return _context3.stop();
-          }
-        }
-      }, _callee3, this);
-    })))
+    }()
   }, {
     key: "toString",
     value: function toString() {
@@ -9970,7 +10015,7 @@ function () {
 }();
 
 exports.ApiEndpoint = ApiEndpoint;
-},{"./ApiQuery":"../../src/lib/ApiQuery.ts","./ApiController":"../../src/lib/ApiController.ts"}],"../../src/lib/ApiController.ts":[function(require,module,exports) {
+},{"../utils/data":"../../src/utils/data.ts","./ApiQuery":"../../src/lib/ApiQuery.ts","./ApiController":"../../src/lib/ApiController.ts"}],"../../src/lib/ApiController.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9980,9 +10025,15 @@ exports.ApiController = void 0;
 
 var _isntnt = require("isntnt");
 
-var _data = require("../utils/data");
+var _data = require("../constants/data");
+
+var _data2 = require("../utils/data");
 
 var _ApiEndpoint = require("./ApiEndpoint");
+
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -9990,8 +10041,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
-var controllers = (0, _data.createEmptyObject)();
-var emptyObject = (0, _data.createEmptyObject)();
+var controllers = (0, _data2.createEmptyObject)();
 
 var ApiController =
 /*#__PURE__*/
@@ -9999,8 +10049,8 @@ function () {
   function ApiController(api) {
     _classCallCheck(this, ApiController);
 
-    this.endpoints = (0, _data.createEmptyObject)();
-    this.resources = (0, _data.createEmptyObject)();
+    this.endpoints = (0, _data2.createEmptyObject)();
+    this.resources = (0, _data2.createEmptyObject)();
     this.api = api;
   }
 
@@ -10035,6 +10085,38 @@ function () {
       return new _ApiEndpoint.ApiEndpoint(this.api, path, Resource);
     }
   }, {
+    key: "handleRequest",
+    value: function () {
+      var _handleRequest = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee(url, options) {
+        var request;
+        return regeneratorRuntime.wrap(function _callee$(_context) {
+          while (1) {
+            switch (_context.prev = _context.next) {
+              case 0:
+                _context.next = 2;
+                return fetch(url.href, options);
+
+              case 2:
+                request = _context.sent;
+                return _context.abrupt("return", request.json());
+
+              case 4:
+              case "end":
+                return _context.stop();
+            }
+          }
+        }, _callee);
+      }));
+
+      function handleRequest(_x, _x2) {
+        return _handleRequest.apply(this, arguments);
+      }
+
+      return handleRequest;
+    }()
+  }, {
     key: "getIncludedResourceData",
     value: function getIncludedResourceData(identifier, included) {
       var data = included.find(function (resource) {
@@ -10053,18 +10135,21 @@ function () {
     value: function decodeResource(Resource, data, included) {
       var _this = this;
 
-      var fieldsParam = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : emptyObject;
-      var includeParam = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : emptyObject;
+      var fieldsParam = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : _data.EMPTY_OBJECT;
+      var includeParam = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : _data.EMPTY_OBJECT;
       var debug = arguments.length > 5 ? arguments[5] : undefined;
       // debug && console.info('decodeResource', Resource.type, data)
-      var fieldNames = fieldsParam[Resource.type] || (0, _data.keys)(Resource.fields);
+      // Todo: should the data of a resource be added to the included data because
+      // a relationship MAY depend on it?
+      included.push((0, _data2.createDataValue)(data));
+      var fieldNames = fieldsParam[Resource.type] || (0, _data2.keys)(Resource.fields);
       var result = fieldNames.reduce(function (result, name) {
         var field = Resource.fields[name];
 
         if (field.isAttributeField()) {
-          result[name] = (0, _data.getAttributeValue)(data.attributes, field);
+          result[name] = (0, _data2.getAttributeValue)(data.attributes, field);
         } else if (field.isRelationshipField()) {
-          var value = (0, _data.getRelationshipData)(data.relationships, field);
+          var value = (0, _data2.getRelationshipData)(data.relationships, field);
 
           if (field.isToOneRelationship()) {
             if (!field.validate(value)) {
@@ -10074,20 +10159,20 @@ function () {
 
             if ((0, _isntnt.isNone)(value)) {
               result[name] = null;
-            } else if ((0, _isntnt.isUndefined)(includeParam[name])) {
+            } else if ((0, _isntnt.isNone)(includeParam) || (0, _isntnt.isUndefined)(includeParam[name])) {
               result[name] = value;
             } else {
               var relationshipResource = _this.getResource(value.type);
 
               var relationshipData = _this.getIncludedResourceData(value, included);
 
-              result[name] = _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name] || emptyObject);
+              result[name] = _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name]);
             }
           }
 
           if (field.isToManyRelationship()) {
             if (field.validate(value)) {
-              if ((0, _isntnt.isUndefined)(includeParam[name])) {
+              if ((0, _isntnt.isNone)(includeParam) || (0, _isntnt.isUndefined)(includeParam[name])) {
                 result[name] = value;
               } else {
                 result[name] = value.map(function (identifier) {
@@ -10095,7 +10180,7 @@ function () {
 
                   var relationshipData = _this.getIncludedResourceData(identifier, included);
 
-                  return _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name] || emptyObject);
+                  return _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name]);
                 });
               }
             } else {
@@ -10106,7 +10191,7 @@ function () {
         }
 
         return result;
-      }, (0, _data.createBaseResource)(Resource, data));
+      }, (0, _data2.createBaseResource)(Resource, data));
       debug && console.info('Resource', new Resource(result));
       return new Resource(result);
     }
@@ -10116,7 +10201,7 @@ function () {
       var identifier = String(api.url);
 
       if (identifier in controllers) {
-        throw new Error("Duplicate api");
+        throw new Error("Duplicate api href");
       }
 
       controllers[identifier] = new ApiController(api);
@@ -10132,19 +10217,37 @@ function () {
 }();
 
 exports.ApiController = ApiController;
-},{"isntnt":"../../node_modules/isntnt/dist/index.js","../utils/data":"../../src/utils/data.ts","./ApiEndpoint":"../../src/lib/ApiEndpoint.ts"}],"../../src/lib/ApiSetup.ts":[function(require,module,exports) {
+},{"isntnt":"../../node_modules/isntnt/dist/index.js","../constants/data":"../../src/constants/data.ts","../utils/data":"../../src/utils/data.ts","./ApiEndpoint":"../../src/lib/ApiEndpoint.ts"}],"../../src/constants/setup.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.mergeApiDefaultSetup = exports.jsonApiVersions = exports.defaultIncludeFieldOptions = void 0;
+exports.defaultIncludeFieldOptions = void 0;
+var defaultIncludeFieldOptions = {
+  NONE: 'none',
+  PRIMARY: 'primary'
+};
+exports.defaultIncludeFieldOptions = defaultIncludeFieldOptions;
+},{}],"../../src/lib/ApiSetup.ts":[function(require,module,exports) {
+"use strict";
 
-var _jsonApiVersions;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.mergeApiDefaultSetup = void 0;
+
+var _jsonApi = require("../constants/jsonApi");
+
+var _setup = require("../constants/setup");
 
 function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; var ownKeys = Object.keys(source); if (typeof Object.getOwnPropertySymbols === 'function') { ownKeys = ownKeys.concat(Object.getOwnPropertySymbols(source).filter(function (sym) { return Object.getOwnPropertyDescriptor(source, sym).enumerable; })); } ownKeys.forEach(function (key) { _defineProperty(target, key, source[key]); }); } return target; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+var reflect = function reflect(value) {
+  return value;
+};
 
 var mergeApiSetup = function mergeApiSetup(defaults) {
   return function (setup) {
@@ -10152,26 +10255,14 @@ var mergeApiSetup = function mergeApiSetup(defaults) {
   };
 };
 
-var defaultIncludeFieldOptions = {
-  NONE: 'none',
-  PRIMARY: 'primary'
-};
-exports.defaultIncludeFieldOptions = defaultIncludeFieldOptions;
-var jsonApiVersions = (_jsonApiVersions = {}, _defineProperty(_jsonApiVersions, '1_0', '1.0'), _defineProperty(_jsonApiVersions, '1_1', '1.1'), _jsonApiVersions);
-exports.jsonApiVersions = jsonApiVersions;
-
-var reflect = function reflect(value) {
-  return value;
-};
-
 var mergeApiDefaultSetup = mergeApiSetup({
-  version: jsonApiVersions['1_0'],
-  defaultIncludeFields: defaultIncludeFieldOptions.NONE,
+  version: _jsonApi.jsonApiVersions['1_0'],
+  defaultIncludeFields: _setup.defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
   parseRequestError: reflect
 });
 exports.mergeApiDefaultSetup = mergeApiDefaultSetup;
-},{}],"../../src/lib/Api.ts":[function(require,module,exports) {
+},{"../constants/jsonApi":"../../src/constants/jsonApi.ts","../constants/setup":"../../src/constants/setup.ts"}],"../../src/lib/Api.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10364,113 +10455,63 @@ var resource = function resource(type) {
 
     return Resource;
   }(_ResourceIdentifier2.ResourceIdentifier), _a.type = type, _a.fields = Object.create(null), _a;
-};
+}; // class A extends resource('a')<A> {
+//   b!: B | null
+// }
+// class B extends resource('b')<B> {
+//   c!: C | null
+// }
+// class C extends resource('c')<C> {
+//   d!: D | null
+// }
+// class D extends resource('d')<D> {
+//   e!: E | null
+// }
+// class E extends resource('e')<E> {
+//   f!: F | null
+// }
+// class F extends resource('f')<F> {
+//   g!: G | null
+// }
+// class G extends resource('g')<G> {
+//   a!: A | null
+// }
+// const a = new A({
+//   type: 'a',
+//   id: 'x',
+//   b: null,
+// })
+// type Xaf = ResourceModels<A>
+// type RT<T> = T extends AnyResource
+//   ? {
+//       [K in T['type']]: NonEmptyArray<
+//         Exclude<keyof Extract<T, { type: K }>, ResourceIdentifierKey>
+//       >
+//     }
+//   : never
+// type Xo<T> = RT<ResourceModels<T>>
+// type Xo2 = Xo<A>
+// type ResourceModels<T, X = T> = T extends AnyResource
+//   ?
+//       | T
+//       | ValuesOf<
+//           {
+//             [K in keyof T]: Exclude<T[K], null> extends AnyResource
+//               ? Exclude<T[K], null> extends X
+//                 ? never
+//                 : ResourceModels<Exclude<T[K], null>, X | T>
+//               : T[K] extends Array<AnyResource>
+//               ? T[K][any] extends X
+//                 ? never
+//                 : ResourceModels<T[K][any], X | T>
+//               : never
+//           }
+//         >
+//   : never
+// // TEMP
+
 
 exports.resource = resource;
-
-var A =
-/*#__PURE__*/
-function (_resource) {
-  _inherits(A, _resource);
-
-  function A() {
-    _classCallCheck(this, A);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(A).apply(this, arguments));
-  }
-
-  return A;
-}(resource('a'));
-
-var B =
-/*#__PURE__*/
-function (_resource2) {
-  _inherits(B, _resource2);
-
-  function B() {
-    _classCallCheck(this, B);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(B).apply(this, arguments));
-  }
-
-  return B;
-}(resource('b'));
-
-var C =
-/*#__PURE__*/
-function (_resource3) {
-  _inherits(C, _resource3);
-
-  function C() {
-    _classCallCheck(this, C);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(C).apply(this, arguments));
-  }
-
-  return C;
-}(resource('c'));
-
-var D =
-/*#__PURE__*/
-function (_resource4) {
-  _inherits(D, _resource4);
-
-  function D() {
-    _classCallCheck(this, D);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(D).apply(this, arguments));
-  }
-
-  return D;
-}(resource('d'));
-
-var E =
-/*#__PURE__*/
-function (_resource5) {
-  _inherits(E, _resource5);
-
-  function E() {
-    _classCallCheck(this, E);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(E).apply(this, arguments));
-  }
-
-  return E;
-}(resource('e'));
-
-var F =
-/*#__PURE__*/
-function (_resource6) {
-  _inherits(F, _resource6);
-
-  function F() {
-    _classCallCheck(this, F);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(F).apply(this, arguments));
-  }
-
-  return F;
-}(resource('f'));
-
-var G =
-/*#__PURE__*/
-function (_resource7) {
-  _inherits(G, _resource7);
-
-  function G() {
-    _classCallCheck(this, G);
-
-    return _possibleConstructorReturn(this, _getPrototypeOf(G).apply(this, arguments));
-  }
-
-  return G;
-}(resource('g'));
-
-var a = new A({
-  type: 'a',
-  id: 'x',
-  b: null
-}); // TEMP
 },{"./ResourceIdentifier":"../../src/lib/ResourceIdentifier.ts"}],"../../src/constants/resourceFieldPropertyDescriptor.ts":[function(require,module,exports) {
 "use strict";
 
@@ -10777,34 +10818,34 @@ Object.defineProperty(exports, "ApiQueryParameterValue", {
     return _ApiQuery.ApiQueryParameterValue;
   }
 });
+Object.defineProperty(exports, "ApiQueryFieldsParameter", {
+  enumerable: true,
+  get: function () {
+    return _ApiQuery.ApiQueryFieldsParameter;
+  }
+});
+Object.defineProperty(exports, "ApiQueryIncludeParameter", {
+  enumerable: true,
+  get: function () {
+    return _ApiQuery.ApiQueryIncludeParameter;
+  }
+});
+Object.defineProperty(exports, "ApiQueryPageParameter", {
+  enumerable: true,
+  get: function () {
+    return _ApiQuery.ApiQueryPageParameter;
+  }
+});
+Object.defineProperty(exports, "ApiQuerySortParameter", {
+  enumerable: true,
+  get: function () {
+    return _ApiQuery.ApiQuerySortParameter;
+  }
+});
 Object.defineProperty(exports, "FetchQueryParameters", {
   enumerable: true,
   get: function () {
     return _ApiQuery.FetchQueryParameters;
-  }
-});
-Object.defineProperty(exports, "PageQueryParameter", {
-  enumerable: true,
-  get: function () {
-    return _ApiQuery.PageQueryParameter;
-  }
-});
-Object.defineProperty(exports, "SortQueryParameters", {
-  enumerable: true,
-  get: function () {
-    return _ApiQuery.SortQueryParameters;
-  }
-});
-Object.defineProperty(exports, "defaultIncludeFieldOptions", {
-  enumerable: true,
-  get: function () {
-    return _ApiSetup.defaultIncludeFieldOptions;
-  }
-});
-Object.defineProperty(exports, "jsonApiVersions", {
-  enumerable: true,
-  get: function () {
-    return _ApiSetup.jsonApiVersions;
   }
 });
 Object.defineProperty(exports, "ApiSetup", {
@@ -10813,22 +10854,28 @@ Object.defineProperty(exports, "ApiSetup", {
     return _ApiSetup.ApiSetup;
   }
 });
+Object.defineProperty(exports, "ApiSetupCreatePageQuery", {
+  enumerable: true,
+  get: function () {
+    return _ApiSetup.ApiSetupCreatePageQuery;
+  }
+});
+Object.defineProperty(exports, "ApiSetupParseRequestError", {
+  enumerable: true,
+  get: function () {
+    return _ApiSetup.ApiSetupParseRequestError;
+  }
+});
+Object.defineProperty(exports, "ApiSetupWithDefaults", {
+  enumerable: true,
+  get: function () {
+    return _ApiSetup.ApiSetupWithDefaults;
+  }
+});
 Object.defineProperty(exports, "DefaultApiSetup", {
   enumerable: true,
   get: function () {
     return _ApiSetup.DefaultApiSetup;
-  }
-});
-Object.defineProperty(exports, "DefaultIncludeFields", {
-  enumerable: true,
-  get: function () {
-    return _ApiSetup.DefaultIncludeFields;
-  }
-});
-Object.defineProperty(exports, "JsonApiVersion", {
-  enumerable: true,
-  get: function () {
-    return _ApiSetup.JsonApiVersion;
   }
 });
 Object.defineProperty(exports, "ascend", {
@@ -10841,6 +10888,18 @@ Object.defineProperty(exports, "descend", {
   enumerable: true,
   get: function () {
     return _ApiSortRule.descend;
+  }
+});
+Object.defineProperty(exports, "sort", {
+  enumerable: true,
+  get: function () {
+    return _ApiSortRule.sort;
+  }
+});
+Object.defineProperty(exports, "ApiSortRule", {
+  enumerable: true,
+  get: function () {
+    return _ApiSortRule.ApiSortRule;
   }
 });
 Object.defineProperty(exports, "resource", {
@@ -11048,6 +11107,10 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
+function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
@@ -11110,7 +11173,32 @@ window.fetch = function (href) {
     var response = isntnt_1.isSome(id) ? resources_1.default[path].getResponse(id) : resources_1.default[path].getResponseCollection();
 
     if (isntnt_1.isSome(response)) {
-      return Promise.resolve(response);
+      return Promise.resolve({
+        json: function () {
+          var _json = _asyncToGenerator(
+          /*#__PURE__*/
+          regeneratorRuntime.mark(function _callee() {
+            return regeneratorRuntime.wrap(function _callee$(_context) {
+              while (1) {
+                switch (_context.prev = _context.next) {
+                  case 0:
+                    return _context.abrupt("return", response);
+
+                  case 1:
+                  case "end":
+                    return _context.stop();
+                }
+              }
+            }, _callee);
+          }));
+
+          function json() {
+            return _json.apply(this, arguments);
+          }
+
+          return json;
+        }()
+      });
     }
 
     return Promise.reject(404);
@@ -11118,8 +11206,6 @@ window.fetch = function (href) {
 
   return Promise.reject(500);
 };
-
-var url = new URL('https://example.com/api');
 
 var Person =
 /*#__PURE__*/
@@ -11179,13 +11265,22 @@ function (_src_1$resource3) {
   return Country;
 }(src_1.resource('country'));
 
+__decorate([src_1.requiredAttribute(isntnt_1.isString)], Country.prototype, "name", void 0);
+
 __decorate([src_1.toManyRelationship('person')], Country.prototype, "citizens", void 0);
 
 __decorate([src_1.toManyRelationship('city')], Country.prototype, "cities", void 0);
 
+var url = new URL('https://example.com/api');
 var api = new src_1.default(url, {
   version: '1.0',
   defaultIncludeFields: 'primary',
+  createPageQuery: function createPageQuery(page) {
+    return {
+      number: page
+    };
+  },
+  afterRequest: function afterRequest() {},
   parseRequestError: function parseRequestError(error) {
     return error;
   }
@@ -11201,7 +11296,7 @@ people.create({
   country: null,
   city: null
 });
-countries.fetch({
+countries.get('1', {
   include: {
     citizens: {
       city: {
@@ -11215,10 +11310,11 @@ people.fetch({
   sort: [src_1.ascend('name'), src_1.descend('age')],
   filter: 'name=12&whatever=40',
   fields: {
-    person: ['name', 'city'],
-    country: ['cities', 'citizens']
+    country: ['name'],
+    city: ['name']
   },
   include: {
+    country: null,
     city: {
       country: {
         citizens: {
@@ -11228,7 +11324,7 @@ people.fetch({
     }
   }
 }).then(function (q) {
-  console.log('aii', q[0]['city']['country']['citizens'][0]['city']); // q['city']!['country']
+  console.log('people', q); // q['city']!['country']
 }).catch(console.warn);
 },{"babel-polyfill":"node_modules/babel-polyfill/lib/index.js","isntnt":"node_modules/isntnt/dist/index.js","./data/resources":"data/resources.ts","../../src/":"../../src/index.ts"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

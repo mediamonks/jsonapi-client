@@ -1,8 +1,6 @@
 import { ResourceId, ResourceType } from './Resource'
 
-export type AnyResourceIdentifier = ResourceIdentifier<any>
-
-export type ResourceIdentifierKey = keyof AnyResourceIdentifier
+export type ResourceIdentifierKey = keyof ResourceIdentifier<any>
 
 export class ResourceIdentifier<T extends ResourceType> {
   readonly type: T
@@ -13,7 +11,7 @@ export class ResourceIdentifier<T extends ResourceType> {
     this.id = id
   }
 
-  static isResource(value: unknown): value is AnyResourceIdentifier {
+  static isResource(value: unknown): value is ResourceIdentifier<any> {
     return value instanceof ResourceIdentifier
   }
 }

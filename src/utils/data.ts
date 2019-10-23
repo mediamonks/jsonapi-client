@@ -7,13 +7,13 @@ import {
   isString,
 } from 'isntnt'
 
-export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> =>
-  Object.keys(value)
-
 import { AnyResource, ResourceConstructor } from '../lib/Resource'
 import { AttributeField, AttributeValue } from '../lib/ResourceAttribute'
 import { ResourceIdentifier } from '../lib/ResourceIdentifier'
 import { RelationshipField } from '../lib/ResourceRelationship'
+
+export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> =>
+  Object.keys(value)
 
 export const createEmptyObject = (): {} => Object.create(null)
 

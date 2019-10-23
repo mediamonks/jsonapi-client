@@ -6,19 +6,20 @@ export {
   ApiQueryParameter,
   ApiQueryParameters,
   ApiQueryParameterValue,
+  ApiQueryFieldsParameter,
+  ApiQueryIncludeParameter,
+  ApiQueryPageParameter,
+  ApiQuerySortParameter,
   FetchQueryParameters,
-  PageQueryParameter,
-  SortQueryParameters,
 } from './lib/ApiQuery'
 export {
-  defaultIncludeFieldOptions,
-  jsonApiVersions,
   ApiSetup,
+  ApiSetupCreatePageQuery,
+  ApiSetupParseRequestError,
+  ApiSetupWithDefaults,
   DefaultApiSetup,
-  DefaultIncludeFields,
-  JsonApiVersion,
 } from './lib/ApiSetup'
-export { ascend, descend } from './lib/ApiSortRule'
+export { ascend, descend, sort, ApiSortRule } from './lib/ApiSortRule'
 export {
   resource,
   ResourceAttributes,
