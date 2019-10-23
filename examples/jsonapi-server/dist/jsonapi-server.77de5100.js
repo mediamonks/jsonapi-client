@@ -9895,6 +9895,7 @@ function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || func
 
 var isPage = (0, _isntnt.literal)('page');
 var isSort = (0, _isntnt.literal)('sort');
+var isInclude = (0, _isntnt.literal)('include');
 
 var A =
 /*#__PURE__*/
@@ -10033,6 +10034,10 @@ var parseApiQuery = function parseApiQuery(api, values) {
       return parseApiQueryParameter(name, parseApiQueryParameterArray(values[name].map(String)));
     }
 
+    if (isInclude(name)) {
+      return parseIncludeParameter(name, values[name]);
+    }
+
     return parseApiQueryParameter(name, values[name]);
   });
   return parameters.length ? "?".concat(parameters.join('&')) : '';
@@ -10040,6 +10045,20 @@ var parseApiQuery = function parseApiQuery(api, values) {
 
 var parseParameterName = function parseParameterName(name, key) {
   return (0, _isntnt.isNone)(key) ? name : "".concat(name, "[").concat(key, "]");
+};
+
+var getIncludeParameter = function getIncludeParameter(path, values) {
+  return Object.keys(values).map(function (name) {
+    var children = values[name];
+    var childPath = path.concat(name);
+    var value = childPath.join('.');
+    return (0, _isntnt.isSome)(children) ? [value, getIncludeParameter(childPath, children)].join(',') : value;
+  });
+};
+
+var parseIncludeParameter = function parseIncludeParameter(name) {
+  var value = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  return parseApiQueryParameterValue(name, getIncludeParameter([], value));
 };
 
 var parseApiQueryParameter = function parseApiQueryParameter(name, value) {
@@ -11276,8 +11295,9 @@ var api = new src_1.default(url, {
     return error;
   }
 });
-api.register(Country, City);
+api.register(City);
 var people = api.endpoint('people', Person);
+var countries = api.endpoint('country', Country);
 people.create({
   id: 'test',
   type: 'person',
@@ -11285,6 +11305,15 @@ people.create({
   age: 12,
   country: null,
   city: null
+});
+countries.fetch({
+  include: {
+    citizens: {
+      city: null
+    }
+  }
+}).then(function (q) {
+  q[0]['citizens'][0]['city'];
 });
 people.fetch({
   page: 12,
@@ -11304,7 +11333,7 @@ people.fetch({
     }
   }
 }).then(function (q) {
-  console.log('aii', q[0]['city']['country']['citizens']); // q['city']!['country']
+  console.log('aii', q[0]['city']['country']['citizens'][0]['city']); // q['city']!['country']
 }).catch(console.warn);
 },{"babel-polyfill":"node_modules/babel-polyfill/lib/index.js","isntnt":"node_modules/isntnt/dist/index.js","./data/resources":"data/resources.ts","../../src/":"../../src/index.ts"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

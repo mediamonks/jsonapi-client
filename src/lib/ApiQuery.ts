@@ -6,6 +6,7 @@ import {
   isTrue,
   literal,
   isNone,
+  isSome,
 } from 'isntnt'
 import { NonEmptyArray, ValuesOf } from '../types/util'
 
@@ -19,6 +20,7 @@ import { ResourceFieldName } from './ResourceField'
 
 const isPage = literal('page')
 const isSort = literal('sort')
+const isInclude = literal('include')
 
 export type PageQueryParameter<
   T extends Partial<ApiSetup>
@@ -164,6 +166,9 @@ const parseApiQuery = <T extends FetchQueryParameters<any, any>>(
         ),
       )
     }
+    if (isInclude(name)) {
+      return parseIncludeParameter(name, values[name]!)
+    }
     return parseApiQueryParameter(name, (values as any)[name])
   })
   return parameters.length ? `?${parameters.join('&')}` : ''
@@ -172,9 +177,31 @@ const parseApiQuery = <T extends FetchQueryParameters<any, any>>(
 const parseParameterName = (
   name: ResourceFieldName,
   key: string | null,
-): string => {
-  return isNone(key) ? name : `${name}[${key}]`
+): string => (isNone(key) ? name : `${name}[${key}]`)
+
+type ApiQueryIncludeParameter = Partial<{
+  [key: string]: ApiQueryIncludeParameter | null
+}>
+
+const getIncludeParameter = (
+  path: Array<string>,
+  values: ApiQueryIncludeParameter,
+): Array<string> => {
+  return Object.keys(values).map((name) => {
+    const children = values[name]
+    const childPath = path.concat(name)
+    const value = childPath.join('.')
+    return isSome(children)
+      ? [value, getIncludeParameter(childPath, children)].join(',')
+      : value
+  })
 }
+
+const parseIncludeParameter = (
+  name: 'include',
+  value: ApiQueryIncludeParameter = {},
+): Array<string> =>
+  parseApiQueryParameterValue(name, getIncludeParameter([], value))
 
 const parseApiQueryParameter = (
   name: ResourceFieldName,

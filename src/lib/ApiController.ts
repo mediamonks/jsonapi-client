@@ -1,4 +1,4 @@
-import { isArray, isUndefined, isNone, isSome, Predicate } from 'isntnt'
+import { isUndefined, isNone, Predicate } from 'isntnt'
 
 import {
   createEmptyObject,

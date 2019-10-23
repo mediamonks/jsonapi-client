@@ -66,9 +66,10 @@ const api = new Api(url, {
   },
 })
 
-api.register(Country, City)
+api.register(City)
 
 const people = api.endpoint('people', Person)
+const countries = api.endpoint('country', Country)
 
 people.create({
   id: 'test',
@@ -78,6 +79,18 @@ people.create({
   country: null,
   city: null,
 })
+
+countries
+  .fetch({
+    include: {
+      citizens: {
+        city: null,
+      },
+    },
+  })
+  .then((q) => {
+    q[0]['citizens'][0]['city']
+  })
 
 people
   .fetch({
@@ -96,15 +109,10 @@ people
           },
         },
       },
-      // country: {
-      //   citizens: {
-      //     country: null,
-      //   },
-      // },
     },
   })
   .then((q) => {
-    console.log('aii', q[0]['city']!['country']!['citizens'])
+    console.log('aii', q[0]['city']!['country']!['citizens'][0]['city'])
     // q['city']!['country']
   })
   .catch(console.warn)
