@@ -79,8 +79,9 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       this.Resource.type,
       response.data,
       response.included,
-      query.fields || {},
-      query.include as any,
+      query.fields,
+      query.include,
+      [],
     )
 
     return new Promise((resolve, reject) => {
@@ -105,8 +106,9 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
         this.Resource.type,
         resource,
         response.included,
-        query.fields || {},
-        query.include as any,
+        query.fields,
+        query.include,
+        [this.Resource.type, resource.id],
       )
       if (result.isSuccess()) {
         values.push(result.value as any)
