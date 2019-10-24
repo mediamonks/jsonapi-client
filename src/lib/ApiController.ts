@@ -1,4 +1,4 @@
-import { isUndefined, isNone, Predicate, shape, isObject } from 'isntnt'
+import { isUndefined, isNone, Predicate, shape, isObject, and } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
 import {
@@ -11,6 +11,7 @@ import { Result } from '../utils/Result'
 
 import { Api } from './Api'
 import { ApiEndpoint } from './ApiEndpoint'
+import { ApiError } from './ApiError'
 import { ApiSetup } from './ApiSetup'
 import { ApiQueryIncludeParameter, ApiQueryFieldsParameter } from './ApiQuery'
 import {
@@ -22,8 +23,16 @@ import {
 } from './Resource'
 import { AttributeField } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
+import { RelationshipField } from '../../dist/src'
+import { RelationshipValue } from './ResourceRelationship'
+import { isArray } from 'util'
+
+const has = <K extends PropertyKey>(key: K) =>
+  and(isObject, (value: any): value is Record<K, any> => key in value)
 
 const isDataWithAttributes = shape({ attributes: isObject })
+const isDataWithRelationships = shape({ relationships: isObject })
+const hasData = has('data')
 
 type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
@@ -38,6 +47,10 @@ const controllers: Record<string, ApiController<any>> = createEmptyObject()
 type AttributeFieldValue<
   F extends AttributeField<any>
 > = F extends AttributeField<infer T> ? T : never
+
+type RelationshipFieldData<
+  F extends RelationshipField<any>
+> = F extends RelationshipField<infer T> ? T : never
 
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
@@ -85,16 +98,61 @@ export class ApiController<S extends Partial<ApiSetup>> {
     field: F,
   ): Result<AttributeFieldValue<F> | null, Error> {
     if (!isDataWithAttributes(data)) {
-      return Result.reject(new Error(`Data must have an attributes object`))
+      return Result.reject(
+        new ApiError(
+          `Invalid resource data, attributes must be an object`,
+          data,
+          [field.name],
+        ),
+      )
     }
-
     const value = (data.attributes as any)[field.name]
     if (field.validate(value)) {
       return Result.accept(value)
     } else if (field.isOptionalAttribute() && isNone(value)) {
       return Result.accept(null)
     }
-    return Result.reject(new Error(`Invalid value for attribute ${field.name}`))
+    return Result.reject(
+      new ApiError(`Invalid "${field.name}" attribute value`, value),
+    )
+  }
+
+  getRelationshipData<F extends RelationshipField<any>>(
+    data: ResourceData<AnyResource>,
+    field: F,
+  ): Result<RelationshipValue<AnyResource>, Error> {
+    if (!isDataWithRelationships(data)) {
+      return Result.reject(
+        new ApiError(
+          `Invalid resource data, relationships must be an object`,
+          data,
+          [field.name],
+        ),
+      )
+    }
+    const value = (data.relationships as any)[field.name]
+    if (!hasData(value)) {
+      return Result.reject(
+        new ApiError(
+          `Invalid relationship data, value at ${field.name} must have a data property`,
+          data,
+          [field.name],
+        ),
+      )
+    }
+    if (!field.validate(value.data)) {
+      const expectedValue = field.isToOneRelationship()
+        ? `a Resource identifier or null`
+        : 'an array of Resource identifiers'
+      return Result.reject(
+        new ApiError(
+          `Invalid relationship value, ${field.name} must be ${expectedValue}`,
+          data,
+          [field.name],
+        ),
+      )
+    }
+    return Result.accept(value.data)
   }
 
   getIncludedResourceData(
@@ -115,7 +173,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   }
 
   decodeResource<R extends AnyResource>(
-    Resource: ResourceConstructor<R>,
+    type: string,
     data: ResourceData<R>,
     included: Array<ResourceData<any>>,
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
@@ -126,97 +184,67 @@ export class ApiController<S extends Partial<ApiSetup>> {
     // a relationship MAY depend on it?
     included.push(data)
 
+    const Resource = this.getResource(type)
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
     const errors: Array<any> = []
     const resource = fieldNames.reduce(
       (resource, name) => {
         const field = Resource.fields[name]
         if (field.isAttributeField()) {
-          const result = this.getAttributeValue(data, field)
-          if (result.isSuccess()) {
-            resource[name] = result.value
-          } else {
-            errors.push(result.error)
+          const result = this.getAttributeValue(data, field).map((value) => {
+            resource.name = value
+          })
+          if (result.isRejected()) {
+            errors.push(result.value)
           }
         } else if (field.isRelationshipField()) {
-          const value = getRelationshipData(data.relationships, field)
-          if (field.isToOneRelationship()) {
-            if (
-              !(field.validate as Predicate<ResourceIdentifier<any>>)(value)
-            ) {
-              console.warn(Resource.type, field.name, value)
-              throw new Error(
-                `invalid to-one relationship data for field ${field.name} of type ${Resource.type}`,
-              )
-            }
-            if (isNone(value)) {
-              resource[name] = null
-            } else if (
-              isNone(includeParam) ||
-              isUndefined(includeParam[name])
-            ) {
-              resource[name] = value
-            } else {
-              const relationshipResource = this.getResource(value.type)
-              const relationshipData = this.getIncludedResourceData(
-                value,
-                included,
-              )
-
-              const result = this.decodeResource(
-                relationshipResource,
-                relationshipData,
-                included,
-                fieldsParam,
-                includeParam[field.name],
-              )
-
-              if (result.isSuccess()) {
-                resource[name] = result.value
-              } else {
-                errors.push({ type: Resource.type, field: name })
-              }
-            }
-          }
-          if (field.isToManyRelationship()) {
-            if (
-              (field.validate as Predicate<Array<ResourceIdentifier<any>>>)(
-                value,
-              )
-            ) {
-              if (isNone(includeParam) || isUndefined(includeParam[name])) {
+          const relationshipData = this.getRelationshipData(data, field).map(
+            (value) => {
+              if (
+                isNone(value) ||
+                isNone(includeParam) ||
+                isUndefined(includeParam[name])
+              ) {
                 resource[name] = value
-              } else {
-                const relationshipValues: Array<any> = []
-                resource[name] = value.map((identifier) => {
-                  const relationshipResource = this.getResource(identifier.type)
-                  const relationshipData = this.getIncludedResourceData(
+              } else if (isArray(value)) {
+                value.map((identifier) => {
+                  const includedRelationshipData = this.getIncludedResourceData(
                     identifier,
                     included,
                   )
                   const result = this.decodeResource(
-                    relationshipResource,
-                    relationshipData,
+                    identifier.type,
+                    includedRelationshipData,
                     included,
                     fieldsParam,
                     includeParam[field.name],
-                  )
-
-                  if (result.isSuccess()) {
-                    relationshipValues.push(result.value)
-                  } else {
-                    errors.push({ type: Resource.type, field: name })
+                  ).map((resource) => {
+                    resource[name] = resource
+                  })
+                  if (result.isRejected()) {
+                    errors.push(result.value)
                   }
                 })
-                resource[name] = relationshipValues
+              } else {
+                const includedRelationshipData = this.getIncludedResourceData(
+                  value,
+                  included,
+                )
+                const result = this.decodeResource(
+                  value.type,
+                  includedRelationshipData,
+                  included,
+                  fieldsParam,
+                  includeParam[field.name],
+                ).map((resource) => {
+                  resource[name] = resource
+                })
+                if (result.isRejected()) {
+                  errors.push(result.value)
+                }
               }
-            } else {
-              console.warn(Resource.type, field.name, value)
-              throw new Error(
-                `invalid to-one relationship data for field ${field.name} of type ${Resource.type}`,
-              )
-            }
-          }
+            },
+          )
         }
         return resource
       },

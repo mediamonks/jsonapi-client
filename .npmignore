@@ -1,0 +1,11 @@
+*.log
+*tsconfig.json
+.DS_Store
+.cache
+.vscode
+.idea
+logs/
+dist/
+coverage/
+node_modules/
+examples/

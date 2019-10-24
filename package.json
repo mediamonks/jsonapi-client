@@ -4,10 +4,20 @@
   "main": "dist/index.js",
   "author": "Nathan Uphoff",
   "license": "MIT",
+  "scripts": {
+    "start": "yarn && yarn watch",
+    "watch": "tsc -w -d --skipLibCheck",
+    "build": "jest -u --collectCoverage --passWithNoTests && rimraf dist && tsc -d --skipLibCheck",
+    "test": "NODE_ENV=development jest --watch --coverage"
+  },
   "dependencies": {
-    "typescript": "3.7.0-beta"
+    "isntnt": "^1.0.2"
   },
   "devDependencies": {
-    "isntnt": "^1.0.2"
+    "typescript": "3.7.0-beta",
+    "@types/jest": "^24.0.15",
+    "@types/node": "^12.6.9",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2"
   }
 }

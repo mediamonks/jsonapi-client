@@ -1,2 +1,9 @@
+*.log
+.DS_Store
+.cache
+.vscode
+.idea
+logs
 node_modules
-dist/
+dist
+/coverage

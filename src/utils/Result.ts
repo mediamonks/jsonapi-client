@@ -11,28 +11,43 @@ const nothing = Symbol('Nothing')
 const isNothing = literal(nothing)
 
 export class Result<T, E> {
-  value: T | Nothing = nothing
-  error: E | Nothing = nothing
+  value: T | E = nothing as any
+  state: 'accepted' | 'rejected' = 'rejected'
   constructor(resolver: ResultResolver<T, E>) {
     resolver(
       (value: T) => {
         this.value = value
+        this.state = 'accepted'
       },
       (value: E) => {
-        this.error = value
+        this.value = value
       },
     )
-    if (isNothing(this.value) && isNothing(this.error)) {
+    if (isNothing(this.value)) {
       throw new Error(`Result must be resolved`)
     }
   }
 
   isSuccess(): this is Result<T, never> {
-    return !isNothing(this.value)
+    return this.state === 'accepted'
   }
 
   isRejected(): this is Result<never, E> {
-    return !isNothing(this.error)
+    return this.state === 'rejected'
+  }
+
+  map<O>(transform: (value: T) => O): Result<O, E> {
+    if (this.isSuccess()) {
+      return Result.accept(transform(this.value))
+    }
+    return this as any
+  }
+
+  unwrap(): T {
+    if (!this.isSuccess()) {
+      throw this.value
+    }
+    return this.value
   }
 
   static accept<T>(value: T): Result<T, never> {
