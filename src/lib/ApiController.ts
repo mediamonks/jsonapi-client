@@ -1,4 +1,4 @@
-import { isUndefined, isNone, shape, isObject, and } from 'isntnt'
+import { isArray, isUndefined, isNone, shape, isObject, and } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
 import { createEmptyObject, createBaseResource, keys } from '../utils/data'
@@ -18,9 +18,7 @@ import {
 } from './Resource'
 import { AttributeField, AttributeValue } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
-import { RelationshipField } from '../../dist/src'
-import { RelationshipValue } from './ResourceRelationship'
-import { isArray } from 'util'
+import { RelationshipField, RelationshipValue } from './ResourceRelationship'
 
 const has = <K extends PropertyKey>(key: K) =>
   and(isObject, (value: any): value is Record<K, any> => key in value)
@@ -107,7 +105,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   getRelationshipData<F extends RelationshipField<any>>(
     data: ResourceData<AnyResource>,
     field: F,
-  ): Result<RelationshipValue<AnyResource>, Error> {
+  ): Result<RelationshipValue<AnyResource>, ApiError<any>> {
     if (!isDataWithRelationships(data)) {
       return Result.reject(
         new ApiError(
@@ -162,7 +160,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   decodeResource<R extends AnyResource>(
     type: string,
     data: ResourceData<R>,
-    included: Array<ResourceData<any>>,
+    included: Array<ResourceData<any>> = [],
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
     includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
     debug?: boolean,
@@ -232,6 +230,9 @@ export class ApiController<S extends Partial<ApiSetup>> {
               }
             },
           )
+          if (relationshipData.isRejected()) {
+            errors.push(relationshipData.value)
+          }
         }
         return resource
       },
