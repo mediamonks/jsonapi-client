@@ -1,5 +1,6 @@
 {
   "exclude": ["node_modules", "**/*.spec.ts", "/examples"],
+  "include": ["src"],
   "compilerOptions": {
     "target": "esnext",
     "strict": true,
