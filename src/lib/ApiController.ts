@@ -1,12 +1,7 @@
-import { isUndefined, isNone, Predicate, shape, isObject, and } from 'isntnt'
+import { isUndefined, isNone, shape, isObject, and } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
-import {
-  createEmptyObject,
-  createBaseResource,
-  getRelationshipData,
-  keys,
-} from '../utils/data'
+import { createEmptyObject, createBaseResource, keys } from '../utils/data'
 import { Result } from '../utils/Result'
 
 import { Api } from './Api'
@@ -21,7 +16,7 @@ import {
   ResourceRelationships,
   ResourceType,
 } from './Resource'
-import { AttributeField } from './ResourceAttribute'
+import { AttributeField, AttributeValue } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
 import { RelationshipField } from '../../dist/src'
 import { RelationshipValue } from './ResourceRelationship'
@@ -43,14 +38,6 @@ type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
 }
 
 const controllers: Record<string, ApiController<any>> = createEmptyObject()
-
-type AttributeFieldValue<
-  F extends AttributeField<any>
-> = F extends AttributeField<infer T> ? T : never
-
-type RelationshipFieldData<
-  F extends RelationshipField<any>
-> = F extends RelationshipField<infer T> ? T : never
 
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
@@ -96,7 +83,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   getAttributeValue<F extends AttributeField<any>>(
     data: ResourceData<AnyResource>,
     field: F,
-  ): Result<AttributeFieldValue<F> | null, Error> {
+  ): Result<AttributeValue, ApiError<any>> {
     if (!isDataWithAttributes(data)) {
       return Result.reject(
         new ApiError(
@@ -179,14 +166,14 @@ export class ApiController<S extends Partial<ApiSetup>> {
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
     includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
     debug?: boolean,
-  ): Result<R, any[]> {
+  ): Result<R, ApiError<any>[]> {
     // Todo: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
     included.push(data)
 
     const Resource = this.getResource(type)
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
-    const errors: Array<any> = []
+    const errors: Array<ApiError<any>> = []
     const resource = fieldNames.reduce(
       (resource, name) => {
         const field = Resource.fields[name]
@@ -222,7 +209,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                     resource[name] = resource
                   })
                   if (result.isRejected()) {
-                    errors.push(result.value)
+                    errors.push(...result.value)
                   }
                 })
               } else {
@@ -240,7 +227,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                   resource[name] = resource
                 })
                 if (result.isRejected()) {
-                  errors.push(result.value)
+                  errors.push(...result.value)
                 }
               }
             },
@@ -255,7 +242,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
 
     return errors.length
       ? Result.reject(errors)
-      : Result.accept(new Resource(resource as any))
+      : Result.accept(new Resource(resource as any) as any)
   }
 
   static add(api: Api<any>): void {

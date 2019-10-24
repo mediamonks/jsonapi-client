@@ -10057,9 +10057,9 @@ function () {
 
               case 7:
                 response = _context3.sent;
-                result = controller.decodeResource(this.Resource, response.data, response.included, query.fields || {}, query.include);
+                result = controller.decodeResource(this.Resource.type, response.data, response.included, query.fields || {}, query.include);
                 return _context3.abrupt("return", new Promise(function (resolve, reject) {
-                  result.isSuccess() ? resolve(result.value) : reject(result.error);
+                  result.isSuccess() ? resolve(result.value) : reject(result.value);
                 }));
 
               case 10:
@@ -10110,12 +10110,12 @@ function () {
                 errors = [];
                 values = [];
                 response.data.forEach(function (resource) {
-                  var result = controller.decodeResource(_this.Resource, resource, response.included, query.fields || {}, query.include);
+                  var result = controller.decodeResource(_this.Resource.type, resource, response.included, query.fields || {}, query.include);
 
                   if (result.isSuccess()) {
                     values.push(result.value);
                   } else {
-                    errors.push.apply(errors, _toConsumableArray(result.error));
+                    errors.push.apply(errors, _toConsumableArray(result.value));
                   }
                 });
                 return _context4.abrupt("return", new Promise(function (resolve, reject) {
@@ -11193,6 +11193,14 @@ var _ApiError = require("./ApiError");
 
 var _util = require("util");
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
@@ -11380,7 +11388,7 @@ function () {
                 });
 
                 if (result.isRejected()) {
-                  errors.push(result.value);
+                  errors.push.apply(errors, _toConsumableArray(result.value));
                 }
               });
             } else {
@@ -11391,7 +11399,7 @@ function () {
               });
 
               if (_result.isRejected()) {
-                errors.push(_result.value);
+                errors.push.apply(errors, _toConsumableArray(_result.value));
               }
             }
           });
@@ -12371,10 +12379,10 @@ window.fetch = function (href) {
   console.log('fetched', href, options);
   var url = new URL(href);
 
-  var _url$pathname$split$f = url.pathname.split('/').filter(Boolean).slice(-2),
-      _url$pathname$split$f2 = _slicedToArray(_url$pathname$split$f, 2),
-      path = _url$pathname$split$f2[0],
-      id = _url$pathname$split$f2[1];
+  var _url$pathname$split$f = url.pathname.split(/\//g).filter(Boolean),
+      _url$pathname$split$f2 = _slicedToArray(_url$pathname$split$f, 3),
+      path = _url$pathname$split$f2[1],
+      id = _url$pathname$split$f2[2];
 
   if (isntnt_1.isSome(resources_1.default[path])) {
     var response = isntnt_1.isSome(id) ? resources_1.default[path].getResponse(id) : resources_1.default[path].getResponseCollection();
@@ -12478,7 +12486,7 @@ __decorate([src_1.toManyRelationship('person')], Country.prototype, "citizens", 
 
 __decorate([src_1.toManyRelationship('city')], Country.prototype, "cities", void 0);
 
-var url = new URL('https://example.com/api');
+var url = new URL('https://example.com/api/');
 var api = new src_1.default(url, {
   version: '1.0',
   defaultIncludeFields: 'primary',
@@ -12488,7 +12496,7 @@ var api = new src_1.default(url, {
     };
   },
   afterRequest: function afterRequest() {},
-  parseRequestError: function parseRequestError(error) {
+  parseRequestError: function parseRequestError() {
     return {
       test: 'aha'
     };

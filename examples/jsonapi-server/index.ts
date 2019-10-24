@@ -14,14 +14,11 @@ import Api, {
   RequiredAttribute,
 } from '../../src/'
 
-// x
+// fetch mock
 ;(window as any).fetch = (href: string, options: any = {}): Promise<any> => {
   console.log('fetched', href, options)
   const url = new URL(href)
-  const [path, id] = url.pathname
-    .split('/')
-    .filter(Boolean)
-    .slice(-2)
+  const [, path, id] = url.pathname.split(/\//g).filter(Boolean)
   if (isSome((mocks as any)[path])) {
     const response = isSome(id)
       ? (mocks as any)[path].getResponse(id)
@@ -61,7 +58,7 @@ class Country extends resource('country')<Country> {
   @toManyRelationship('city') cities!: ToManyRelationship<City>
 }
 
-const url = new URL('https://example.com/api')
+const url = new URL('https://example.com/api/')
 
 const api = new Api(url, {
   version: '1.0',
@@ -72,7 +69,7 @@ const api = new Api(url, {
     }
   },
   afterRequest() {},
-  parseRequestError(error) {
+  parseRequestError() {
     return {
       test: 'aha',
     }

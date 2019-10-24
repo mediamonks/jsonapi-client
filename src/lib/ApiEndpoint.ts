@@ -70,7 +70,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     const options = createGetRequestOptions()
     const response = await controller.handleRequest(url, options)
     const result = controller.decodeResource(
-      this.Resource,
+      this.Resource.type,
       response.data,
       response.included,
       query.fields || {},
@@ -78,7 +78,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     )
 
     return new Promise((resolve, reject) => {
-      result.isSuccess() ? resolve(result.value as any) : reject(result.error)
+      result.isSuccess() ? resolve(result.value as any) : reject(result.value)
     })
   }
 
@@ -96,7 +96,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
 
     response.data.forEach((resource: any) => {
       const result = controller.decodeResource(
-        this.Resource,
+        this.Resource.type,
         resource,
         response.included,
         query.fields || {},
@@ -105,7 +105,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       if (result.isSuccess()) {
         values.push(result.value as any)
       } else {
-        errors.push(...(result.error as any))
+        errors.push(...(result.value as any))
       }
     })
 
