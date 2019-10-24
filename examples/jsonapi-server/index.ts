@@ -73,7 +73,9 @@ const api = new Api(url, {
   },
   afterRequest() {},
   parseRequestError(error) {
-    return error
+    return {
+      test: 'aha',
+    }
   },
 })
 
@@ -93,6 +95,9 @@ people.create({
 
 countries
   .get('1', {
+    fields: {
+      city: ['name'],
+    },
     include: {
       citizens: {
         city: {
@@ -125,6 +130,5 @@ people
   })
   .then((q) => {
     console.log('people', q)
-    // q['city']!['country']
   })
   .catch(console.warn)

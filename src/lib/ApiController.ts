@@ -1,14 +1,14 @@
-import { isUndefined, isNone, Predicate } from 'isntnt'
+import { isUndefined, isNone, Predicate, shape, isObject } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
 import {
   createEmptyObject,
   createBaseResource,
-  getAttributeValue,
   getRelationshipData,
   keys,
-  createDataValue,
 } from '../utils/data'
+import { Result } from '../utils/Result'
+
 import { Api } from './Api'
 import { ApiEndpoint } from './ApiEndpoint'
 import { ApiSetup } from './ApiSetup'
@@ -20,7 +20,10 @@ import {
   ResourceRelationships,
   ResourceType,
 } from './Resource'
+import { AttributeField } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
+
+const isDataWithAttributes = shape({ attributes: isObject })
 
 type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
@@ -31,6 +34,10 @@ type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
 }
 
 const controllers: Record<string, ApiController<any>> = createEmptyObject()
+
+type AttributeFieldValue<
+  F extends AttributeField<any>
+> = F extends AttributeField<infer T> ? T : never
 
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
@@ -73,6 +80,23 @@ export class ApiController<S extends Partial<ApiSetup>> {
     return request.json()
   }
 
+  getAttributeValue<F extends AttributeField<any>>(
+    data: ResourceData<AnyResource>,
+    field: F,
+  ): Result<AttributeFieldValue<F> | null, Error> {
+    if (!isDataWithAttributes(data)) {
+      return Result.reject(new Error(`Data must have an attributes object`))
+    }
+
+    const value = (data.attributes as any)[field.name]
+    if (field.validate(value)) {
+      return Result.accept(value)
+    } else if (field.isOptionalAttribute() && isNone(value)) {
+      return Result.accept(null)
+    }
+    return Result.reject(new Error(`Invalid value for attribute ${field.name}`))
+  }
+
   getIncludedResourceData(
     identifier: ResourceIdentifier<any>,
     included: Array<ResourceData<any>>,
@@ -97,48 +121,61 @@ export class ApiController<S extends Partial<ApiSetup>> {
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
     includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
     debug?: boolean,
-  ) {
-    // debug && console.info('decodeResource', Resource.type, data)
-
+  ): Result<R, any[]> {
     // Todo: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
-    included.push(createDataValue(data))
+    included.push(data)
 
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
-    const result = fieldNames.reduce(
-      (result, name) => {
+    const errors: Array<any> = []
+    const resource = fieldNames.reduce(
+      (resource, name) => {
         const field = Resource.fields[name]
         if (field.isAttributeField()) {
-          result[name] = getAttributeValue(data.attributes, field)
+          const result = this.getAttributeValue(data, field)
+          if (result.isSuccess()) {
+            resource[name] = result.value
+          } else {
+            errors.push(result.error)
+          }
         } else if (field.isRelationshipField()) {
           const value = getRelationshipData(data.relationships, field)
           if (field.isToOneRelationship()) {
-            if (!(field.validate as Predicate<any>)(value)) {
+            if (
+              !(field.validate as Predicate<ResourceIdentifier<any>>)(value)
+            ) {
               console.warn(Resource.type, field.name, value)
               throw new Error(
                 `invalid to-one relationship data for field ${field.name} of type ${Resource.type}`,
               )
             }
             if (isNone(value)) {
-              result[name] = null
+              resource[name] = null
             } else if (
               isNone(includeParam) ||
               isUndefined(includeParam[name])
             ) {
-              result[name] = value
+              resource[name] = value
             } else {
               const relationshipResource = this.getResource(value.type)
               const relationshipData = this.getIncludedResourceData(
                 value,
                 included,
               )
-              result[name] = this.decodeResource(
+
+              const result = this.decodeResource(
                 relationshipResource,
                 relationshipData,
                 included,
                 fieldsParam,
                 includeParam[field.name],
               )
+
+              if (result.isSuccess()) {
+                resource[name] = result.value
+              } else {
+                errors.push({ type: Resource.type, field: name })
+              }
             }
           }
           if (field.isToManyRelationship()) {
@@ -148,22 +185,30 @@ export class ApiController<S extends Partial<ApiSetup>> {
               )
             ) {
               if (isNone(includeParam) || isUndefined(includeParam[name])) {
-                result[name] = value
+                resource[name] = value
               } else {
-                result[name] = value.map((identifier) => {
+                const relationshipValues: Array<any> = []
+                resource[name] = value.map((identifier) => {
                   const relationshipResource = this.getResource(identifier.type)
                   const relationshipData = this.getIncludedResourceData(
                     identifier,
                     included,
                   )
-                  return this.decodeResource(
+                  const result = this.decodeResource(
                     relationshipResource,
                     relationshipData,
                     included,
                     fieldsParam,
                     includeParam[field.name],
                   )
+
+                  if (result.isSuccess()) {
+                    relationshipValues.push(result.value)
+                  } else {
+                    errors.push({ type: Resource.type, field: name })
+                  }
                 })
+                resource[name] = relationshipValues
               }
             } else {
               console.warn(Resource.type, field.name, value)
@@ -173,12 +218,16 @@ export class ApiController<S extends Partial<ApiSetup>> {
             }
           }
         }
-        return result
+        return resource
       },
       createBaseResource(Resource, data) as Record<string, any>,
     )
-    debug && console.info('Resource', new Resource(result as any))
-    return new Resource(result as any)
+
+    debug && console.info('Resource', new Resource(resource as any))
+
+    return errors.length
+      ? Result.reject(errors)
+      : Result.accept(new Resource(resource as any))
   }
 
   static add(api: Api<any>): void {

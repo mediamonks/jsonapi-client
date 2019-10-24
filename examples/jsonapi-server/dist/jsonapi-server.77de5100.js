@@ -9678,7 +9678,77 @@ var PARAMETER_DELIMITER = '=';
 exports.PARAMETER_DELIMITER = PARAMETER_DELIMITER;
 var PARAMETER_PREFIX = '?';
 exports.PARAMETER_PREFIX = PARAMETER_PREFIX;
-},{"../utils/data":"../../src/utils/data.ts"}],"../../src/constants/jsonApi.ts":[function(require,module,exports) {
+},{"../utils/data":"../../src/utils/data.ts"}],"../../src/utils/Result.ts":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.Result = void 0;
+
+var _isntnt = require("isntnt");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var nothing = Symbol('Nothing');
+var isNothing = (0, _isntnt.literal)(nothing);
+
+var Result =
+/*#__PURE__*/
+function () {
+  function Result(resolver) {
+    var _this = this;
+
+    _classCallCheck(this, Result);
+
+    this.value = nothing;
+    this.error = nothing;
+    resolver(function (value) {
+      _this.value = value;
+    }, function (value) {
+      _this.error = value;
+    });
+
+    if (isNothing(this.value) && isNothing(this.error)) {
+      throw new Error("Result must be resolved");
+    }
+  }
+
+  _createClass(Result, [{
+    key: "isSuccess",
+    value: function isSuccess() {
+      return !isNothing(this.value);
+    }
+  }, {
+    key: "isRejected",
+    value: function isRejected() {
+      return !isNothing(this.error);
+    }
+  }], [{
+    key: "accept",
+    value: function accept(value) {
+      return new Result(function (accept) {
+        return accept(value);
+      });
+    }
+  }, {
+    key: "reject",
+    value: function reject(value) {
+      return new Result(function (_, reject) {
+        return reject(value);
+      });
+    }
+  }]);
+
+  return Result;
+}();
+
+exports.Result = Result;
+},{"isntnt":"../../node_modules/isntnt/dist/index.js"}],"../../src/constants/jsonApi.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -9820,13 +9890,23 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ApiEndpoint = exports.defaultPostRequestHeaders = exports.defaultGetRequestHeaders = exports.jsonApiContentType = exports.RequestHeader = void 0;
 
-var _data = require("../utils/data");
+var _data = require("../constants/data");
+
+var _data2 = require("../utils/data");
 
 var _ApiQuery = require("./ApiQuery");
 
 var _ApiController = require("./ApiController");
 
 var _defaultPostRequestHe;
+
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
@@ -9840,10 +9920,8 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var defaultFetchQueryParameters = {};
-
 var createGetRequestOptions = function createGetRequestOptions() {
-  return (0, _data.createDataValue)({
+  return (0, _data2.createDataValue)({
     method: 'GET',
     headers: defaultGetRequestHeaders
   });
@@ -9888,9 +9966,10 @@ function () {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
+                console.warn('ApiEndpoint#create has not (yet) been implemented');
                 return _context.abrupt("return", new this.Resource(data));
 
-              case 1:
+              case 2:
               case "end":
                 return _context.stop();
             }
@@ -9905,35 +9984,19 @@ function () {
       return create;
     }()
   }, {
-    key: "get",
+    key: "patch",
     value: function () {
-      var _get = _asyncToGenerator(
+      var _patch = _asyncToGenerator(
       /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee2(id) {
-        var query,
-            controller,
-            queryParameters,
-            url,
-            options,
-            response,
-            _args2 = arguments;
+      regeneratorRuntime.mark(function _callee2(data) {
         return regeneratorRuntime.wrap(function _callee2$(_context2) {
           while (1) {
             switch (_context2.prev = _context2.next) {
               case 0:
-                query = _args2.length > 1 && _args2[1] !== undefined ? _args2[1] : defaultFetchQueryParameters;
-                controller = _ApiController.ApiController.get(this.api);
-                queryParameters = this.createQuery(query);
-                url = new URL("".concat(this.path, "/").concat(id).concat(String(queryParameters)), this.api.url);
-                options = createGetRequestOptions();
-                _context2.next = 7;
-                return controller.handleRequest(url, options);
+                console.warn('ApiEndpoint#patch has not (yet) been implemented');
+                return _context2.abrupt("return", new this.Resource(data));
 
-              case 7:
-                response = _context2.sent;
-                return _context2.abrupt("return", controller.decodeResource(this.Resource, response.data, response.included, query.fields || {}, query.include));
-
-              case 9:
+              case 2:
               case "end":
                 return _context2.stop();
             }
@@ -9941,7 +10004,54 @@ function () {
         }, _callee2, this);
       }));
 
-      function get(_x2) {
+      function patch(_x2) {
+        return _patch.apply(this, arguments);
+      }
+
+      return patch;
+    }()
+  }, {
+    key: "get",
+    value: function () {
+      var _get = _asyncToGenerator(
+      /*#__PURE__*/
+      regeneratorRuntime.mark(function _callee3(id) {
+        var query,
+            controller,
+            queryParameters,
+            url,
+            options,
+            response,
+            result,
+            _args3 = arguments;
+        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+          while (1) {
+            switch (_context3.prev = _context3.next) {
+              case 0:
+                query = _args3.length > 1 && _args3[1] !== undefined ? _args3[1] : _data.EMPTY_OBJECT;
+                controller = _ApiController.ApiController.get(this.api);
+                queryParameters = this.createQuery(query);
+                url = new URL("".concat(this.path, "/").concat(id).concat(String(queryParameters)), this.api.url);
+                options = createGetRequestOptions();
+                _context3.next = 7;
+                return controller.handleRequest(url, options);
+
+              case 7:
+                response = _context3.sent;
+                result = controller.decodeResource(this.Resource, response.data, response.included, query.fields || {}, query.include);
+                return _context3.abrupt("return", new Promise(function (resolve, reject) {
+                  result.isSuccess() ? resolve(result.value) : reject(result.error);
+                }));
+
+              case 10:
+              case "end":
+                return _context3.stop();
+            }
+          }
+        }, _callee3, this);
+      }));
+
+      function get(_x3) {
         return _get.apply(this, arguments);
       }
 
@@ -9952,7 +10062,7 @@ function () {
     value: function () {
       var _fetch = _asyncToGenerator(
       /*#__PURE__*/
-      regeneratorRuntime.mark(function _callee3() {
+      regeneratorRuntime.mark(function _callee4() {
         var _this = this;
 
         var query,
@@ -9961,31 +10071,44 @@ function () {
             url,
             options,
             response,
-            _args3 = arguments;
-        return regeneratorRuntime.wrap(function _callee3$(_context3) {
+            errors,
+            values,
+            _args4 = arguments;
+        return regeneratorRuntime.wrap(function _callee4$(_context4) {
           while (1) {
-            switch (_context3.prev = _context3.next) {
+            switch (_context4.prev = _context4.next) {
               case 0:
-                query = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : defaultFetchQueryParameters;
+                query = _args4.length > 0 && _args4[0] !== undefined ? _args4[0] : _data.EMPTY_OBJECT;
                 controller = _ApiController.ApiController.get(this.api);
                 queryParameters = this.createQuery(query);
                 url = new URL(String(queryParameters), this.toURL());
                 options = createGetRequestOptions();
-                _context3.next = 7;
+                _context4.next = 7;
                 return controller.handleRequest(url, options);
 
               case 7:
-                response = _context3.sent;
-                return _context3.abrupt("return", response.data.map(function (resource) {
-                  return controller.decodeResource(_this.Resource, resource, response.included, query.fields || {}, query.include);
+                response = _context4.sent;
+                errors = [];
+                values = [];
+                response.data.forEach(function (resource) {
+                  var result = controller.decodeResource(_this.Resource, resource, response.included, query.fields || {}, query.include);
+
+                  if (result.isSuccess()) {
+                    values.push(result.value);
+                  } else {
+                    errors.push.apply(errors, _toConsumableArray(result.error));
+                  }
+                });
+                return _context4.abrupt("return", new Promise(function (resolve, reject) {
+                  errors.length === 0 ? resolve(values) : reject(errors);
                 }));
 
-              case 9:
+              case 12:
               case "end":
-                return _context3.stop();
+                return _context4.stop();
             }
           }
-        }, _callee3, this);
+        }, _callee4, this);
       }));
 
       function fetch() {
@@ -10015,7 +10138,7 @@ function () {
 }();
 
 exports.ApiEndpoint = ApiEndpoint;
-},{"../utils/data":"../../src/utils/data.ts","./ApiQuery":"../../src/lib/ApiQuery.ts","./ApiController":"../../src/lib/ApiController.ts"}],"../../src/lib/ApiController.ts":[function(require,module,exports) {
+},{"../constants/data":"../../src/constants/data.ts","../utils/data":"../../src/utils/data.ts","./ApiQuery":"../../src/lib/ApiQuery.ts","./ApiController":"../../src/lib/ApiController.ts"}],"../../src/lib/ApiController.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -10029,6 +10152,8 @@ var _data = require("../constants/data");
 
 var _data2 = require("../utils/data");
 
+var _Result = require("../utils/Result");
+
 var _ApiEndpoint = require("./ApiEndpoint");
 
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
@@ -10041,6 +10166,9 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
+var isDataWithAttributes = (0, _isntnt.shape)({
+  attributes: _isntnt.isObject
+});
 var controllers = (0, _data2.createEmptyObject)();
 
 var ApiController =
@@ -10117,6 +10245,23 @@ function () {
       return handleRequest;
     }()
   }, {
+    key: "getAttributeValue",
+    value: function getAttributeValue(data, field) {
+      if (!isDataWithAttributes(data)) {
+        return _Result.Result.reject(new Error("Data must have an attributes object"));
+      }
+
+      var value = data.attributes[field.name];
+
+      if (field.validate(value)) {
+        return _Result.Result.accept(value);
+      } else if (field.isOptionalAttribute() && (0, _isntnt.isNone)(value)) {
+        return _Result.Result.accept(null);
+      }
+
+      return _Result.Result.reject(new Error("Invalid value for attribute ".concat(field.name)));
+    }
+  }, {
     key: "getIncludedResourceData",
     value: function getIncludedResourceData(identifier, included) {
       var data = included.find(function (resource) {
@@ -10138,16 +10283,22 @@ function () {
       var fieldsParam = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : _data.EMPTY_OBJECT;
       var includeParam = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : _data.EMPTY_OBJECT;
       var debug = arguments.length > 5 ? arguments[5] : undefined;
-      // debug && console.info('decodeResource', Resource.type, data)
       // Todo: should the data of a resource be added to the included data because
       // a relationship MAY depend on it?
-      included.push((0, _data2.createDataValue)(data));
+      included.push(data);
       var fieldNames = fieldsParam[Resource.type] || (0, _data2.keys)(Resource.fields);
-      var result = fieldNames.reduce(function (result, name) {
+      var errors = [];
+      var resource = fieldNames.reduce(function (resource, name) {
         var field = Resource.fields[name];
 
         if (field.isAttributeField()) {
-          result[name] = (0, _data2.getAttributeValue)(data.attributes, field);
+          var result = _this.getAttributeValue(data, field);
+
+          if (result.isSuccess()) {
+            resource[name] = result.value;
+          } else {
+            errors.push(result.error);
+          }
         } else if (field.isRelationshipField()) {
           var value = (0, _data2.getRelationshipData)(data.relationships, field);
 
@@ -10158,30 +10309,50 @@ function () {
             }
 
             if ((0, _isntnt.isNone)(value)) {
-              result[name] = null;
+              resource[name] = null;
             } else if ((0, _isntnt.isNone)(includeParam) || (0, _isntnt.isUndefined)(includeParam[name])) {
-              result[name] = value;
+              resource[name] = value;
             } else {
               var relationshipResource = _this.getResource(value.type);
 
               var relationshipData = _this.getIncludedResourceData(value, included);
 
-              result[name] = _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name]);
+              var _result = _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name]);
+
+              if (_result.isSuccess()) {
+                resource[name] = _result.value;
+              } else {
+                errors.push({
+                  type: Resource.type,
+                  field: name
+                });
+              }
             }
           }
 
           if (field.isToManyRelationship()) {
             if (field.validate(value)) {
               if ((0, _isntnt.isNone)(includeParam) || (0, _isntnt.isUndefined)(includeParam[name])) {
-                result[name] = value;
+                resource[name] = value;
               } else {
-                result[name] = value.map(function (identifier) {
+                var relationshipValues = [];
+                resource[name] = value.map(function (identifier) {
                   var relationshipResource = _this.getResource(identifier.type);
 
                   var relationshipData = _this.getIncludedResourceData(identifier, included);
 
-                  return _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name]);
+                  var result = _this.decodeResource(relationshipResource, relationshipData, included, fieldsParam, includeParam[field.name]);
+
+                  if (result.isSuccess()) {
+                    relationshipValues.push(result.value);
+                  } else {
+                    errors.push({
+                      type: Resource.type,
+                      field: name
+                    });
+                  }
                 });
+                resource[name] = relationshipValues;
               }
             } else {
               console.warn(Resource.type, field.name, value);
@@ -10190,10 +10361,10 @@ function () {
           }
         }
 
-        return result;
+        return resource;
       }, (0, _data2.createBaseResource)(Resource, data));
-      debug && console.info('Resource', new Resource(result));
-      return new Resource(result);
+      debug && console.info('Resource', new Resource(resource));
+      return errors.length ? _Result.Result.reject(errors) : _Result.Result.accept(new Resource(resource));
     }
   }], [{
     key: "add",
@@ -10217,7 +10388,7 @@ function () {
 }();
 
 exports.ApiController = ApiController;
-},{"isntnt":"../../node_modules/isntnt/dist/index.js","../constants/data":"../../src/constants/data.ts","../utils/data":"../../src/utils/data.ts","./ApiEndpoint":"../../src/lib/ApiEndpoint.ts"}],"../../src/constants/setup.ts":[function(require,module,exports) {
+},{"isntnt":"../../node_modules/isntnt/dist/index.js","../constants/data":"../../src/constants/data.ts","../utils/data":"../../src/utils/data.ts","../utils/Result":"../../src/utils/Result.ts","./ApiEndpoint":"../../src/lib/ApiEndpoint.ts"}],"../../src/constants/setup.ts":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -11282,7 +11453,9 @@ var api = new src_1.default(url, {
   },
   afterRequest: function afterRequest() {},
   parseRequestError: function parseRequestError(error) {
-    return error;
+    return {
+      test: 'aha'
+    };
   }
 });
 api.register(City);
@@ -11297,6 +11470,9 @@ people.create({
   city: null
 });
 countries.get('1', {
+  fields: {
+    city: ['name']
+  },
   include: {
     citizens: {
       city: {
@@ -11324,7 +11500,7 @@ people.fetch({
     }
   }
 }).then(function (q) {
-  console.log('people', q); // q['city']!['country']
+  console.log('people', q);
 }).catch(console.warn);
 },{"babel-polyfill":"node_modules/babel-polyfill/lib/index.js","isntnt":"node_modules/isntnt/dist/index.js","./data/resources":"data/resources.ts","../../src/":"../../src/index.ts"}],"node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];

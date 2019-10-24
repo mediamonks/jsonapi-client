@@ -49,16 +49,24 @@ type BaseRelationshipResource<T> = T extends Array<AnyResource>
   ? T[number]
   : Extract<T, AnyResource>
 
-export type FetchQueryParameters<
+export type ApiQueryResourceParameters<R extends AnyResource> = Partial<{
+  include: BaseApiQueryIncludeParameters<R>
+  fields: BaseApiQueryFieldsParameter<R>
+}>
+
+export type ApiQueryFilterParameters<
   R extends AnyResource,
   S extends Partial<ApiSetup>
 > = Partial<{
   page: ApiQueryPageParameter<S>
   sort: ApiQuerySortParameter<R>
   filter: ApiQueryParameter
-  include: BaseApiQueryIncludeParameters<R>
-  fields: BaseApiQueryFieldsParameter<R>
 }>
+
+export type FetchQueryParameters<
+  R extends AnyResource,
+  S extends Partial<ApiSetup>
+> = ApiQueryResourceParameters<R> & ApiQueryFilterParameters<R, S>
 
 export type ApiQueryParameterValue =
   | string

@@ -1,14 +1,16 @@
+import { EMPTY_OBJECT } from '../constants/data'
 import { createDataValue } from '../utils/data'
 
 import { Api } from './Api'
-import { ApiQuery, FetchQueryParameters } from './ApiQuery'
+import {
+  ApiQuery,
+  ApiQueryResourceParameters,
+  FetchQueryParameters,
+} from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
 import { ApiController } from './ApiController'
-import { ApiResult } from './ApiResult'
-
-const defaultFetchQueryParameters: FetchQueryParameters<any, any> = {}
 
 const createGetRequestOptions = () =>
   createDataValue({
@@ -45,15 +47,21 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   }
 
   async create(data: R): Promise<R> {
+    console.warn('ApiEndpoint#create has not (yet) been implemented')
     return new this.Resource(data)
   }
 
-  async get<Q extends FetchQueryParameters<R, S>>(
+  async patch(data: R): Promise<R> {
+    console.warn('ApiEndpoint#patch has not (yet) been implemented')
+    return new this.Resource(data)
+  }
+
+  async get<Q extends ApiQueryResourceParameters<R>>(
     id: string,
-    query: Q = defaultFetchQueryParameters as Q,
-  ): Promise<FilteredResource<R, S, Q>[]> {
+    query: Q = EMPTY_OBJECT as Q,
+  ): Promise<FilteredResource<R, Q>[]> {
     const controller = ApiController.get(this.api)
-    const queryParameters = this.createQuery(query)
+    const queryParameters = this.createQuery(query as any)
     const url = new URL(
       `${this.path}/${id}${String(queryParameters)}`,
       this.api.url,
@@ -61,33 +69,49 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
 
     const options = createGetRequestOptions()
     const response = await controller.handleRequest(url, options)
-    return controller.decodeResource(
+    const result = controller.decodeResource(
       this.Resource,
       response.data,
       response.included,
       query.fields || {},
       query.include as any,
-    ) as any
+    )
+
+    return new Promise((resolve, reject) => {
+      result.isSuccess() ? resolve(result.value as any) : reject(result.error)
+    })
   }
 
   async fetch<Q extends FetchQueryParameters<R, S>>(
-    query: Q = defaultFetchQueryParameters as Q,
-  ): Promise<FilteredResource<R, S, Q>[]> {
+    query: Q = EMPTY_OBJECT as Q,
+  ): Promise<FilteredResource<R, Q>[]> {
     const controller = ApiController.get(this.api)
     const queryParameters = this.createQuery(query)
     const url = new URL(String(queryParameters), this.toURL())
 
     const options = createGetRequestOptions()
     const response = await controller.handleRequest(url, options)
-    return response.data.map((resource: any) =>
-      controller.decodeResource(
+    const errors: Array<Error> = []
+    const values: Array<FilteredResource<R, Q>> = []
+
+    response.data.forEach((resource: any) => {
+      const result = controller.decodeResource(
         this.Resource,
         resource,
         response.included,
         query.fields || {},
         query.include as any,
-      ),
-    )
+      )
+      if (result.isSuccess()) {
+        values.push(result.value as any)
+      } else {
+        errors.push(...(result.error as any))
+      }
+    })
+
+    return new Promise((resolve, reject) => {
+      errors.length === 0 ? resolve(values) : reject(errors)
+    })
   }
 
   toString(): string {
@@ -142,20 +166,17 @@ type FilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
   : NotAResourceWarning<R>[]
 
 // test: use ApiEndpoint as ResourceFilter
-type FilterEndpointResource<
-  E extends ApiEndpoint<any, any>,
-  Q extends FetchQueryParameters<
-    InstanceType<E['Resource']>,
-    ApiSetupValues<E['api']>
-  >
-> = FilteredResource<InstanceType<E['Resource']>, ApiSetupValues<E['api']>, Q>
-
-type ApiSetupValues<A extends Api<any>> = A extends Api<infer S> ? S : never
+// type FilterEndpointResource<
+//   E extends ApiEndpoint<any, any>,
+//   Q extends FetchQueryParameters<
+//     InstanceType<E['Resource']>,
+//     ApiSetupValues<E['api']>
+//   >
+// > = FilteredResource<InstanceType<E['Resource']>, ApiSetupValues<E['api']>, Q>
 
 type FilteredResource<
   R extends AnyResource,
-  S extends Partial<ApiSetup>,
-  Q extends FetchQueryParameters<R, S>
+  Q extends ApiQueryResourceParameters<R>
 > = BaseFilteredResource<R, Q['include'], Q['fields']>
 
 type Warning<T extends string, U> = Error & {
