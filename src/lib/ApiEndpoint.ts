@@ -69,6 +69,12 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
 
     const options = createGetRequestOptions()
     const response = await controller.handleRequest(url, options)
+
+    // temp: throw server errors
+    if ('errors' in response) {
+      throw new Error(response.errors)
+    }
+
     const result = controller.decodeResource(
       this.Resource.type,
       response.data,

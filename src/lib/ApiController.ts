@@ -165,19 +165,21 @@ export class ApiController<S extends Partial<ApiSetup>> {
     includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
     debug?: boolean,
   ): Result<R, ApiError<any>[]> {
+    // console.trace(data, included)
     // Todo: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
     included.push(data)
 
     const Resource = this.getResource(type)
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
+
     const errors: Array<ApiError<any>> = []
     const resource = fieldNames.reduce(
       (resource, name) => {
         const field = Resource.fields[name]
         if (field.isAttributeField()) {
           const result = this.getAttributeValue(data, field).map((value) => {
-            resource.name = value
+            resource[name] = value
           })
           if (result.isRejected()) {
             errors.push(result.value)
@@ -192,6 +194,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
               ) {
                 resource[name] = value
               } else if (isArray(value)) {
+                resource[name] = []
                 value.map((identifier) => {
                   const includedRelationshipData = this.getIncludedResourceData(
                     identifier,
@@ -203,8 +206,8 @@ export class ApiController<S extends Partial<ApiSetup>> {
                     included,
                     fieldsParam,
                     includeParam[field.name],
-                  ).map((resource) => {
-                    resource[name] = resource
+                  ).map((includedResource) => {
+                    resource[name].push(includedResource)
                   })
                   if (result.isRejected()) {
                     errors.push(...result.value)
@@ -221,8 +224,8 @@ export class ApiController<S extends Partial<ApiSetup>> {
                   included,
                   fieldsParam,
                   includeParam[field.name],
-                ).map((resource) => {
-                  resource[name] = resource
+                ).map((includedResource) => {
+                  resource[name] = includedResource
                 })
                 if (result.isRejected()) {
                   errors.push(...result.value)
