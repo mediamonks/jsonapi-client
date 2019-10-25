@@ -47,38 +47,3 @@ export const createBaseResource = <R extends AnyResource>(
     id: data.id,
   })
 }
-
-export const getAttributeValue = (
-  attributes: Record<string, AttributeValue>,
-  field: AttributeField<any>,
-): AttributeValue => {
-  if (!isObject(attributes)) {
-    console.warn(attributes)
-    throw new Error(`Attributes is expected to be an object`)
-  }
-  const value = field.name in attributes ? attributes[field.name] : null
-  if (
-    !field.validate(value) ||
-    (field.isRequiredAttribute() && isNone(value))
-  ) {
-    throw new Error(``)
-  }
-  return value
-}
-
-export const getRelationshipData = (
-  relationships: Record<string, { data: any }>,
-  field: RelationshipField<any>,
-): any => {
-  if (!isObject(relationships)) {
-    throw new Error(`Relationships is expected to be an object`)
-  }
-  const value = relationships[field.name]
-  if (!isObject(value)) {
-    throw new Error(`Invalid relationship value, must be an object`)
-  }
-  if (field.isToOneRelationship()) {
-    return isSome(value.data) ? value.data : null
-  }
-  return isArray(value.data) ? value.data : []
-}
