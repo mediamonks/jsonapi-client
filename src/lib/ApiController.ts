@@ -33,8 +33,6 @@ type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
   relationships: ResourceRelationships<R>
 }
 
-const controllers: Record<string, ApiController<any>> = createEmptyObject()
-
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
   endpoints: ApiEndpoints = createEmptyObject()
@@ -251,17 +249,5 @@ export class ApiController<S extends Partial<ApiSetup>> {
     return errors.length
       ? Result.reject(errors)
       : Result.accept(new Resource(resource as any) as any)
-  }
-
-  static add(api: Api<any>): void {
-    const identifier = String(api.url)
-    if (identifier in controllers) {
-      throw new Error(`Duplicate api href`)
-    }
-    controllers[identifier] = new ApiController(api)
-  }
-
-  static get<S extends Partial<ApiSetup>>(api: Api<S>): ApiController<S> {
-    return controllers[String(api.url)]
   }
 }

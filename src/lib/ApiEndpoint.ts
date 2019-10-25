@@ -60,7 +60,6 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     id: string,
     query: Q = EMPTY_OBJECT as Q,
   ): Promise<FilteredResource<R, Q>[]> {
-    const controller = ApiController.get(this.api)
     const queryParameters = this.createQuery(query as any)
     const url = new URL(
       `${this.path}/${id}${String(queryParameters)}`,
@@ -68,14 +67,14 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     )
 
     const options = createGetRequestOptions()
-    const response = await controller.handleRequest(url, options)
+    const response = await this.api.controller.handleRequest(url, options)
 
     // temp: throw server errors
     if ('errors' in response) {
       throw new Error(response.errors)
     }
 
-    const result = controller.decodeResource(
+    const result = this.api.controller.decodeResource(
       this.Resource.type,
       response.data,
       response.included,
@@ -92,17 +91,16 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   async fetch<Q extends FetchQueryParameters<R, S>>(
     query: Q = EMPTY_OBJECT as Q,
   ): Promise<FilteredResource<R, Q>[]> {
-    const controller = ApiController.get(this.api)
     const queryParameters = this.createQuery(query)
     const url = new URL(String(queryParameters), this.toURL())
 
     const options = createGetRequestOptions()
-    const response = await controller.handleRequest(url, options)
+    const response = await this.api.controller.handleRequest(url, options)
     const errors: Array<Error> = []
     const values: Array<FilteredResource<R, Q>> = []
 
     response.data.forEach((resource: any) => {
-      const result = controller.decodeResource(
+      const result = this.api.controller.decodeResource(
         this.Resource.type,
         resource,
         response.included,

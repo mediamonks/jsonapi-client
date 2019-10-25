@@ -10,23 +10,24 @@ import { AnyResource, ResourceConstructor } from './Resource'
 export class Api<S extends Partial<ApiSetup>> {
   readonly url: URL
   readonly setup: ApiSetupWithDefaults<S>
+  readonly controller: ApiController<S>
 
   constructor(url: URL, setup: S = {} as S) {
     this.url = url
     this.setup = mergeApiDefaultSetup(setup)
-    ApiController.add(this)
+    this.controller = new ApiController(this)
   }
 
   endpoint<R extends AnyResource>(
     path: string,
     Resource: ResourceConstructor<R>,
   ): ApiEndpoint<R, S> {
-    return ApiController.get(this).createApiEndpoint(path, Resource)
+    return this.controller.createApiEndpoint(path, Resource)
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
     resources.forEach((Resource) => {
-      ApiController.get(this).addResource(Resource)
+      this.controller.addResource(Resource)
     })
   }
 
