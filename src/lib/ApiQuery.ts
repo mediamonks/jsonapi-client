@@ -38,6 +38,10 @@ export type ApiQuerySortParameter<R extends AnyResource> = Array<
   ApiSortRule<ResourceAttributeNames<R>>
 >
 
+export type ApiQueryFilterParameter = {
+  [key: string]: ApiQueryParameterValue
+}
+
 export type ApiQueryIncludeParameter<
   R extends AnyResource
 > = BaseApiQueryIncludeParameters<R>
@@ -55,19 +59,19 @@ export type ApiQueryResourceParameters<R extends AnyResource> = Partial<{
   fields: BaseApiQueryFieldsParameter<R>
 }>
 
-export type ApiQueryFilterParameters<
+export type ApiQueryFiltersParameters<
   R extends AnyResource,
   S extends Partial<ApiSetup>
 > = Partial<{
   page: ApiQueryPageParameter<S>
   sort: ApiQuerySortParameter<R>
-  filter: ApiQueryParameter
+  filter: ApiQueryFilterParameter
 }>
 
 export type FetchQueryParameters<
   R extends AnyResource,
   S extends Partial<ApiSetup>
-> = ApiQueryResourceParameters<R> & ApiQueryFilterParameters<R, S>
+> = ApiQueryResourceParameters<R> & ApiQueryFiltersParameters<R, S>
 
 export type ApiQueryParameterValue =
   | string
