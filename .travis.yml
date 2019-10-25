@@ -1,0 +1,22 @@
+language: node_js
+
+cache: yarn
+
+node_js:
+  - 'stable'
+  - '8'
+  - '10'
+
+sudo: false
+
+script:
+  - yarn test:ci
+
+deploy:
+  - provider: npm
+    email: 'devmonk@mediamonks.com'
+    api_key: $NPM_TOKEN
+    on:
+      tags: true
+      node: 'stable'
+    skip_cleanup: true
