@@ -1,6 +1,9 @@
 import { createEmptyObject } from '../utils/data'
 
-export const EMPTY_OBJECT = createEmptyObject()
+// freeze empty (readonly) objects to get an Error when they're mutated,
+// this indicates a logic error in the application
+export const EMPTY_OBJECT = Object.freeze(createEmptyObject())
+export const EMPTY_ARRAY = Object.freeze([])
 
 export const EMPTY_STRING = ''
 export const INCLUDE_PARAMETER_VALUE_DELIMITER = '.'
