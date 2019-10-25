@@ -18,8 +18,8 @@ const reflect = <T>(value: T): T => value
 const mergeApiSetup = (defaults: ApiSetup) => (
   setup: Partial<ApiSetup>,
 ): ApiSetupWithDefaults<any> => ({
-  ...setup,
   ...defaults,
+  ...setup,
 })
 
 export type ApiSetup = {
