@@ -1,5 +1,5 @@
 {
-  "exclude": ["node_modules", "**/*.spec.ts", "/examples"],
+  "exclude": ["node_modules", "**/*.test.ts", "/examples"],
   "include": ["src"],
   "compilerOptions": {
     "target": "esnext",

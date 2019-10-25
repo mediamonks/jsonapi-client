@@ -12,6 +12,13 @@
     "test:ci": "NODE_ENV=development jest",
     "prepublishOnly": "yarn build"
   },
+  "bugs": {
+    "url": "https://github.com/mediamonks/jsonapi-client/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mediamonks/jsonapi-client.git"
+  },
   "dependencies": {
     "isntnt": "^1.0.2"
   },
