@@ -1,39 +1,11 @@
 import { EMPTY_OBJECT } from '../constants/data'
-import { createDataValue } from '../utils/data'
+import { createGetRequestOptions } from '../utils/data'
 
 import { Api } from './Api'
-import {
-  ApiQuery,
-  ApiQueryResourceParameters,
-  FetchQueryParameters,
-} from './ApiQuery'
+import { ApiQuery, ApiQueryResourceParameters, FetchQueryParameters } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
-import { ApiController } from './ApiController'
-
-const createGetRequestOptions = () =>
-  createDataValue({
-    method: 'GET',
-    headers: defaultGetRequestHeaders,
-  })
-
-export enum RequestHeader {
-  ACCEPT = 'Accept',
-  CONTENT_TYPE = 'Content-Type',
-  ACCESS_CONTROL_ALLOW_ORIGIN = 'Access-Control-Allow-Origin',
-}
-
-export const jsonApiContentType = 'application/vnd.api+json'
-
-export const defaultGetRequestHeaders = {
-  [RequestHeader.CONTENT_TYPE]: jsonApiContentType,
-}
-
-export const defaultPostRequestHeaders = {
-  [RequestHeader.ACCEPT]: jsonApiContentType,
-  [RequestHeader.CONTENT_TYPE]: jsonApiContentType,
-}
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly api: Api<S>
@@ -61,10 +33,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     query: Q = EMPTY_OBJECT as Q,
   ): Promise<FilteredResource<R, Q>[]> {
     const queryParameters = this.createQuery(query as any)
-    const url = new URL(
-      `${this.path}/${id}${String(queryParameters)}`,
-      this.api.url,
-    )
+    const url = new URL(`${this.path}/${id}${String(queryParameters)}`, this.api.url)
 
     const options = createGetRequestOptions()
     const response = await this.api.controller.handleRequest(url, options)
@@ -170,15 +139,6 @@ type BaseFilteredResource<R, I, F> = R extends AnyResource
 type FilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
   ? Array<BaseFilteredResource<R[number], I, F>>
   : NotAResourceWarning<R>[]
-
-// test: use ApiEndpoint as ResourceFilter
-// type FilterEndpointResource<
-//   E extends ApiEndpoint<any, any>,
-//   Q extends FetchQueryParameters<
-//     InstanceType<E['Resource']>,
-//     ApiSetupValues<E['api']>
-//   >
-// > = FilteredResource<InstanceType<E['Resource']>, ApiSetupValues<E['api']>, Q>
 
 type FilteredResource<
   R extends AnyResource,
