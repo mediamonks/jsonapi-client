@@ -7,7 +7,7 @@ export class ApiSortRule<T extends string> {
   }
 
   toString(): string {
-    return this.ascending ? `-${this.name}` : this.name
+    return this.ascending ? this.name : `-${this.name}`;
   }
 }
 
