@@ -4,8 +4,7 @@ cache: yarn
 
 node_js:
   - 'stable'
-  - '8'
-  - '10'
+  - '12'
 
 sudo: false
 
