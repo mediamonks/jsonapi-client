@@ -8,7 +8,9 @@
     "start": "yarn && yarn watch",
     "watch": "tsc -w -d --skipLibCheck",
     "build": "jest -u --collectCoverage --passWithNoTests && rimraf dist && tsc -d --skipLibCheck",
-    "test": "NODE_ENV=development jest --watch --coverage"
+    "test": "NODE_ENV=development jest --watch --coverage",
+    "test:ci": "NODE_ENV=development jest",
+    "prepublishOnly": "yarn build"
   },
   "dependencies": {
     "isntnt": "^1.0.2"
