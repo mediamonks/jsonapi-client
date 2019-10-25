@@ -1,4 +1,4 @@
-import { isArray, isUndefined, isNone, shape, isObject, and } from 'isntnt'
+import { isArray, isUndefined, isNone, isObject, and } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
 import { createEmptyObject, createBaseResource, keys } from '../utils/data'
@@ -23,8 +23,6 @@ import { RelationshipField, RelationshipValue } from './ResourceRelationship'
 const has = <K extends PropertyKey>(key: K) =>
   and(isObject, (value: any): value is Record<K, any> => key in value)
 
-const isDataWithAttributes = shape({ attributes: isObject })
-const isDataWithRelationships = shape({ relationships: isObject })
 const hasData = has('data')
 
 type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
