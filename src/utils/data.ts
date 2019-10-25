@@ -1,19 +1,11 @@
-import {
-  Serializable,
-  isArray,
-  isNone,
-  isObject,
-  isSome,
-  isString,
-} from 'isntnt'
+import { Serializable, isArray, isObject, isString } from 'isntnt'
+
+import { defaultGetRequestHeaders } from '../constants/jsonApi'
 
 import { AnyResource, ResourceConstructor } from '../lib/Resource'
-import { AttributeField, AttributeValue } from '../lib/ResourceAttribute'
 import { ResourceIdentifier } from '../lib/ResourceIdentifier'
-import { RelationshipField } from '../lib/ResourceRelationship'
 
-export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> =>
-  Object.keys(value)
+export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> => Object.keys(value)
 
 export const createEmptyObject = (): {} => Object.create(null)
 
@@ -47,3 +39,9 @@ export const createBaseResource = <R extends AnyResource>(
     id: data.id,
   })
 }
+
+export const createGetRequestOptions = () =>
+  createDataValue({
+    method: 'GET',
+    headers: defaultGetRequestHeaders,
+  })

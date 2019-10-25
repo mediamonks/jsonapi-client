@@ -1,11 +1,7 @@
 import { Predicate, isNever } from 'isntnt'
 
 import { AnyResource, ResourceType } from './Resource'
-import {
-  AttributeField,
-  AttributeValue,
-  RequiredAttributeValue,
-} from './ResourceAttribute'
+import { AttributeField, AttributeValue, RequiredAttributeValue } from './ResourceAttribute'
 import { ResourceIdentifierKey } from './ResourceIdentifier'
 import {
   RelationshipValue,
@@ -14,20 +10,13 @@ import {
   ToManyRelationshipField,
 } from './ResourceRelationship'
 
-// export type AnyResourceField = ResourceField<RequiredAttributeValue>
-
 export type ResourceFieldName = string
 
-export type ResourceFields<R extends AnyResource> = Omit<
-  R,
-  ResourceIdentifierKey
->
+export type ResourceFields<R extends AnyResource> = Omit<R, ResourceIdentifierKey>
 
 export type ResourceFieldRoot = 'attributes' | 'relationships'
 
-export class ResourceField<
-  T extends AttributeValue | RelationshipValue<AnyResource>
-> {
+export class ResourceField<T extends AttributeValue | RelationshipValue<AnyResource>> {
   root: ResourceFieldRoot | null = null
   name: ResourceFieldName
   validate: Predicate<T>
@@ -41,13 +30,9 @@ export class ResourceField<
     return this.root === 'attributes'
   }
 
-  isRequiredAttribute: () => this is AttributeField<
-    RequiredAttributeValue
-  > = isNever as any
+  isRequiredAttribute: () => this is AttributeField<RequiredAttributeValue> = isNever as any
 
-  isOptionalAttribute: () => this is AttributeField<
-    RequiredAttributeValue
-  > = isNever as any
+  isOptionalAttribute: () => this is AttributeField<RequiredAttributeValue> = isNever as any
 
   isRelationshipField(): this is RelationshipField<ResourceType> {
     return this.root === 'relationships'

@@ -7,17 +7,13 @@ export class ApiSortRule<T extends string> {
   }
 
   toString(): string {
-    return this.ascending ? this.name : `-${this.name}`;
+    return this.ascending ? this.name : `-${this.name}`
   }
 }
 
-export const sort = <T extends string>(
-  name: T,
-  ascending: boolean,
-): ApiSortRule<T> => new ApiSortRule(name, ascending)
+export const sort = <T extends string>(name: T, ascending: boolean): ApiSortRule<T> =>
+  new ApiSortRule(name, ascending)
 
-export const ascend = <T extends string>(name: T): ApiSortRule<T> =>
-  sort(name, true)
+export const ascend = <T extends string>(name: T): ApiSortRule<T> => sort(name, true)
 
-export const descend = <T extends string>(name: T): ApiSortRule<T> =>
-  sort(name, false)
+export const descend = <T extends string>(name: T): ApiSortRule<T> => sort(name, false)

@@ -15,3 +15,14 @@ export const jsonApiReservedParameterNames = {
   INCLUDE: 'include',
   FIELDS: 'fields',
 } as const
+
+export const jsonApiContentType = 'application/vnd.api+json'
+
+export const defaultGetRequestHeaders = {
+  ['Content-Type']: jsonApiContentType,
+}
+
+export const defaultPostRequestHeaders = {
+  ['Accept']: jsonApiContentType,
+  ['Content-Type']: jsonApiContentType,
+}

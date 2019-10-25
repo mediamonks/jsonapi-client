@@ -1,7 +1,8 @@
-import { isArray, isUndefined, isNone, isObject, and } from 'isntnt'
+import { isArray, isUndefined, isNone } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
 import { createEmptyObject, createBaseResource, keys } from '../utils/data'
+import { hasData } from '../utils/predicates'
 import { Result } from '../utils/Result'
 
 import { Api } from './Api'
@@ -19,11 +20,6 @@ import {
 import { AttributeField, AttributeValue } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
 import { RelationshipField, RelationshipValue } from './ResourceRelationship'
-
-const has = <K extends PropertyKey>(key: K) =>
-  and(isObject, (value: any): value is Record<K, any> => key in value)
-
-const hasData = has('data')
 
 type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
@@ -49,9 +45,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     ;(this.resources as any)[Resource.type] = Resource
   }
 
-  getResource<T extends ResourceType>(
-    type: T,
-  ): ResourceConstructor<ResourceIdentifier<T>> {
+  getResource<T extends ResourceType>(type: T): ResourceConstructor<ResourceIdentifier<T>> {
     if (isUndefined(this.resources[type])) {
       throw new Error(`Resource of type "${type}" does not exist`)
     }
@@ -64,9 +58,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   ): ApiEndpoint<R, S> {
     this.addResource(Resource)
     if (path in this.endpoints) {
-      throw new Error(
-        `Path "${path}" for Resource of type "${Resource.type}" already in use`,
-      )
+      throw new Error(`Path "${path}" for Resource of type "${Resource.type}" already in use`)
     }
     return new ApiEndpoint(this.api, path, Resource)
   }
@@ -89,11 +81,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
       return Result.accept(null)
     }
     return Result.reject(
-      new ApiError(
-        `Invalid attribute value at "${field.name}"`,
-        value,
-        pointer.concat(field.name),
-      ),
+      new ApiError(`Invalid attribute value at "${field.name}"`, value, pointer.concat(field.name)),
     )
   }
 
@@ -118,11 +106,9 @@ export class ApiController<S extends Partial<ApiSetup>> {
         ? `a Resource identifier or null`
         : 'an array of Resource identifiers'
       return Result.reject(
-        new ApiError(
-          `Invalid relationship value, ${field.name} must be ${expectedValue}`,
-          data,
-          [field.name],
-        ),
+        new ApiError(`Invalid relationship value, ${field.name} must be ${expectedValue}`, data, [
+          field.name,
+        ]),
       )
     }
     return Result.accept(value.data)
@@ -134,8 +120,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     pointer: Array<string> = ['INCLUDED'],
   ): ResourceData<any> {
     const data = included.find(
-      (resource) =>
-        resource.type === identifier.type && resource.id === identifier.id,
+      (resource) => resource.type === identifier.type && resource.id === identifier.id,
     )
     if (isUndefined(data)) {
       throw new ApiError(
@@ -171,27 +156,20 @@ export class ApiController<S extends Partial<ApiSetup>> {
         }
 
         if (field.isAttributeField()) {
-          const result = this.getAttributeValue(data, field, pointer).map(
-            (value) => {
-              resource[name] = value
-            },
-          )
+          const result = this.getAttributeValue(data, field, pointer).map((value) => {
+            resource[name] = value
+          })
           if (result.isRejected()) {
             errors.push(result.value)
           }
         } else if (field.isRelationshipField()) {
-          const relationshipData = this.getRelationshipData(
-            data,
-            field,
-            pointer,
-          ).map((value) => {
+          const relationshipData = this.getRelationshipData(data, field, pointer).map((value) => {
             if (isNone(value)) {
               resource[name] = null
             } else if (isNone(includeParam) || isNone(includeParam[name])) {
               if (isArray(value)) {
                 resource[name] = value.map(
-                  (identifier) =>
-                    new ResourceIdentifier(identifier.type, identifier.id),
+                  (identifier) => new ResourceIdentifier(identifier.type, identifier.id),
                 )
               } else {
                 resource[name] = new ResourceIdentifier(value.type, value.id)
@@ -199,10 +177,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
             } else if (isArray(value)) {
               resource[name] = []
               value.map((identifier) => {
-                const includedRelationshipData = this.getIncludedResourceData(
-                  identifier,
-                  included,
-                )
+                const includedRelationshipData = this.getIncludedResourceData(identifier, included)
                 const result = this.decodeResource(
                   identifier.type,
                   includedRelationshipData,
@@ -218,10 +193,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                 }
               })
             } else {
-              const includedRelationshipData = this.getIncludedResourceData(
-                value,
-                included,
-              )
+              const includedRelationshipData = this.getIncludedResourceData(value, included)
               const result = this.decodeResource(
                 value.type,
                 includedRelationshipData,
