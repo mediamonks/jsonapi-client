@@ -144,12 +144,9 @@ const getIncludeParameter = (
     ? Object.keys(values!).map((name) => {
         const children = values[name]
         const childPath = path.concat(name)
-        const value = childPath.join(INCLUDE_PARAMETER_VALUE_DELIMITER)
         return isSome(children)
-          ? [value, getIncludeParameter(childPath, children)].join(
-              LIST_PARAMETER_VALUE_DELIMITER,
-            )
-          : value
+          ? getIncludeParameter(childPath, children).join(LIST_PARAMETER_VALUE_DELIMITER)
+          : childPath.join(INCLUDE_PARAMETER_VALUE_DELIMITER)
       })
     : EMPTY_ARRAY
 
