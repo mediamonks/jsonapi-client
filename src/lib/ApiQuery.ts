@@ -16,6 +16,7 @@ import {
   PARAMETER_PREFIX,
   PARAMETER_DELIMITER,
   PARAMETERS_DELIMITER,
+  EMPTY_ARRAY,
 } from '../constants/data'
 import { jsonApiReservedParameterNames } from '../constants/jsonApi'
 import { NonEmptyArray, ValuesOf } from '../types/util'
@@ -146,7 +147,7 @@ const getIncludeParameter = (
             )
           : value
       })
-    : []
+    : EMPTY_ARRAY
 
 const parseIncludeParameter = (
   name: typeof jsonApiReservedParameterNames['INCLUDE'],
@@ -154,7 +155,7 @@ const parseIncludeParameter = (
 ): Array<string> =>
   isSome(value)
     ? parseApiQueryParameterValue(name, getIncludeParameter([], value))
-    : []
+    : EMPTY_ARRAY
 
 const parseApiQueryParameter = (
   name: ResourceFieldName,
@@ -184,7 +185,7 @@ const parseApiQueryParameterValue = (
   if (isArray(value)) {
     return parseApiQueryParameterValue(name, parseApiQueryParameterArray(value))
   }
-  return []
+  return EMPTY_ARRAY
 }
 
 const parseApiQueryParameterArray = (value: Array<string | number>): string => {
