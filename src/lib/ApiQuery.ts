@@ -135,7 +135,7 @@ const parseParameterName = (
 const getIncludeParameter = (
   path: Array<string>,
   values: ApiQueryIncludeParameter<any>,
-): Array<string> =>
+): ReadonlyArray<string> =>
   isSome(values)
     ? Object.keys(values!).map((name) => {
         const children = values[name]
@@ -152,15 +152,17 @@ const getIncludeParameter = (
 const parseIncludeParameter = (
   name: typeof jsonApiReservedParameterNames['INCLUDE'],
   value: ApiQueryIncludeParameter<any>,
-): Array<string> =>
+): ReadonlyArray<string> =>
   isSome(value)
-    ? parseApiQueryParameterValue(name, getIncludeParameter([], value))
+    ? parseApiQueryParameterValue(name, getIncludeParameter([], value) as Array<
+        string
+      >)
     : EMPTY_ARRAY
 
 const parseApiQueryParameter = (
   name: ResourceFieldName,
   value: ApiQueryParameterValue,
-): Array<string> => {
+): ReadonlyArray<string> => {
   if (isArray(value)) {
     return parseApiQueryParameterValue(name, parseApiQueryParameterArray(value))
   }
@@ -175,7 +177,7 @@ const parseApiQueryParameter = (
 const parseApiQueryParameterValue = (
   name: ResourceFieldName,
   value: ApiQueryParameterValue,
-): Array<string> => {
+): ReadonlyArray<string> => {
   if (isTrue(value)) {
     return [name]
   }
