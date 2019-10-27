@@ -59,13 +59,24 @@ describe('Api', () => {
         expect(endpoint.api).toEqual(api);
       })
 
-      it('should retrieve the endpoint', () => {
+      it('should register the Resource', () => {
         const url = 'https://www.example.com/api';
         const api = new Api(new URL(url));
 
         const endpoint = api.endpoint('/foo', Asset);
 
-        expect(endpoint.api.controller.resources['Asset']).toEqual(Asset);
+        expect(endpoint.api.controller.getResource('Asset')).toEqual(Asset);
+      })
+    })
+
+    describe('register', () => {
+      it('should register a Resource', () => {
+        const url = 'https://www.example.com/api';
+        const api = new Api(new URL(url));
+
+        api.register(Asset);
+
+        expect(api.controller.getResource('Asset')).toEqual(Asset);
       })
     })
   });
