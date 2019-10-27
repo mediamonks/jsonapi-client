@@ -90,7 +90,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   }
 
   toString(): string {
-    return `${this.api}/${this.path}`
+    return `${this.api}${this.path}`
   }
 
   toURL(): URL {
