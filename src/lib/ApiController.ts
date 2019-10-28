@@ -7,7 +7,7 @@ import { Result } from '../utils/Result'
 
 import { Api } from './Api'
 import { ApiEndpoint } from './ApiEndpoint'
-import { ApiError } from './ApiError'
+import { ApiError, ApiResponseError, ApiValidationError } from './ApiError'
 import { ApiSetup } from './ApiSetup'
 import { ApiQueryIncludeParameter, ApiQueryFieldsParameter } from './ApiQuery'
 import {
@@ -81,7 +81,11 @@ export class ApiController<S extends Partial<ApiSetup>> {
       return Result.accept(null)
     }
     return Result.reject(
-      new ApiError(`Invalid attribute value at "${field.name}"`, value, pointer.concat(field.name)),
+      new ApiValidationError(
+        `Invalid attribute value at "${field.name}"`,
+        value,
+        pointer.concat(field.name),
+      ),
     )
   }
 
@@ -94,8 +98,8 @@ export class ApiController<S extends Partial<ApiSetup>> {
     const value = (relationships as any)[field.name]
     if (!hasData(value)) {
       return Result.reject(
-        new ApiError(
-          `Invalid relationship data, value at ${field.name} must have a data property`,
+        new ApiResponseError(
+          `Invalid relationship data, value at "${field.name}" must have a "data" property`,
           value,
           pointer.concat(field.name),
         ),
@@ -106,9 +110,11 @@ export class ApiController<S extends Partial<ApiSetup>> {
         ? `a Resource identifier or null`
         : 'an array of Resource identifiers'
       return Result.reject(
-        new ApiError(`Invalid relationship value, ${field.name} must be ${expectedValue}`, data, [
-          field.name,
-        ]),
+        new ApiValidationError(
+          `Invalid relationship value, "${field.name}" must be ${expectedValue}`,
+          value,
+          pointer.concat(field.name),
+        ),
       )
     }
     return Result.accept(value.data)
@@ -123,7 +129,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
       (resource) => resource.type === identifier.type && resource.id === identifier.id,
     )
     if (isUndefined(data)) {
-      throw new ApiError(
+      throw new ApiResponseError(
         `Expected Resource of type "${identifier.type}" with id "${identifier.id}" to be included`,
         identifier,
         pointer,
@@ -138,7 +144,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     included: Array<ResourceData<any>> = [],
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
     includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
-    pointer: Array<string> = ['OOPS'],
+    pointer: Array<string>,
   ): Result<R, ApiError<any>[]> {
     // Todo: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
