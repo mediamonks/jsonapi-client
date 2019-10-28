@@ -166,7 +166,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
           const relationshipData = this.getRelationshipData(data, field, pointer).map((value) => {
             if (isNone(value)) {
               resource[name] = null
-            } else if (isNone(includeParam) || isNone(includeParam[name])) {
+            } else if (isNone(includeParam) || isUndefined(includeParam[name])) {
               if (isArray(value)) {
                 resource[name] = value.map(
                   (identifier) => new ResourceIdentifier(identifier.type, identifier.id),
