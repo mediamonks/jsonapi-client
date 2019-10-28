@@ -73,8 +73,10 @@ export class ApiController<S extends Partial<ApiSetup>> {
     field: F,
     pointer: Array<string>,
   ): Result<AttributeValue, ApiError<any>> {
+    // todo: attributes prop is not always optional, should it throw if its missing
+    // when it should not?
     const attributes = data.attributes || EMPTY_OBJECT
-    const value = (attributes as any)[field.name]
+    const value = field.name in attributes ? (attributes as any)[field.name] : null
     if (field.validate(value)) {
       return Result.accept(value)
     } else if (field.isOptionalAttribute() && isNone(value)) {
@@ -94,18 +96,14 @@ export class ApiController<S extends Partial<ApiSetup>> {
     field: F,
     pointer: Array<string>,
   ): Result<RelationshipValue<AnyResource>, ApiError<any>> {
+    // todo: relationships prop is not always optional, should it throw if its missing
+    // when it should not?
     const relationships = data.relationships || EMPTY_OBJECT
     const value = (relationships as any)[field.name]
-    if (!hasData(value)) {
-      return Result.reject(
-        new ApiResponseError(
-          `Invalid relationship data, value at "${field.name}" must have a "data" property`,
-          value,
-          pointer.concat(field.name),
-        ),
-      )
+    if (isUndefined(value)) {
+      return Result.accept(field.isToOneRelationship() ? null : [])
     }
-    if (!field.validate(value.data)) {
+    if (field.validate(value.data)) {
       const expectedValue = field.isToOneRelationship()
         ? `a Resource identifier or null`
         : 'an array of Resource identifiers'
