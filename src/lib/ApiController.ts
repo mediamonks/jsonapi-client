@@ -104,18 +104,19 @@ export class ApiController<S extends Partial<ApiSetup>> {
       return Result.accept(field.isToOneRelationship() ? null : [])
     }
     if (field.validate(value.data)) {
-      const expectedValue = field.isToOneRelationship()
-        ? `a Resource identifier or null`
-        : 'an array of Resource identifiers'
-      return Result.reject(
-        new ApiValidationError(
-          `Invalid relationship value, "${field.name}" must be ${expectedValue}`,
-          value,
-          pointer.concat(field.name),
-        ),
-      )
+      return Result.accept(value.data)
     }
-    return Result.accept(value.data)
+    console.log('AGAG', field.name, value.data, field.validate(value.data))
+    const expectedValue = field.isToOneRelationship()
+      ? `a Resource identifier or null`
+      : 'an array of Resource identifiers'
+    return Result.reject(
+      new ApiValidationError(
+        `Invalid relationship value, "${field.name}" must be ${expectedValue}`,
+        value,
+        pointer.concat(field.name),
+      ),
+    )
   }
 
   getIncludedResourceData(
