@@ -2,7 +2,6 @@ import { isArray, isUndefined, isNone } from 'isntnt'
 
 import { EMPTY_OBJECT } from '../constants/data'
 import { createEmptyObject, createBaseResource, keys } from '../utils/data'
-import { hasData } from '../utils/predicates'
 import { Result } from '../utils/Result'
 
 import { Api } from './Api'
@@ -106,7 +105,6 @@ export class ApiController<S extends Partial<ApiSetup>> {
     if (field.validate(value.data)) {
       return Result.accept(value.data)
     }
-    console.log('AGAG', field.name, value.data, field.validate(value.data))
     const expectedValue = field.isToOneRelationship()
       ? `a Resource identifier or null`
       : 'an array of Resource identifiers'
