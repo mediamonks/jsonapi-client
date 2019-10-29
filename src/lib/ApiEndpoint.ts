@@ -2,7 +2,12 @@ import { EMPTY_OBJECT } from '../constants/data'
 import { createGetRequestOptions } from '../utils/data'
 
 import { Api } from './Api'
-import { ApiQuery, ApiQueryResourceParameters, FetchQueryParameters } from './ApiQuery'
+import {
+  ApiQuery,
+  ApiQueryResourceParameters,
+  ApiQueryFilterParameters,
+  FetchQueryParameters,
+} from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
@@ -28,11 +33,11 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     return new this.Resource(data)
   }
 
-  async get<Q extends ApiQueryResourceParameters<R>>(
+  async get<F extends ApiQueryResourceParameters<R>>(
     id: string,
-    query: Q = EMPTY_OBJECT as Q,
-  ): Promise<FilteredResource<R, Q>[]> {
-    const queryParameters = this.createQuery(query as any)
+    resourceQuery: F = EMPTY_OBJECT as F,
+  ): Promise<FilteredResource<R, F>[]> {
+    const queryParameters = this.createQuery(resourceQuery)
     const url = new URL(`${this.path}/${id}${String(queryParameters)}`, this.api.url)
 
     const options = createGetRequestOptions()
@@ -47,8 +52,8 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       this.Resource.type,
       response.data,
       response.included,
-      query.fields,
-      query.include,
+      resourceQuery.fields,
+      resourceQuery.include,
       [],
     )
 
@@ -57,24 +62,25 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     })
   }
 
-  async fetch<Q extends FetchQueryParameters<R, S>>(
+  async fetch<Q extends ApiQueryFilterParameters<R, S>, F extends ApiQueryResourceParameters<R>>(
     query: Q = EMPTY_OBJECT as Q,
-  ): Promise<FilteredResource<R, Q>[]> {
+    resourceFilter: F = EMPTY_OBJECT as F,
+  ): Promise<FilteredResource<R, F>[]> {
     const queryParameters = this.createQuery(query)
     const url = new URL(String(queryParameters), this.toURL())
 
     const options = createGetRequestOptions()
     const response = await this.api.controller.handleRequest(url, options)
     const errors: Array<Error> = []
-    const values: Array<FilteredResource<R, Q>> = []
+    const values: Array<FilteredResource<R, F>> = []
 
     response.data.forEach((resource: any) => {
       const result = this.api.controller.decodeResource(
         this.Resource.type,
         resource,
         response.included,
-        query.fields,
-        query.include,
+        resourceFilter.fields,
+        resourceFilter.include,
         [this.Resource.type, resource.id],
       )
       if (result.isSuccess()) {
@@ -121,7 +127,7 @@ type ResourceIncludes<R, I, F> = R extends AnyResource
         : R[K] extends AnyResource | null
         ? K extends keyof I
           ? BaseFilteredResource<Extract<R[K], AnyResource>, I[K], F> | null
-          : ResourceIdentifier<Extract<R[K], AnyResource>['type']>
+          : ResourceIdentifier<Extract<R[K], AnyResource>['type']> | null
         : K extends keyof I
         ? Warning<'Invalid include parameter: field is not a relationship', K>
         : R[K]
@@ -140,7 +146,7 @@ type FilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
   ? Array<BaseFilteredResource<R[number], I, F>>
   : NotAResourceWarning<R>[]
 
-type FilteredResource<
+export type FilteredResource<
   R extends AnyResource,
   Q extends ApiQueryResourceParameters<R>
 > = BaseFilteredResource<R, Q['include'], Q['fields']>
@@ -151,3 +157,14 @@ type Warning<T extends string, U> = Error & {
 }
 
 type NotAResourceWarning<T> = Warning<'Not a Resource', T>
+
+export type ApiEndpointResource<E extends ApiEndpoint<any, any>> = E extends ApiEndpoint<
+  infer R,
+  any
+>
+  ? R
+  : never
+
+export type ApiEndpointSetup<T extends ApiEndpoint<any, any>> = T extends ApiEndpoint<any, infer S>
+  ? S
+  : never
