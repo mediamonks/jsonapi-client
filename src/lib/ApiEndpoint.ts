@@ -5,7 +5,7 @@ import { Api } from './Api'
 import {
   ApiQuery,
   ApiQueryResourceParameters,
-  ApiQueryFilterParameters,
+  ApiQueryFiltersParameters,
   FetchQueryParameters,
 } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
@@ -62,7 +62,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     })
   }
 
-  async fetch<Q extends ApiQueryFilterParameters<R, S>, F extends ApiQueryResourceParameters<R>>(
+  async fetch<Q extends ApiQueryFiltersParameters<R, S>, F extends ApiQueryResourceParameters<R>>(
     query: Q = EMPTY_OBJECT as Q,
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<FilteredResource<R, F>[]> {
