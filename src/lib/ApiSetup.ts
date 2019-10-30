@@ -27,6 +27,7 @@ export type ApiSetup = {
   defaultIncludeFields: DefaultIncludeFieldsOption
   createPageQuery: ApiSetupCreatePageQuery
   parseRequestError: ApiSetupParseRequestError
+  adapter: ((input: RequestInfo, init?: RequestInit) => Promise<Response>) | undefined
 }
 
 export type ApiSetupCreatePageQuery =
@@ -41,6 +42,7 @@ export type DefaultApiSetup = ApiSetupWithDefaults<{
   defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
   createPageQuery: Transform<ApiQueryParameter, ApiQueryParameter>
   parseRequestError: Transform<ApiResponseError, any>
+  adapter: ((input: RequestInfo, init?: RequestInit) => Promise<Response>) | undefined
 }>
 
 export type ApiSetupWithDefaults<T extends Partial<ApiSetup>> = Required<
@@ -54,4 +56,5 @@ export const mergeApiDefaultSetup = mergeApiSetup({
   defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
   parseRequestError: reflect,
+  adapter: typeof fetch !== 'undefined' ? fetch : undefined, // global fetch
 })

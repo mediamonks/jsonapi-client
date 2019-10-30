@@ -1,4 +1,5 @@
 import { isArray, isUndefined, isNone } from 'isntnt'
+import dedent from 'dedent';
 
 import { EMPTY_OBJECT } from '../constants/data'
 import { createEmptyObject, createBaseResource, keys } from '../utils/data'
@@ -63,7 +64,15 @@ export class ApiController<S extends Partial<ApiSetup>> {
   }
 
   async handleRequest(url: URL, options: any): Promise<any> {
-    const request = await fetch(url.href, options)
+    if (isNone(this.api.setup.adapter)) {
+      throw new Error(dedent`No fetch adapter provided.
+        When not running in a browser that doesn't support fetch, you need to provide polyfill fetch.
+        When running in node, you can pass "node-fetch" as an adapter to the Api setup.
+        If you want to mock, you can use "fetch-mock".
+      `)
+    }
+
+    const request = await this.api.setup.adapter(url.href, options)
     return request.json()
   }
 

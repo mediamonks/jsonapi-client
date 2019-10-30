@@ -24,6 +24,8 @@
     "url": "https://github.com/mediamonks/jsonapi-client.git"
   },
   "dependencies": {
+    "@types/dedent": "^0.7.0",
+    "dedent": "^0.7.0",
     "isntnt": "^1.0.2"
   },
   "devDependencies": {
