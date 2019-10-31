@@ -69,23 +69,25 @@ describe('ApiEndpoint', () => {
           alt: 'foo',
         } as const
 
-        const mockHandleRequest = jest.fn(() => {
-          return new Promise((resolve) => {
-            resolve(
-              Result.accept({
-                data: {
-                  type: data.type,
-                  id: data.id,
-                  attributes: {
-                    assetType: data.assetType,
-                    name: data.name,
-                    alt: data.alt,
+        const mockHandleRequest = jest.fn(
+          (): Promise<Result<any, never>> => {
+            return new Promise((resolve) => {
+              resolve(
+                Result.accept({
+                  data: {
+                    type: data.type,
+                    id: data.id,
+                    attributes: {
+                      assetType: data.assetType,
+                      name: data.name,
+                      alt: data.alt,
+                    },
                   },
-                },
-              }),
-            )
-          })
-        })
+                }),
+              )
+            })
+          },
+        )
 
         api.controller.handleRequest = mockHandleRequest
 
@@ -109,25 +111,27 @@ describe('ApiEndpoint', () => {
           alt: 'foo',
         } as const
 
-        const mockHandleRequest = jest.fn(() => {
-          return new Promise((resolve) => {
-            resolve(
-              Result.accept({
-                data: [
-                  {
-                    type: data.type,
-                    id: data.id,
-                    attributes: {
-                      assetType: data.assetType,
-                      name: data.name,
-                      alt: data.alt,
+        const mockHandleRequest = jest.fn(
+          (): Promise<Result<any, never>> => {
+            return new Promise((resolve) => {
+              resolve(
+                Result.accept({
+                  data: [
+                    {
+                      type: data.type,
+                      id: data.id,
+                      attributes: {
+                        assetType: data.assetType,
+                        name: data.name,
+                        alt: data.alt,
+                      },
                     },
-                  },
-                ],
-              }),
-            )
-          })
-        })
+                  ],
+                }),
+              )
+            })
+          },
+        )
 
         api.controller.handleRequest = mockHandleRequest
 

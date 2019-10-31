@@ -57,7 +57,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
           keys(this.Resource.fields).filter((name) => name in values),
           [],
         )
-        .map(async (body) => {
+        .map((body) => {
           const options = createPostRequestOptions(body)
           this.api.controller.handleRequest(url, options).then((result) => {
             if (result.isSuccess()) {
