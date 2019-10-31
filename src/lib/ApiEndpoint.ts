@@ -1,5 +1,5 @@
 import { EMPTY_OBJECT } from '../constants/data'
-import { createGetRequestOptions } from '../utils/data'
+import { createGetRequestOptions, keys, createPostRequestOptions } from '../utils/data'
 
 import { Api } from './Api'
 import {
@@ -9,8 +9,14 @@ import {
   FetchQueryParameters,
 } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
-import { AnyResource, ResourceConstructor } from './Resource'
+import {
+  AnyResource,
+  ResourceConstructor,
+  ResourcePatchValues,
+  ResourceCreateValues,
+} from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
+import { rejects } from 'assert'
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly api: Api<S>
@@ -23,14 +29,45 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     this.Resource = Resource
   }
 
-  async create(data: R): Promise<R> {
-    console.warn('ApiEndpoint#create has not (yet) been implemented')
-    return new this.Resource(data)
+  async create(values: ResourceCreateValues<R>): Promise<any> {
+    const url = this.toURL()
+    return new Promise((resolve, reject) => {
+      this.api.controller
+        .encodeResource(this.Resource.type, values, keys(this.Resource.fields), [])
+        .map(async (body) => {
+          const options = createPostRequestOptions(body)
+          this.api.controller.handleRequest(url, options).then((result) => {
+            if (result.isSuccess()) {
+              resolve(result.value)
+            } else {
+              reject(result.value)
+            }
+          })
+        })
+    })
   }
 
-  async patch(data: R): Promise<R> {
-    console.warn('ApiEndpoint#patch has not (yet) been implemented')
-    return new this.Resource(data)
+  async patch(values: ResourceCreateValues<R>): Promise<any> {
+    const url = this.toURL()
+    return new Promise((resolve, reject) => {
+      this.api.controller
+        .encodeResource(
+          this.Resource.type,
+          values,
+          keys(this.Resource.fields).filter((name) => name in values),
+          [],
+        )
+        .map(async (body) => {
+          const options = createPostRequestOptions(body)
+          this.api.controller.handleRequest(url, options).then((result) => {
+            if (result.isSuccess()) {
+              resolve(result.value)
+            } else {
+              reject(result.value)
+            }
+          })
+        })
+    })
   }
 
   async get<F extends ApiQueryResourceParameters<R>>(
@@ -41,24 +78,24 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     const url = new URL(`${this.path}/${id}${String(queryParameters)}`, this.api.url)
 
     const options = createGetRequestOptions()
-    const response = await this.api.controller.handleRequest(url, options)
-
-    // temp: throw server errors
-    if ('errors' in response) {
-      throw new Error(response.errors)
-    }
-
-    const result = this.api.controller.decodeResource(
-      this.Resource.type,
-      response.data,
-      response.included,
-      resourceQuery.fields,
-      resourceQuery.include,
-      [],
-    )
-
     return new Promise((resolve, reject) => {
-      result.isSuccess() ? resolve(result.value as any) : reject(result.value)
+      this.api.controller.handleRequest(url, options).then((request) => {
+        request.map((response) => {
+          const result = this.api.controller.decodeResource(
+            this.Resource.type,
+            response.data,
+            response.included,
+            resourceQuery.fields,
+            resourceQuery.include,
+            [],
+          )
+          if (result.isSuccess()) {
+            resolve(result.value as any)
+          } else {
+            reject(result.value)
+          }
+        })
+      })
     })
   }
 
@@ -69,29 +106,36 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     const queryParameters = this.createQuery({ ...query, ...resourceFilter })
     const url = new URL(String(queryParameters), this.toURL())
 
-    const options = createGetRequestOptions()
-    const response = await this.api.controller.handleRequest(url, options)
-    const errors: Array<Error> = []
-    const values: Array<FilteredResource<R, F>> = []
-
-    response.data.forEach((resource: any) => {
-      const result = this.api.controller.decodeResource(
-        this.Resource.type,
-        resource,
-        response.included,
-        resourceFilter.fields,
-        resourceFilter.include,
-        [this.Resource.type, resource.id],
-      )
-      if (result.isSuccess()) {
-        values.push(result.value as any)
-      } else {
-        errors.push(...(result.value as any))
-      }
-    })
-
     return new Promise((resolve, reject) => {
-      errors.length === 0 ? resolve(values) : reject(errors)
+      const options = createGetRequestOptions()
+      this.api.controller.handleRequest(url, options).then((request) => {
+        request.map((response) => {
+          const errors: Array<Error> = []
+          const values: Array<FilteredResource<R, F>> = []
+
+          response.data.forEach((resource: any) => {
+            const result = this.api.controller.decodeResource(
+              this.Resource.type,
+              resource,
+              response.included,
+              resourceFilter.fields,
+              resourceFilter.include,
+              [this.Resource.type, resource.id],
+            )
+            if (result.isSuccess()) {
+              values.push(result.value as any)
+            } else {
+              errors.push(...(result.value as any))
+            }
+          })
+
+          if (errors.length) {
+            reject(errors)
+          } else {
+            resolve(values)
+          }
+        })
+      })
     })
   }
 

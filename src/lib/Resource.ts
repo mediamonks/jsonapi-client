@@ -65,3 +65,14 @@ export type ResourceConstructor<R extends AnyResource> = {
   fields: Record<ResourceType, ResourceField<any>>
   new (data: R): R
 }
+
+export type ResourceCreateValues<R extends AnyResource> = ResourceIdentifier<R['type']> &
+  {
+    [K in Exclude<keyof R, ResourceIdentifierKey>]: R[K] extends AnyResource[]
+      ? ResourceIdentifier<R[K][number]['type']>[]
+      : Exclude<R[K], null> extends AnyResource
+      ? ResourceIdentifier<Extract<R[K], AnyResource>['type']> | null
+      : R[K]
+  }
+
+export type ResourcePatchValues<R extends AnyResource> = Partial<ResourceCreateValues<R>>

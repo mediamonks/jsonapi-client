@@ -1,13 +1,13 @@
-import { isArray, isUndefined, isNone } from 'isntnt'
-import dedent from 'dedent';
+import { isArray, isUndefined, isNone, isSome } from 'isntnt'
+import dedent from 'dedent'
 
 import { EMPTY_OBJECT } from '../constants/data'
-import { createEmptyObject, createBaseResource, keys } from '../utils/data'
+import { createEmptyObject, keys, createDataValue } from '../utils/data'
 import { Result } from '../utils/Result'
 
 import { Api } from './Api'
 import { ApiEndpoint } from './ApiEndpoint'
-import { ApiError, ApiResponseError, ApiValidationError } from './ApiError'
+import { ApiError, ApiResponseError, ApiRequestError, ApiValidationError } from './ApiError'
 import { ApiSetup } from './ApiSetup'
 import { ApiQueryIncludeParameter, ApiQueryFieldsParameter } from './ApiQuery'
 import {
@@ -20,6 +20,8 @@ import {
 import { AttributeField, AttributeValue } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
 import { RelationshipField, RelationshipValue } from './ResourceRelationship'
+import { isString } from 'util'
+import { create } from 'domain'
 
 type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
@@ -63,7 +65,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     return new ApiEndpoint(this.api, path, Resource)
   }
 
-  async handleRequest(url: URL, options: any): Promise<any> {
+  async handleRequest(url: URL, options: any): Promise<Result<any, ApiRequestError<any>[]>> {
     if (isNone(this.api.setup.adapter)) {
       throw new Error(dedent`No fetch adapter provided.
         When not running in a browser that doesn't support fetch, you need to provide polyfill fetch.
@@ -73,7 +75,10 @@ export class ApiController<S extends Partial<ApiSetup>> {
     }
 
     const request = await this.api.setup.adapter(url.href, options)
-    return request.json()
+    return request
+      .json()
+      .then((data): any => Result.accept(data))
+      .catch((error) => Result.reject(new ApiRequestError('Invalid request', error)))
   }
 
   getAttributeValue<F extends AttributeField<any>>(
@@ -145,7 +150,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   }
 
   decodeResource<R extends AnyResource>(
-    type: string,
+    type: ResourceType,
     data: ResourceData<R>,
     included: Array<ResourceData<any>> = [],
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
@@ -159,79 +164,178 @@ export class ApiController<S extends Partial<ApiSetup>> {
     const Resource = this.getResource(type)
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
 
+    const values: Record<string, any> = Object.create(null)
     const errors: Array<ApiError<any>> = []
-    const resource = fieldNames.reduce(
-      (resource, name) => {
-        const field = Resource.fields[name]
-        if (isUndefined(field)) {
-          throw new Error(`Resource of type "${type}" has no "${name}" fields`)
-        }
 
-        if (field.isAttributeField()) {
-          const result = this.getAttributeValue(data, field, pointer).map((value) => {
-            resource[name] = value
-          })
-          if (result.isRejected()) {
-            errors.push(result.value)
-          }
-        } else if (field.isRelationshipField()) {
-          const relationshipData = this.getRelationshipData(data, field, pointer).map((value) => {
-            if (isNone(value)) {
-              resource[name] = null
-            } else if (isNone(includeParam) || isUndefined(includeParam[name])) {
-              if (isArray(value)) {
-                resource[name] = value.map(
-                  (identifier) => new ResourceIdentifier(identifier.type, identifier.id),
-                )
-              } else {
-                resource[name] = new ResourceIdentifier(value.type, value.id)
-              }
-            } else if (isArray(value)) {
-              resource[name] = []
-              value.map((identifier) => {
-                const includedRelationshipData = this.getIncludedResourceData(identifier, included)
-                const result = this.decodeResource(
-                  identifier.type,
-                  includedRelationshipData,
-                  included,
-                  fieldsParam,
-                  includeParam[field.name],
-                  pointer.concat(field.name),
-                ).map((includedResource) => {
-                  resource[name].push(includedResource)
-                })
-                if (result.isRejected()) {
-                  errors.push(...result.value)
-                }
-              })
+    if (type !== data.type) {
+      errors.push(
+        new ApiError(
+          `Invalid type for Resource of type "${type}"`,
+          data.type,
+          pointer.concat('type'),
+        ),
+      )
+    } else {
+      values.type = type
+    }
+
+    if (!isString(data.id)) {
+      errors.push(
+        new ApiError(`Invalid id for Resource of type "${type}"`, data.id, pointer.concat('id')),
+      )
+    } else {
+      values.id = data.id
+    }
+
+    fieldNames.forEach((name) => {
+      const field = Resource.fields[name]
+      if (isUndefined(field)) {
+        throw new Error(`Resource of type "${type}" has no "${name}" fields`)
+      }
+
+      if (field.isAttributeField()) {
+        const result = this.getAttributeValue(data, field, pointer).map((value) => {
+          values[name] = value
+        })
+        if (result.isRejected()) {
+          errors.push(result.value)
+        }
+      } else if (field.isRelationshipField()) {
+        const relationshipData = this.getRelationshipData(data, field, pointer).map((value) => {
+          if (isNone(value)) {
+            values[name] = null
+          } else if (isNone(includeParam) || isUndefined(includeParam[name])) {
+            if (isArray(value)) {
+              values[name] = value.map(
+                (identifier) => new ResourceIdentifier(identifier.type, identifier.id),
+              )
             } else {
-              const includedRelationshipData = this.getIncludedResourceData(value, included)
+              values[name] = new ResourceIdentifier(value.type, value.id)
+            }
+          } else if (isArray(value)) {
+            values[name] = []
+            value.map((identifier) => {
+              const includedRelationshipData = this.getIncludedResourceData(identifier, included)
               const result = this.decodeResource(
-                value.type,
+                identifier.type,
                 includedRelationshipData,
                 included,
                 fieldsParam,
                 includeParam[field.name],
                 pointer.concat(field.name),
               ).map((includedResource) => {
-                resource[name] = includedResource
+                values[name].push(includedResource)
               })
               if (result.isRejected()) {
                 errors.push(...result.value)
               }
+            })
+          } else {
+            const includedRelationshipData = this.getIncludedResourceData(value, included)
+            const result = this.decodeResource(
+              value.type,
+              includedRelationshipData,
+              included,
+              fieldsParam,
+              includeParam[field.name],
+              pointer.concat(field.name),
+            ).map((includedResource) => {
+              values[name] = includedResource
+            })
+            if (result.isRejected()) {
+              errors.push(...result.value)
             }
-          })
-          if (relationshipData.isRejected()) {
-            errors.push(relationshipData.value)
           }
+        })
+        if (relationshipData.isRejected()) {
+          errors.push(relationshipData.value)
         }
-        return resource
-      },
-      createBaseResource(Resource, data) as Record<string, any>,
-    )
+      }
+    })
 
-    return errors.length
-      ? Result.reject(errors)
-      : Result.accept(new Resource(resource as any) as any)
+    return errors.length ? Result.reject(errors) : Result.accept(new Resource(values as any) as any)
+  }
+
+  encodeResource<R extends AnyResource>(
+    type: ResourceType,
+    values: R,
+    fieldsNames: Array<string>,
+    pointer: Array<string>,
+  ): Result<any, ApiError<any>[]> {
+    const errors: Array<ApiError<any>> = []
+    const data: Record<string, any> = createEmptyObject()
+
+    const Resource = this.getResource(type)
+
+    if ('type' in values && values.type !== type) {
+      errors.push(
+        new ApiError(
+          `Invalid id value for Resource of type ${type}`,
+          values.id,
+          pointer.concat('type'),
+        ),
+      )
+    } else {
+      data.type = type
+    }
+
+    if ('id' in values && !isString(values.id)) {
+      errors.push(
+        new ApiError(
+          `Invalid id value for Resource of type ${type}`,
+          values.id,
+          pointer.concat('id'),
+        ),
+      )
+    }
+
+    fieldsNames.forEach((name) => {
+      if (name === 'id' || name === 'type') {
+        return
+      }
+      const field = (Resource.fields as any)[name]
+      if (isUndefined(field)) {
+        throw new Error(`Field "${name}" does not exists on Resource of type ${type}`)
+      }
+
+      const value = (values as any)[name]
+      if (field.isAttributeField()) {
+        if (field.validate(value)) {
+          ;(data.attributes || (data.attributes = createEmptyObject()))[name] = value
+        } else if (field.isRequiredAttribute() || isSome(value)) {
+          errors.push(
+            new ApiError(
+              `Invalid attribute value at "${name}" for Resource of type ${type}`,
+              value,
+              pointer.concat(name),
+            ),
+          )
+        }
+      } else if (field.isRelationshipField()) {
+        if (field.validate(value)) {
+          ;(data.relationships || (data.relationships = createEmptyObject()))[
+            name
+          ] = createDataValue({
+            data: isArray(value)
+              ? value.map((identifier: any) =>
+                  createDataValue({ type: identifier.type, id: identifier.id }),
+                )
+              : isNone(value)
+              ? null
+              : createDataValue({ type: value.type, id: value.id }),
+          })
+        } else if (name in values) {
+          errors.push(
+            new ApiError(
+              `Invalid relationship data at "${name}" for Resource of type ${type}`,
+              value,
+              pointer.concat(name),
+            ),
+          )
+        }
+      }
+    })
+
+    return errors.length ? Result.reject(errors) : Result.accept({ data })
   }
 }

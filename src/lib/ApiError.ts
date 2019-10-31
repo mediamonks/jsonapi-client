@@ -9,6 +9,8 @@ export class ApiError<T> extends Error {
   }
 }
 
+export class ApiRequestError<T> extends ApiError<T> {}
+
 export class ApiResponseError<T> extends ApiError<T> {}
 
 export class ApiValidationError<T> extends ApiError<T> {}
