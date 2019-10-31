@@ -66,7 +66,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     query: Q = EMPTY_OBJECT as Q,
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<FilteredResource<R, F>[]> {
-    const queryParameters = this.createQuery(query)
+    const queryParameters = this.createQuery({ ...query, ...resourceFilter })
     const url = new URL(String(queryParameters), this.toURL())
 
     const options = createGetRequestOptions()
