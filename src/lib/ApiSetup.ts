@@ -56,5 +56,5 @@ export const mergeApiDefaultSetup = mergeApiSetup({
   defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
   parseRequestError: reflect,
-  adapter: typeof fetch !== 'undefined' ? fetch : undefined, // global fetch
+  adapter: typeof fetch !== 'undefined' ? fetch.bind(window) : undefined, // global fetch
 })
