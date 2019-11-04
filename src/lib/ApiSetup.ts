@@ -1,14 +1,10 @@
-import {
-  jsonApiVersions,
-  JsonApiVersion,
-  JsonApiVersions,
-} from '../constants/jsonApi'
+import { jsonApiVersions, JsonApiVersion, JsonApiVersions } from '../constants/jsonApi'
 import {
   defaultIncludeFieldOptions,
   DefaultIncludeFieldsOption,
   DefaultIncludeFieldsOptions,
 } from '../constants/setup'
-import { ApiResponseError } from '../types/data'
+import { ApiResponseError, SerializableObject } from '../types/data'
 import { Transform } from '../types/util'
 
 import { ApiQueryParameter } from './ApiQuery'
@@ -27,7 +23,8 @@ export type ApiSetup = {
   defaultIncludeFields: DefaultIncludeFieldsOption
   createPageQuery: ApiSetupCreatePageQuery
   parseRequestError: ApiSetupParseRequestError
-  adapter: ((input: RequestInfo, init?: RequestInit) => Promise<Response>) | undefined
+  beforeRequest: Transform<SerializableObject>
+  adapter: Window['fetch']
 }
 
 export type ApiSetupCreatePageQuery =
@@ -42,7 +39,8 @@ export type DefaultApiSetup = ApiSetupWithDefaults<{
   defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
   createPageQuery: Transform<ApiQueryParameter, ApiQueryParameter>
   parseRequestError: Transform<ApiResponseError, any>
-  adapter: ((input: RequestInfo, init?: RequestInit) => Promise<Response>) | undefined
+  beforeRequest: Transform<SerializableObject>
+  adapter: Window['fetch']
 }>
 
 export type ApiSetupWithDefaults<T extends Partial<ApiSetup>> = Required<
@@ -51,10 +49,15 @@ export type ApiSetupWithDefaults<T extends Partial<ApiSetup>> = Required<
   }
 >
 
+const windowFetch = (typeof window !== 'undefined' && typeof window.fetch === 'function'
+  ? fetch.bind(window)
+  : undefined) as Window['fetch']
+
 export const mergeApiDefaultSetup = mergeApiSetup({
   version: jsonApiVersions['1_0'],
   defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
   parseRequestError: reflect,
-  adapter: typeof fetch !== 'undefined' ? fetch.bind(window) : undefined, // global fetch
+  beforeRequest: reflect,
+  adapter: windowFetch,
 })
