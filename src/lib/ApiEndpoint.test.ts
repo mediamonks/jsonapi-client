@@ -58,7 +58,6 @@ describe('ApiEndpoint', () => {
     describe('get', () => {
       it('should get a resource item', async () => {
         const api = new Api(new URL('https://www.example.com/api'))
-        api.register(Asset)
         const endpoint = api.endpoint('/assets', Asset)
 
         const data = {
