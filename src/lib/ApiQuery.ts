@@ -1,12 +1,4 @@
-import {
-  isArray,
-  isString,
-  isSerializableNumber,
-  isObject,
-  isTrue,
-  isNone,
-  isSome,
-} from 'isntnt'
+import { isArray, isString, isSerializableNumber, isObject, isTrue, isNone, isSome } from 'isntnt'
 
 import {
   EMPTY_OBJECT,
@@ -42,13 +34,9 @@ export type ApiQueryFilterParameter = {
   [key: string]: ApiQueryParameterValue
 }
 
-export type ApiQueryIncludeParameter<
-  R extends AnyResource
-> = BaseApiQueryIncludeParameters<R>
+export type ApiQueryIncludeParameter<R extends AnyResource> = BaseApiQueryIncludeParameters<R>
 
-export type ApiQueryFieldsParameter<
-  R extends AnyResource
-> = BaseApiQueryFieldsParameter<R>
+export type ApiQueryFieldsParameter<R extends AnyResource> = BaseApiQueryFieldsParameter<R>
 
 type BaseRelationshipResource<T> = T extends Array<AnyResource>
   ? T[number]
@@ -73,11 +61,7 @@ export type FetchQueryParameters<
   S extends Partial<ApiSetup>
 > = ApiQueryResourceParameters<R> & ApiQueryFiltersParameters<R, S>
 
-export type ApiQueryParameterValue =
-  | string
-  | number
-  | boolean
-  | Array<string | number>
+export type ApiQueryParameterValue = string | number | boolean | Array<string | number>
 
 export type ApiQueryParameter =
   | ApiQueryParameterValue
@@ -106,48 +90,45 @@ const parseApiQuery = <T extends FetchQueryParameters<any, any>>(
   api: Api<any>,
   values: T,
 ): string => {
-  const parameters: Array<string> = Object.keys(values).flatMap((name) => {
-    switch (name) {
-      case jsonApiReservedParameterNames.PAGE:
-        return parseApiQueryParameter(
-          name,
-          api.setup.createPageQuery(values[name]),
-        )
-      case jsonApiReservedParameterNames.SORT:
-        return parseApiQueryParameter(
-          name,
-          parseApiQueryParameterArray(
-            (values[name] as Array<ApiSortRule<any>>).map(String),
-          ),
-        )
-      case jsonApiReservedParameterNames.INCLUDE:
-        return parseIncludeParameter(name, values[name] || EMPTY_OBJECT)
-      default:
-        return parseApiQueryParameter(name, (values as any)[name])
-    }
-  })
+  const parameters: Array<string> = Object.keys(values)
+    .sort()
+    .flatMap((name) => {
+      switch (name) {
+        case jsonApiReservedParameterNames.PAGE:
+          return parseApiQueryParameter(name, api.setup.createPageQuery(values[name]))
+        case jsonApiReservedParameterNames.SORT:
+          return parseApiQueryParameter(
+            name,
+            parseApiQueryParameterArray((values[name] as Array<ApiSortRule<any>>).map(String)),
+          )
+        case jsonApiReservedParameterNames.INCLUDE:
+          return parseIncludeParameter(name, values[name] || EMPTY_OBJECT)
+        default:
+          return parseApiQueryParameter(name, (values as any)[name])
+      }
+    })
   return parameters.length
     ? `${PARAMETER_PREFIX}${parameters.join(PARAMETERS_DELIMITER)}`
     : EMPTY_STRING
 }
 
-const parseParameterName = (
-  name: ResourceFieldName,
-  key: string | null,
-): string => (isNone(key) ? name : `${name}[${key}]`)
+const parseParameterName = (name: ResourceFieldName, key: string | null): string =>
+  isNone(key) ? name : `${name}[${key}]`
 
 const getIncludeParameter = (
   path: Array<string>,
   values: ApiQueryIncludeParameter<any>,
 ): ReadonlyArray<string> =>
   isSome(values)
-    ? Object.keys(values!).map((name) => {
-        const children = values[name]
-        const childPath = path.concat(name)
-        return isSome(children)
-          ? getIncludeParameter(childPath, children).join(LIST_PARAMETER_VALUE_DELIMITER)
-          : childPath.join(INCLUDE_PARAMETER_VALUE_DELIMITER)
-      })
+    ? Object.keys(values)
+        .sort()
+        .map((name) => {
+          const children = values[name]
+          const childPath = path.concat(name)
+          return isSome(children)
+            ? getIncludeParameter(childPath, children).join(LIST_PARAMETER_VALUE_DELIMITER)
+            : childPath.join(INCLUDE_PARAMETER_VALUE_DELIMITER)
+        })
     : EMPTY_ARRAY
 
 const parseIncludeParameter = (
@@ -155,9 +136,7 @@ const parseIncludeParameter = (
   value: ApiQueryIncludeParameter<any>,
 ): ReadonlyArray<string> =>
   isSome(value)
-    ? parseApiQueryParameterValue(name, getIncludeParameter([], value) as Array<
-        string
-      >)
+    ? parseApiQueryParameterValue(name, getIncludeParameter([], value) as Array<string>)
     : EMPTY_ARRAY
 
 const parseApiQueryParameter = (
@@ -193,9 +172,8 @@ const parseApiQueryParameterValue = (
 
 const parseApiQueryParameterArray = (value: Array<string | number>): string => {
   return value
-    .filter(
-      (item) => (isString(item) && item.length) || isSerializableNumber(item),
-    )
+    .sort()
+    .filter((item) => (isString(item) && item.length) || isSerializableNumber(item))
     .join(LIST_PARAMETER_VALUE_DELIMITER)
 }
 
@@ -203,16 +181,11 @@ type BaseApiQueryIncludeParameters<T> = T extends RelationshipValue<AnyResource>
   ?
       | null
       | {
-          [K in keyof T]?: BaseApiQueryIncludeParameters<
-            BaseRelationshipResource<T[K]>
-          >
+          [K in keyof T]?: BaseApiQueryIncludeParameters<BaseRelationshipResource<T[K]>>
         }
   : never
 
-type BaseApiQueryFieldsParameter<
-  T,
-  X extends string = never
-> = T extends AnyResource
+type BaseApiQueryFieldsParameter<T, X extends string = never> = T extends AnyResource
   ? T['type'] extends X
     ? never
     :

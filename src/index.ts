@@ -2,6 +2,12 @@ import { Api } from './lib/Api'
 export default Api
 
 export {
+  ApiEndpoint,
+  ApiEndpointResource,
+  ApiEndpointSetup,
+  FilteredResource,
+} from './lib/ApiEndpoint'
+export {
   ApiQuery,
   ApiQueryParameter,
   ApiQueryParameters,
@@ -11,6 +17,9 @@ export {
   ApiQueryPageParameter,
   ApiQuerySortParameter,
   FetchQueryParameters,
+  ApiQueryResourceParameters,
+  ApiQueryFiltersParameters,
+  ApiQueryFilterParameter,
 } from './lib/ApiQuery'
 export {
   ApiSetup,
@@ -22,6 +31,7 @@ export {
 export { ascend, descend, sort, ApiSortRule } from './lib/ApiSortRule'
 export {
   resource,
+  AnyResource,
   ResourceAttributes,
   ResourceAttributeNames,
   ResourceConstructor,
@@ -40,15 +50,8 @@ export {
   RequiredAttribute,
   RequiredAttributeField,
 } from './lib/ResourceAttribute'
-export {
-  ResourceField,
-  ResourceFieldName,
-  ResourceFields,
-} from './lib/ResourceField'
-export {
-  ResourceIdentifier,
-  ResourceIdentifierKey,
-} from './lib/ResourceIdentifier'
+export { ResourceField, ResourceFieldName, ResourceFields } from './lib/ResourceField'
+export { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
 export {
   toManyRelationship,
   toOneRelationship,
