@@ -1,9 +1,5 @@
 import { ApiController } from './ApiController'
-import {
-  mergeApiDefaultSetup,
-  ApiSetupWithDefaults,
-  ApiSetup,
-} from './ApiSetup'
+import { mergeApiDefaultSetup, ApiSetupWithDefaults, ApiSetup } from './ApiSetup'
 import { ApiEndpoint } from './ApiEndpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
 
@@ -22,7 +18,7 @@ export class Api<S extends Partial<ApiSetup>> {
     path: string,
     Resource: ResourceConstructor<R>,
   ): ApiEndpoint<R, S> {
-    return this.controller.createApiEndpoint(path, Resource)
+    return new ApiEndpoint(this, path, Resource)
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {

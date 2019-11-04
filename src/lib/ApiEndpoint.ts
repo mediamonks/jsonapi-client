@@ -9,14 +9,8 @@ import {
   FetchQueryParameters,
 } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
-import {
-  AnyResource,
-  ResourceConstructor,
-  ResourcePatchValues,
-  ResourceCreateValues,
-} from './Resource'
+import { AnyResource, ResourceConstructor, ResourceCreateValues } from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
-import { rejects } from 'assert'
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly api: Api<S>
@@ -24,6 +18,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly Resource: ResourceConstructor<R>
 
   constructor(api: Api<S>, path: string, Resource: ResourceConstructor<R>) {
+    api.controller.addResource(Resource)
     this.api = api
     this.path = path
     this.Resource = Resource

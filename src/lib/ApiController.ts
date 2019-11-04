@@ -1,4 +1,4 @@
-import { isArray, isUndefined, isNone, isSome } from 'isntnt'
+import { isArray, isUndefined, isNone, isSome, isString } from 'isntnt'
 import dedent from 'dedent'
 
 import { EMPTY_OBJECT } from '../constants/data'
@@ -6,7 +6,6 @@ import { createEmptyObject, keys, createDataValue } from '../utils/data'
 import { Result } from '../utils/Result'
 
 import { Api } from './Api'
-import { ApiEndpoint } from './ApiEndpoint'
 import { ApiError, ApiResponseError, ApiRequestError, ApiValidationError } from './ApiError'
 import { ApiSetup } from './ApiSetup'
 import { ApiQueryIncludeParameter, ApiQueryFieldsParameter } from './ApiQuery'
@@ -20,10 +19,7 @@ import {
 import { AttributeField, AttributeValue } from './ResourceAttribute'
 import { ResourceIdentifier } from './ResourceIdentifier'
 import { RelationshipField, RelationshipValue } from './ResourceRelationship'
-import { isString } from 'util'
-import { create } from 'domain'
 
-type ApiEndpoints = Record<string, ApiEndpoint<AnyResource, any>>
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
 
 type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
@@ -33,7 +29,6 @@ type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
 
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
-  endpoints: ApiEndpoints = createEmptyObject()
   resources: ApiResources = createEmptyObject()
 
   constructor(api: Api<S>) {
@@ -42,7 +37,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
 
   addResource<R extends AnyResource>(Resource: ResourceConstructor<R>): void {
     if (Resource.type in this.resources) {
-      throw new Error(`Duplicate resource ${Resource.type}`)
+      console.warn(`Duplicate resource ${Resource.type}.`)
     }
     ;(this.resources as any)[Resource.type] = Resource
   }
@@ -52,17 +47,6 @@ export class ApiController<S extends Partial<ApiSetup>> {
       throw new Error(`Resource of type "${type}" does not exist`)
     }
     return (this.resources as any)[type]
-  }
-
-  createApiEndpoint<R extends AnyResource>(
-    path: string,
-    Resource: ResourceConstructor<R>,
-  ): ApiEndpoint<R, S> {
-    this.addResource(Resource)
-    if (path in this.endpoints) {
-      throw new Error(`Path "${path}" for Resource of type "${Resource.type}" already in use`)
-    }
-    return new ApiEndpoint(this.api, path, Resource)
   }
 
   async handleRequest(url: URL, options: any): Promise<Result<any, ApiRequestError<any>[]>> {
@@ -134,19 +118,20 @@ export class ApiController<S extends Partial<ApiSetup>> {
   getIncludedResourceData(
     identifier: ResourceIdentifier<any>,
     included: Array<ResourceData<any>>,
-    pointer: Array<string> = ['INCLUDED'],
-  ): ResourceData<any> {
+    pointer: Array<string>,
+  ): Result<ResourceData<any>, ApiError<any>[]> {
     const data = included.find(
       (resource) => resource.type === identifier.type && resource.id === identifier.id,
     )
-    if (isUndefined(data)) {
-      throw new ApiResponseError(
-        `Expected Resource of type "${identifier.type}" with id "${identifier.id}" to be included`,
-        identifier,
-        pointer,
-      )
-    }
-    return data
+    return isSome(data)
+      ? Result.accept(data)
+      : Result.reject([
+          new ApiResponseError(
+            `Expected Resource of type "${identifier.type}" with id "${identifier.id}" to be included`,
+            identifier,
+            pointer,
+          ),
+        ])
   }
 
   decodeResource<R extends AnyResource>(
@@ -215,32 +200,38 @@ export class ApiController<S extends Partial<ApiSetup>> {
           } else if (isArray(value)) {
             values[name] = []
             value.map((identifier) => {
-              const includedRelationshipData = this.getIncludedResourceData(identifier, included)
-              const result = this.decodeResource(
-                identifier.type,
-                includedRelationshipData,
+              const result = this.getIncludedResourceData(
+                identifier,
                 included,
-                fieldsParam,
-                includeParam[field.name],
                 pointer.concat(field.name),
-              ).map((includedResource) => {
-                values[name].push(includedResource)
+              ).map((includedRelationshipData) => {
+                return this.decodeResource(
+                  identifier.type,
+                  includedRelationshipData,
+                  included,
+                  fieldsParam,
+                  includeParam[field.name],
+                  pointer.concat(field.name),
+                )
               })
               if (result.isRejected()) {
                 errors.push(...result.value)
               }
             })
           } else {
-            const includedRelationshipData = this.getIncludedResourceData(value, included)
-            const result = this.decodeResource(
-              value.type,
-              includedRelationshipData,
+            const result = this.getIncludedResourceData(
+              value,
               included,
-              fieldsParam,
-              includeParam[field.name],
               pointer.concat(field.name),
-            ).map((includedResource) => {
-              values[name] = includedResource
+            ).map((includedRelationshipData) => {
+              return this.decodeResource(
+                value.type,
+                includedRelationshipData,
+                included,
+                fieldsParam,
+                includeParam[field.name],
+                pointer.concat(field.name),
+              )
             })
             if (result.isRejected()) {
               errors.push(...result.value)
