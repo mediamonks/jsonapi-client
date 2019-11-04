@@ -74,7 +74,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
       `)
     }
 
-    const request = await this.api.setup.adapter(url.href, options)
+    const request = await this.api.setup.adapter(url.href, this.api.setup.beforeRequest!(options))
     return request
       .json()
       .then((data): any => Result.accept(data))
@@ -164,7 +164,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     const Resource = this.getResource(type)
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
 
-    const values: Record<string, any> = Object.create(null)
+    const values: Record<string, any> = createEmptyObject()
     const errors: Array<ApiError<any>> = []
 
     if (type !== data.type) {
