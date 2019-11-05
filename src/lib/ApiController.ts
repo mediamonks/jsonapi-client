@@ -178,6 +178,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
 
     fieldNames.forEach((name) => {
       const field = Resource.fields[name]
+
       if (isUndefined(field)) {
         throw new Error(`Resource of type "${type}" has no "${name}" fields`)
       }
@@ -208,35 +209,39 @@ export class ApiController<S extends Partial<ApiSetup>> {
                 identifier,
                 included,
                 pointer.concat(field.name),
-              ).map((includedRelationshipData) => {
-                return this.decodeResource(
-                  identifier.type,
-                  includedRelationshipData,
-                  included,
-                  fieldsParam,
-                  includeParam[field.name],
-                  pointer.concat(field.name),
-                )
-              })
+              )
+                .flatMap((includedRelationshipData) => {
+                  return this.decodeResource(
+                    identifier.type,
+                    includedRelationshipData,
+                    included,
+                    fieldsParam,
+                    includeParam[field.name],
+                    pointer.concat(field.name),
+                  )
+                })
+                .map((relationshipResource) => {
+                  values[name].push(relationshipResource)
+                })
               if (result.isRejected()) {
                 errors.push(...result.value)
               }
             })
           } else {
-            const result = this.getIncludedResourceData(
-              value,
-              included,
-              pointer.concat(field.name),
-            ).map((includedRelationshipData) => {
-              return this.decodeResource(
-                value.type,
-                includedRelationshipData,
-                included,
-                fieldsParam,
-                includeParam[field.name],
-                pointer.concat(field.name),
+            const result = this.getIncludedResourceData(value, included, pointer.concat(field.name))
+              .flatMap((includedRelationshipData) =>
+                this.decodeResource(
+                  value.type,
+                  includedRelationshipData,
+                  included,
+                  fieldsParam,
+                  includeParam[field.name],
+                  pointer.concat(field.name),
+                ),
               )
-            })
+              .map((relationshipResource) => {
+                values[name] = relationshipResource
+              })
             if (result.isRejected()) {
               errors.push(...result.value)
             }
