@@ -1,9 +1,6 @@
 import { literal } from 'isntnt'
 
-type ResultResolver<T, E> = (
-  accept: (value: T) => void,
-  reject: (value: E) => void,
-) => void
+type ResultResolver<T, E> = (accept: (value: T) => void, reject: (value: E) => void) => void
 
 type Nothing = typeof nothing
 
@@ -39,6 +36,13 @@ export class Result<T, E> {
   map<O>(transform: (value: T) => O): Result<O, E> {
     if (this.isSuccess()) {
       return Result.accept(transform(this.value))
+    }
+    return this as any
+  }
+
+  flatMap<O>(transform: (value: T) => Result<O, E>): Result<O, E> {
+    if (this.isSuccess()) {
+      return transform(this.value)
     }
     return this as any
   }

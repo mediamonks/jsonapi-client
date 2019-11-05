@@ -16,7 +16,6 @@ export {
   ApiQueryIncludeParameter,
   ApiQueryPageParameter,
   ApiQuerySortParameter,
-  FetchQueryParameters,
   ApiQueryResourceParameters,
   ApiQueryFiltersParameters,
   ApiQueryFilterParameter,

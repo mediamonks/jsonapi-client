@@ -1,63 +1,27 @@
-import { isSome } from 'isntnt'
+export class SingleApiResult<T, M> {
+  data: T
+  meta: M
 
-import {
-  AnyApiResponseMeta,
-  ApiResponseData,
-  ApiErrorResponse,
-  ApiSuccessResponse,
-} from '../types/data'
-import { AnyResource } from './Resource'
-
-type ApiResultResolver<
-  T extends ApiResponseData<AnyResource>,
-  M extends AnyApiResponseMeta
-> = (
-  accept: (response: ApiSuccessResponse<T, M>) => void,
-  reject: (response: ApiErrorResponse<T, M>) => void,
-) => void
-
-export class ApiResult<
-  T extends ApiResponseData<AnyResource>,
-  M extends AnyApiResponseMeta
-> {
-  data: T | null = null
-  errors: Array<any> = []
-  meta!: M
-
-  constructor(resolve: ApiResultResolver<T, M>) {
-    resolve(
-      ({ data, meta }: ApiSuccessResponse<T, M>) => {
-        this.data = data
-        this.meta = meta
-      },
-      ({ errors, meta }: ApiErrorResponse<T, M>) => {
-        this.errors = errors
-        this.meta = meta
-      },
-    )
+  constructor(data: T, meta: M) {
+    this.data = data
+    this.meta = meta
   }
 
-  isSuccess(): this is ApiResult<T, M> {
-    return isSome(this.data)
+  [Symbol.iterator](): IterableIterator<T> {
+    return [this.data][Symbol.iterator]()
+  }
+}
+
+export class PaginatedApiResult<T, M> {
+  data: T[]
+  meta: M
+
+  constructor(data: T[], meta: M) {
+    this.data = data
+    this.meta = meta
   }
 
-  [Symbol.iterator](): IterableIterator<T extends Array<any> ? T[number] : T> {
-    return Array.isArray(this.data)
-      ? this.data[Symbol.iterator]()
-      : [this.data][Symbol.iterator]()
-  }
-
-  static accept<
-    T extends ApiResponseData<AnyResource>,
-    M extends AnyApiResponseMeta
-  >(value: ApiSuccessResponse<T, M>): ApiResult<T, M> {
-    return new ApiResult((accept) => accept(value))
-  }
-
-  static reject<
-    T extends ApiResponseData<AnyResource>,
-    M extends AnyApiResponseMeta
-  >(value: ApiErrorResponse<T, M>): ApiResult<never, M> {
-    return new ApiResult((_, reject) => reject(value))
+  [Symbol.iterator](): IterableIterator<T> {
+    return this.data[Symbol.iterator]()
   }
 }

@@ -61,7 +61,11 @@ export class ApiController<S extends Partial<ApiSetup>> {
     const request = await this.api.setup.adapter(url.href, this.api.setup.beforeRequest!(options))
     return request
       .json()
-      .then((data): any => Result.accept(data))
+      .then((response): any => {
+        return 'errors' in response
+          ? Result.reject(response.errors.map(this.api.setup.parseRequestError))
+          : Result.accept(response)
+      })
       .catch((error) => Result.reject(new ApiRequestError('Invalid request', error)))
   }
 

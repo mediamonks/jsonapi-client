@@ -157,16 +157,5 @@ describe('ApiEndpoint', () => {
         expect(endpoint.toURL().href).toEqual('https://www.example.com/api/assets')
       })
     })
-
-    describe('createQuery', () => {
-      it('should create a query', () => {
-        const api = new Api(new URL('https://www.example.com/api/'))
-        const endpoint = api.endpoint('assets', Asset)
-
-        const query = endpoint.createQuery({})
-
-        expect(query).toBeInstanceOf(ApiQuery)
-      })
-    })
   })
 })

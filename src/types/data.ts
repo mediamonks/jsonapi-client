@@ -3,10 +3,7 @@ import { AnyResource } from '../lib/Resource'
 export type AnyApiResponseData = ApiResponseData<AnyResource>
 export type AnyApiResponseMeta = ApiResponseMeta<SerializableObject>
 
-export type ApiResponse<
-  D extends AnyApiResponseData,
-  M extends AnyApiResponseMeta
-> = {
+export type ApiResponse<D extends AnyApiResponseData, M extends AnyApiResponseMeta> = {
   data?: D
   meta: M
   errors?: Array<ApiResponseError>
@@ -18,15 +15,11 @@ export type ApiSuccessResponse<
   M extends AnyApiResponseMeta
 > = Required<Omit<ApiResponse<D, M>, 'errors'>>
 
-export type ApiErrorResponse<
-  D extends AnyApiResponseData,
-  M extends AnyApiResponseMeta
-> = Required<Omit<ApiResponse<D, M>, 'data' | 'included'>>
+export type ApiErrorResponse<D extends AnyApiResponseData, M extends AnyApiResponseMeta> = Required<
+  Omit<ApiResponse<D, M>, 'data' | 'included'>
+>
 
-export type SerializableValue =
-  | SerializablePrimitive
-  | SerializableArray
-  | SerializableObject
+export type SerializableValue = SerializablePrimitive | SerializableArray | SerializableObject
 
 export type SerializablePrimitive = string | number | boolean | null
 export type SerializableArray = Array<SerializableValue>
@@ -35,7 +28,9 @@ export type SerializableObject = {
 }
 
 export type ApiResponseData<T extends AnyResource> = T | Array<T>
+
 export type ApiResponseMeta<T extends SerializableObject> = T
+
 export type ApiResponseError = {
   id?: string
   links?: JsonApiLinksObject
