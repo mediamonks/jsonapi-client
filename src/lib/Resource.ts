@@ -1,8 +1,9 @@
 import { ValuesOf, ExtendsOrNever } from '../types/util'
 import { ResourceFields, ResourceField } from './ResourceField'
 import { ResourceIdentifier, ResourceIdentifierKey } from './ResourceIdentifier'
-import { RelationshipValue } from './ResourceRelationship'
+import { RelationshipValue, ToManyRelationship, ToOneRelationship } from './ResourceRelationship'
 import { AttributeValue } from './ResourceAttribute'
+import { BaseRelationshipResource } from './ApiQuery'
 
 export type ResourceType = string
 export type ResourceId = string
@@ -16,7 +17,19 @@ export type ResourceFieldNames<R extends AnyResource> = ExtendsOrNever<
 
 export type ResourceRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: ResourceRelationship<R[K]> extends never ? never : K
+    [K in ResourceFieldNames<R>]: BaseRelationshipResource<R[K]> extends never ? never : K
+  }
+>
+
+export type ResourceToOneRelationshipNames<R extends AnyResource> = ValuesOf<
+  {
+    [K in ResourceFieldNames<R>]: R[K] extends ToOneRelationship<AnyResource> ? K : never
+  }
+>
+
+export type ResourceToManyRelationshipNames<R extends AnyResource> = ValuesOf<
+  {
+    [K in ResourceFieldNames<R>]: R[K] extends ToManyRelationship<AnyResource> ? K : never
   }
 >
 
@@ -39,13 +52,13 @@ type ResourceFieldsModel<F extends ResourceFields<any>> = {
     : never
 }
 
-export type ResourceRelationship<T> = null extends T
-  ? T extends AnyResource
-    ? Extract<T, AnyResource>
-    : never
-  : T extends Array<AnyResource>
-  ? T[number]
-  : never
+// export type BaseRelationshipResource<T> = null extends T
+//   ? T extends AnyResource
+//     ? Extract<T, AnyResource>
+//     : never
+//   : T extends Array<AnyResource>
+//   ? T[number]
+//   : never
 
 export const resource = <T extends ResourceType>(type: T) => {
   return class Resource<

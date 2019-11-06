@@ -1,4 +1,4 @@
-import { or, isAny, isNull, array } from 'isntnt'
+import { or, isAny, isNull, array, Predicate } from 'isntnt'
 
 import { resourceFieldPropertyDescriptor } from '../constants/resourceFieldPropertyDescriptor'
 import { createIsResourceOfType } from '../utils/predicates'
@@ -14,12 +14,21 @@ export type RelationshipValue<R extends AnyResource> = ToOneRelationship<R> | To
 export class RelationshipField<T extends ResourceType> extends ResourceField<
   RelationshipValue<ResourceIdentifier<T>>
 > {
+  public type: T
+  constructor(
+    name: ResourceFieldName,
+    type: T,
+    predicate: Predicate<RelationshipValue<ResourceIdentifier<T>>>,
+  ) {
+    super(name, predicate)
+    this.type = type
+  }
   root: ResourceFieldRoot = 'relationships'
 }
 
 export class ToOneRelationshipField<T extends ResourceType> extends RelationshipField<T> {
   constructor(name: ResourceFieldName, type: T) {
-    super(name, or(isNull, createIsResourceOfType(type)))
+    super(name, type, or(isNull, createIsResourceOfType(type)))
   }
 
   isToOneRelationship: () => this is RelationshipField<T> & ToOneRelationshipField<T> = isAny as any
@@ -27,7 +36,7 @@ export class ToOneRelationshipField<T extends ResourceType> extends Relationship
 
 export class ToManyRelationshipField<T extends ResourceType> extends RelationshipField<T> {
   constructor(name: ResourceFieldName, type: T) {
-    super(name, array(createIsResourceOfType(type)))
+    super(name, type, array(createIsResourceOfType(type)))
   }
 
   isToManyRelationship: () => this is RelationshipField<T> &
