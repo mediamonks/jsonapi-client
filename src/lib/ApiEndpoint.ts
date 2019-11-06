@@ -1,12 +1,24 @@
 import { EMPTY_OBJECT } from '../constants/data'
-import { createGetRequestOptions, keys, createPostRequestOptions } from '../utils/data'
+import {
+  createGetRequestOptions,
+  keys,
+  createPostRequestOptions,
+  createPatchRequestOptions,
+} from '../utils/data'
 
 import { Api } from './Api'
 import { ApiQuery, ApiQueryResourceParameters, ApiQueryFiltersParameters } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
-import { AnyResource, ResourceConstructor, ResourceCreateValues, ResourceId } from './Resource'
+import {
+  AnyResource,
+  ResourceConstructor,
+  ResourceCreateValues,
+  ResourceId,
+  ResourcePatchValues,
+} from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
 import { SingleApiResult, PaginatedApiResult } from './ApiResult'
+import { isUndefined } from 'util'
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly api: Api<S>
@@ -38,18 +50,21 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     })
   }
 
-  async patch(values: ResourceCreateValues<R>): Promise<any> {
-    const url = this.toURL()
+  async patch(id: ResourceId, values: ResourcePatchValues<R>): Promise<any> {
+    const url = new URL(`${this.path}/${id}`, this.api.url)
+    if (isUndefined(values.id)) {
+      ;(values as any).id = id
+    }
     return new Promise((resolve, reject) => {
       this.api.controller
         .encodeResource(
           this.Resource.type,
-          values,
+          values as any,
           keys(this.Resource.fields).filter((name) => name in values),
           [],
         )
         .map((body) => {
-          const options = createPostRequestOptions(body)
+          const options = createPatchRequestOptions(body)
           this.api.controller.handleRequest(url, options).then((result) => {
             if (result.isSuccess()) {
               resolve(result.value)
@@ -89,6 +104,10 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       })
     })
   }
+
+  getToOneRelationship(id: string, relationshipFieldName: string) {}
+
+  getToManyRelationship(id: string, relationshipFieldName: string) {}
 
   async fetch<Q extends ApiQueryFiltersParameters<R, S>, F extends ApiQueryResourceParameters<R>>(
     query: Q = EMPTY_OBJECT as Q,
