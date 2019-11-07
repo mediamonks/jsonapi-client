@@ -32,7 +32,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   constructor(api: Api<S>, path: string, Resource: ResourceConstructor<R>) {
     api.controller.addResource(Resource)
     this.api = api
-    this.path = path
+    this.path = path.replace(/^\/*(.*?)\/*$/, '$1') // ensure no leading nor trailing "/"
     this.Resource = Resource
   }
 
@@ -129,7 +129,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     return (this.fetchEntity(
       id,
       resourceFilter as any,
-      `${relationshipFieldName}/`,
+      `/${relationshipFieldName}`,
       relationshipField.type,
     ) as unknown) as Promise<ApiEntityResult<FilteredResource<RR, F>, any>>
   }
@@ -174,7 +174,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     relationResourceType: ResourceType = '',
   ): Promise<ApiEntityResult<FilteredResource<AnyResource, F>, any>> {
     const queryParameters = new ApiQuery(this.api, { ...resourceFilter })
-    const url = new URL(`${id}${relationshipPath}${String(queryParameters)}`, this.toURL())
+    const url = new URL(`${id}${relationshipPath}${String(queryParameters)}`, `${this}/`)
 
     const options = createGetRequestOptions()
     return new Promise(async (resolve, reject) => {
@@ -203,7 +203,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     relationResourceType: ResourceType = '',
   ): Promise<ApiCollectionResult<FilteredResource<AnyResource, F>, any>> {
     const queryParameters = new ApiQuery(this.api, { ...query, ...resourceFilter })
-    const url = new URL(`${relationshipPath}${String(queryParameters)}`, this.toURL())
+    const url = new URL(`${relationshipPath}${String(queryParameters)}`, relationshipPath ? `${this}/` : this.toURL())
 
     return new Promise((resolve, reject) => {
       const options = createGetRequestOptions()
@@ -271,11 +271,17 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   }
 
   toString(): string {
-    return `${this.api}${this.path}`
+    // ensure trailing "/"
+    const apiUrl = this.api.toString().replace(/\/*$/, '/');
+
+    return `${apiUrl}${this.path}`
   }
 
   toURL(): URL {
-    return new URL(this.path, this.api.url)
+    // ensure trailing "/"
+    const apiUrl = this.api.toString().replace(/\/*$/, '/');
+
+    return new URL(this.path, apiUrl)
   }
 }
 

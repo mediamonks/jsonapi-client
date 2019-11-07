@@ -1,12 +1,12 @@
-import { ApiEndpoint, FilteredResource } from './ApiEndpoint'
-import { Api } from './Api'
-import { resource } from './Resource'
-import { requiredAttribute } from './ResourceAttribute'
-import { isString } from 'isntnt'
-import { Result } from '../utils/Result'
-import { ApiCollectionResult, ApiEntityResult } from './ApiResult'
-import { mockData } from '../test-utils/mock-data'
-import { Author, Post, Comment } from '../test-utils/Entities'
+import {ApiEndpoint, FilteredResource} from './ApiEndpoint'
+import {Api} from './Api'
+import {resource} from './Resource'
+import {requiredAttribute} from './ResourceAttribute'
+import {isString} from 'isntnt'
+import {Result} from '../utils/Result'
+import {ApiCollectionResult, ApiEntityResult} from './ApiResult'
+import {mockData} from '../test-utils/mock-data'
+import {Author, Post, Comment} from '../test-utils/Entities'
 
 describe('ApiEndpoint', () => {
   describe('ApiEndpoint class', () => {
@@ -53,16 +53,13 @@ describe('ApiEndpoint', () => {
 
     describe('get', () => {
       it('should get a resource item', async () => {
-        const api = new Api(new URL('https://www.example.com/api'))
-        const endpoint = api.endpoint('/posts', Post)
+        const api = new Api(new URL('https://www.example.com/api/'))
+        const endpoint = api.endpoint('posts', Post)
 
-        const mockHandleRequest = jest.fn(
-          (): Promise<Result<any, never>> =>
-            Promise.resolve(
-              Result.accept({
-                data: mockData.Post.p1,
-              }),
-            ),
+        const mockHandleRequest = jest.fn().mockResolvedValue(
+          Result.accept({
+            data: mockData.Post.p1,
+          }),
         )
 
         api.controller.handleRequest = mockHandleRequest
@@ -77,6 +74,7 @@ describe('ApiEndpoint', () => {
         })
         expect(item.data).toBeInstanceOf(Post)
         expect(item).toBeInstanceOf(ApiEntityResult)
+        expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts/123');
       })
     })
 
@@ -85,21 +83,20 @@ describe('ApiEndpoint', () => {
         const api = new Api(new URL('https://www.example.com/api'))
         const endpoint = api.endpoint('/posts', Post)
 
-        const mockHandleRequest = jest.fn(
-          (): Promise<Result<any, never>> =>
-            Promise.resolve(
-              Result.accept({
-                data: [mockData.Post.p1],
-              }),
-            ),
+        const mockHandleRequest = jest.fn().mockResolvedValue(
+          Result.accept({
+            data: [mockData.Post.p1],
+          }),
         )
 
         api.controller.handleRequest = mockHandleRequest
 
         let items
-        try {
-          items = await endpoint.fetch({}, { fields: { Post: ['title', 'content'] } })
-        } catch (errors) {
+        try
+        {
+          items = await endpoint.fetch({}, {fields: {Post: ['title', 'content']}})
+        } catch (errors)
+        {
           console.log(errors)
           throw errors
         }
@@ -112,6 +109,7 @@ describe('ApiEndpoint', () => {
             content: 'foo',
           },
         ])
+        expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts?fields[Post]=content,title');
       })
     })
 
@@ -123,33 +121,35 @@ describe('ApiEndpoint', () => {
         const endpoint = api.endpoint('/posts', Post)
         api.register(Author)
 
-        const mockHandleRequest = jest.fn(
-          (): Promise<Result<any, never>> =>
-            Promise.resolve(
-              Result.accept({
-                data: mockData.Author.a1,
-              }),
-            ),
+        const mockHandleRequest = jest.fn().mockResolvedValue(
+          Result.accept({
+            data: mockData.Author.a1,
+          }),
         )
 
         api.controller.handleRequest = mockHandleRequest
 
         let item: ApiEntityResult<FilteredResource<Author, { fields: { Author: ['name'] } }>, any>
-        try {
+        try
+        {
           item = await endpoint.getRelationshipEntity('123', 'author', {
-            fields: { Author: ['name'] },
+            fields: {Author: ['name']},
           })
-        } catch (errors) {
+        } catch (errors)
+        {
           console.log(errors)
           throw errors
         }
-        if (item) {
+        if (item)
+        {
           expect(item.data).toEqual({
             id: 'a1',
             type: 'Author',
             name: 'Narie',
           })
           expect(item.data).toBeInstanceOf(Author)
+          expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts/123/author?fields[Author]=name');
+
         }
         // endpoint.fetchRelationship('123', 'comments', {}, { fields: { Comment: ['title'] } })
       })
@@ -163,32 +163,30 @@ describe('ApiEndpoint', () => {
         const endpoint = api.endpoint('/posts', Post)
         api.register(Comment)
 
-        const mockHandleRequest = jest.fn(
-          (): Promise<Result<any, never>> =>
-            Promise.resolve(
-              Result.accept({
-                data: [mockData.Comment.c1],
-              }),
-            ),
+        const mockHandleRequest = jest.fn().mockResolvedValue(
+          Result.accept({
+            data: [mockData.Comment.c1],
+          }),
         )
         api.controller.handleRequest = mockHandleRequest
 
-        let item: ApiCollectionResult<
-          FilteredResource<Comment, { fields: { Comment: ['title'] } }>,
-          any
-        >
-        try {
+        let item: ApiCollectionResult<FilteredResource<Comment, { fields: { Comment: ['title'] } }>,
+          any>
+        try
+        {
           item = await endpoint.getRelationshipCollection(
             '123',
             'comments',
             {},
-            { fields: { Comment: ['title'] } },
+            {fields: {Comment: ['title']}},
           )
-        } catch (errors) {
+        } catch (errors)
+        {
           console.log(errors)
           throw errors
         }
-        if (item) {
+        if (item)
+        {
           expect(item.data).toEqual([
             {
               id: 'c1',
@@ -197,23 +195,69 @@ describe('ApiEndpoint', () => {
             },
           ])
           expect(item.data[0]).toBeInstanceOf(Comment)
+          expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts/123/comments/?fields[Comment]=title');
+
         }
       })
     })
 
     describe('toString', () => {
-      it('should return the endpoint path', () => {
+      it('should return the correct endpoint path with trailing API slash', () => {
         const api = new Api(new URL('https://www.example.com/api/'))
         const endpoint = api.endpoint('posts', Post)
+
+        expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
+      })
+
+      it('should return the correct endpoint path without trailing API slash', () => {
+        const api = new Api(new URL('https://www.example.com/api'))
+        const endpoint = api.endpoint('posts', Post)
+
+        expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
+      })
+
+      it('should return the correct endpoint path with leading endpoint slash', () => {
+        const api = new Api(new URL('https://www.example.com/api'))
+        const endpoint = api.endpoint('/posts', Post)
+
+        expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
+      })
+
+
+      it('should return the correct endpoint path with trailing endpoint slash', () => {
+        const api = new Api(new URL('https://www.example.com/api'))
+        const endpoint = api.endpoint('posts/', Post)
 
         expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
       })
     })
 
     describe('toURL', () => {
-      it('should return the endpoint path as a URL', () => {
+      it('should return the correct endpoint path with trailing API slash', () => {
         const api = new Api(new URL('https://www.example.com/api/'))
         const endpoint = api.endpoint('posts', Post)
+
+        expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
+      })
+
+      it('should return the correct endpoint path without trailing API slash', () => {
+        const api = new Api(new URL('https://www.example.com/api'))
+        const endpoint = api.endpoint('posts', Post)
+
+        expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
+      })
+
+      it('should return the correct endpoint path with leading endpoint slash', () => {
+        const api = new Api(new URL('https://www.example.com/api'))
+        const endpoint = api.endpoint('/posts', Post)
+
+        expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
+      })
+
+
+      it('should return the correct endpoint path with trailing endpoint slash', () => {
+        const api = new Api(new URL('https://www.example.com/api'))
+        const endpoint = api.endpoint('posts/', Post)
 
         expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
       })
