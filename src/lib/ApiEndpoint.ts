@@ -122,7 +122,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param relationshipFieldName
    * @param resourceFilter
    */
-  async getRelationshipEntity<
+  async getToOneRelationship<
     RI extends ResourceToOneRelationshipNames<R>,
     RR extends Extract<R[RI], AnyResource>,
     F extends ApiQueryResourceParameters<RR>
@@ -152,7 +152,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param query
    * @param resourceFilter
    */
-  async getRelationshipCollection<
+  async getToManyRelationship<
     RI extends ResourceToManyRelationshipNames<R>,
     RR extends R[RI] extends ToManyRelationship<AnyResource> ? R[RI][number] : never,
     Q extends ApiQueryFiltersParameters<RR, S>,

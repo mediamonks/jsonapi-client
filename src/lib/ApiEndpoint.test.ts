@@ -114,7 +114,7 @@ describe('ApiEndpoint', () => {
       })
     })
 
-    describe('getRelationshipEntity', () => {
+    describe('getToOneRelationship', () => {
       it('should fetch a one-to-one relationship', async () => {
         const url = 'https://www.example.com/api'
         const api = new Api(new URL(url))
@@ -133,7 +133,7 @@ describe('ApiEndpoint', () => {
         let item: ApiEntityResult<FilteredResource<Author, { fields: { Author: ['name'] } }>, any>
         try
         {
-          item = await endpoint.getRelationshipEntity('123', 'author', {
+          item = await endpoint.getToOneRelationship('123', 'author', {
             fields: {Author: ['name']},
           })
         } catch (errors)
@@ -155,7 +155,7 @@ describe('ApiEndpoint', () => {
       })
     })
 
-    describe('getRelationshipCollection', () => {
+    describe('getToManyRelationship', () => {
       it('should fetch a one-to-many relationship', async () => {
         const url = 'https://www.example.com/api'
         const api = new Api(new URL(url))
@@ -174,7 +174,7 @@ describe('ApiEndpoint', () => {
           any>
         try
         {
-          item = await endpoint.getRelationshipCollection(
+          item = await endpoint.getToManyRelationship(
             '123',
             'comments',
             {},
