@@ -279,14 +279,18 @@ export class ApiController<S extends Partial<ApiSetup>> {
       data.type = type
     }
 
-    if ('id' in values && !isString(values.id)) {
-      errors.push(
-        new ApiError(
-          `Invalid id value for Resource of type ${type}`,
-          values.id,
-          pointer.concat('id'),
-        ),
-      )
+    if ('id' in values) {
+      if (isString(values.id)) {
+        data.id = values.id
+      } else {
+        errors.push(
+          new ApiError(
+            `Invalid id value for Resource of type ${type}`,
+            values.id,
+            pointer.concat('id'),
+          ),
+        )
+      }
     }
 
     fieldsNames.forEach((name) => {

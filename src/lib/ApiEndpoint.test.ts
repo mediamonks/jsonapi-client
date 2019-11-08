@@ -109,6 +109,7 @@ describe('ApiEndpoint', () => {
             content: 'foo',
           },
         ])
+        expect(items.data[0]).toBeInstanceOf(Post);
         expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts?fields[Post]=content,title');
       })
     })
@@ -151,7 +152,6 @@ describe('ApiEndpoint', () => {
           expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts/123/author?fields[Author]=name');
 
         }
-        // endpoint.fetchRelationship('123', 'comments', {}, { fields: { Comment: ['title'] } })
       })
     })
 
@@ -196,7 +196,6 @@ describe('ApiEndpoint', () => {
           ])
           expect(item.data[0]).toBeInstanceOf(Comment)
           expect(mockHandleRequest.mock.calls[0][0].href).toEqual('https://www.example.com/api/posts/123/comments/?fields[Comment]=title');
-
         }
       })
     })
