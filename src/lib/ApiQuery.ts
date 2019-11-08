@@ -38,7 +38,7 @@ export type ApiQueryIncludeParameter<R extends AnyResource> = BaseApiQueryInclud
 
 export type ApiQueryFieldsParameter<R extends AnyResource> = BaseApiQueryFieldsParameter<R>
 
-type BaseRelationshipResource<T> = T extends Array<AnyResource>
+export type BaseRelationshipResource<T> = T extends Array<AnyResource>
   ? T[number]
   : Extract<T, AnyResource>
 
@@ -177,7 +177,7 @@ const parseApiQueryParameterArray = (value: Array<string | number>): string => {
     .join(LIST_PARAMETER_VALUE_DELIMITER)
 }
 
-type BaseApiQueryIncludeParameters<T> = T extends RelationshipValue<AnyResource>
+export type BaseApiQueryIncludeParameters<T> = T extends RelationshipValue<AnyResource>
   ?
       | null
       | {

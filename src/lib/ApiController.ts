@@ -22,7 +22,7 @@ import { RelationshipField, RelationshipValue } from './ResourceRelationship'
 
 type ApiResources = Record<string, ResourceConstructor<AnyResource>>
 
-type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
+export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
   attributes: ResourceAttributes<R>
   relationships: ResourceRelationships<R>
 }

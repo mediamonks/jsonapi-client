@@ -1,4 +1,4 @@
-export class SingleApiResult<T, M> {
+export class ApiEntityResult<T, M> {
   data: T
   meta: M
 
@@ -12,7 +12,7 @@ export class SingleApiResult<T, M> {
   }
 }
 
-export class PaginatedApiResult<T, M> {
+export class ApiCollectionResult<T, M> {
   data: T[]
   meta: M
 
