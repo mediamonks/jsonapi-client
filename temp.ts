@@ -400,6 +400,12 @@ export const resource = <T extends string>(type: T) => {
   }
 }
 
+type ResourceFieldsParameter<R extends AnyResource> = UnionToIntersection<
+  BaseResourceFieldsUnion<R>
+>
+
+type ResourceIncludeParameter<R extends AnyResource> = BaseResourceIncludeThree<R>
+
 // RESPONSE DATA
 type JSONAPIVersion = '1.0' | '1.1'
 
@@ -510,21 +516,21 @@ type BaseResourceRelationshipNames<T> = ValuesOf<
   }
 >
 
-type BaseResourceToOneRelationshipNames<T> = ValuesOf<
-  {
-    [K in BaseResourceFieldNames<T>]: T[K] extends ResourceToOneRelationship<AnyResource>
-      ? K
-      : never
-  }
->
+// type BaseResourceToOneRelationshipNames<T> = ValuesOf<
+//   {
+//     [K in BaseResourceFieldNames<T>]: T[K] extends ResourceToOneRelationship<AnyResource>
+//       ? K
+//       : never
+//   }
+// >
 
-type BaseResourceToManyRelationshipNames<T> = ValuesOf<
-  {
-    [K in BaseResourceFieldNames<T>]: T[K] extends ResourceToManyRelationship<AnyResource>
-      ? K
-      : never
-  }
->
+// type BaseResourceToManyRelationshipNames<T> = ValuesOf<
+//   {
+//     [K in BaseResourceFieldNames<T>]: T[K] extends ResourceToManyRelationship<AnyResource>
+//       ? K
+//       : never
+//   }
+// >
 
 type BaseResourceFieldOptions<T> = T extends AnyResource
   ? {
@@ -535,23 +541,10 @@ type BaseResourceFieldOptions<T> = T extends AnyResource
 // Base Resource Type
 type BaseResourceType<R> = R extends AnyResource ? R['type'] : never
 
-// Base Resource Fields Parameter
-type BaseResourceFieldsParameter<R> = BaseResourceFieldOptions<R> &
-  ValuesOf<
-    {
-      [K in keyof R]: BaseResourceRelationshipFields<R[K]>
-    }
-  >
-
 // Extracts a Resource from a RelationshipValue
 type BaseRelationshipResource<T> = T extends Array<AnyResource>
   ? T[number]
   : Extract<T, AnyResource>
-
-// Extracts the Relationship fields
-type BaseResourceRelationshipFields<R> = R extends Array<AnyResource>
-  ? BaseResourceFieldOptions<R[number]>
-  : BaseResourceFieldOptions<Extract<R, AnyResource>>
 
 // Extracts the Resource type of a Resource and all of its nested relationships
 type BaseResourceTypeUnion<R, T = never> = R extends AnyResource
@@ -624,10 +617,6 @@ type TestResourceFieldsUnion = Is<
   >
 >
 
-type ResourceFieldsParameterOptions<R extends AnyResource> = UnionToIntersection<
-  BaseResourceFieldsUnion<R>
->
-
 type BaseResourceIncludeThree<R> = R extends AnyResource
   ? Nullable<
       Partial<
@@ -660,10 +649,15 @@ const testResourceIncludeThree: TestResourceIncludeThree = {
 }
 
 // RESOURCE FIELDS
-const fields = <R extends AnyResource, F extends ResourceFieldsParameterOptions<R>>(
+const fields = <R extends AnyResource, F extends ResourceFieldsParameter<R>>(
   Resource: ResourceConstructor<R>,
   fields: F,
-): ApiQueryFieldsParameter<R, F> => new ApiQueryFieldsParameter(Resource, fields as any)
+): ApiQueryFieldsParameter<R, F> => new ApiQueryFieldsParameter(Resource, fields)
+
+const include = <R extends AnyResource, I extends BaseResourceIncludeThree<R>>(
+  Resource: ResourceConstructor<R>,
+  include: I,
+): ApiQueryIncludeParameter<R, I> => new ApiQueryIncludeParameter(Resource, include as any)
 
 type ApiQueryParameterName = string
 
@@ -718,14 +712,23 @@ class ApiEndpoint<R extends AnyResource, S extends ApiEndpointSetup<R>> {
 
 class ApiQueryFieldsParameter<
   R extends AnyResource,
-  F extends ResourceFieldsParameterOptions<R>
-> extends ApiQueryParameter<'fields', F & ApiQueryParameterObjectValue> {
+  F extends ResourceFieldsParameter<R>
+> extends ApiQueryParameter<typeof FIELDS, F & ApiQueryParameterObjectValue> {
   constructor(Resource: ResourceConstructor<R>, value: F) {
     super(FIELDS, value as any)
   }
 }
 
-type ApiQueryParameterArrayValue = Array<string | number>
+class ApiQueryIncludeParameter<
+  R extends AnyResource,
+  I extends BaseResourceIncludeThree<R>
+> extends ApiQueryParameter<typeof INCLUDE, I & ApiQueryParameterObjectValue> {
+  constructor(Resource: ResourceConstructor<R>, value: F) {
+    super(INCLUDE, value as any)
+  }
+}
+
+type ApiQueryParameterArrayValue = Array<string | number> | Array<string>
 type ApiQueryParameterObjectValue = {
   [key: string]: ApiQueryParameterValue
 }
@@ -776,30 +779,123 @@ class F extends resource('f') {
 const a: A = {} as any
 a['b']
 
-const xc = new ApiEndpoint('test', A)
+const aEndpoint = new ApiEndpoint('test', A)
+const aEndpointDefaultIncludedFields = aEndpoint['setup']['defaultIncludedFields']
 
-const oia = xc['setup']['defaultIncludedFields']
-
-const aFields = {
+const aFields: ResourceFieldsParameter<A> = {
   a: ['b', 'cs'],
   b: ['c'],
   d: ['es'],
+  f: ['xf'],
 } as const
 
-const oi = fields(A, {
-  a: ['xa'],
-  b: ['c'],
-  d: ['es'],
-} as const)
+type ResourceFieldOptionsX<R extends AnyResource> = readonly Exclude<
+  keyof R,
+  ResourceIdentifierKey
+>[]
+
+const aInclude: ResourceIncludeParameter<A> = {
+  cs: {
+    ds: {
+      es: {
+        f: null,
+      },
+    },
+  },
+  b: {
+    c: null,
+  },
+}
+
+class ResourceParameters<R extends AnyResource> {
+  fields?: ResourceFieldsParameter<R>
+  include?: ResourceIncludeParameter<R>
+}
 
 const api = (...x: any[]) => {}
 const endpoint = (...x: any[]) => {}
 
-const countries = endpoint('countries', A)
+// const countries = endpoint('countries', A)
 
-type FilteredResource<R extends AnyResource, F extends ResourceFieldOptions<R>> = F
+const oi: ResourceModelParameters<E> = {
+  fields: aFields,
+  include: {
+    f: null,
+  },
+}
 
-type X = FilteredResource<A, typeof oi.value>
+type ResourceModelParameters<R extends AnyResource> = {
+  fields: ResourceFieldsParameter<R>
+  include: ResourceIncludeParameter<R>
+}
+
+// FILTER RESOURCE
+type BaseFilteredByFieldsResource<R, F> = R extends AnyResource
+  ? F extends ReadonlyArray<keyof R>
+    ? Pick<R, F[number] | ResourceIdentifierKey>
+    : F extends undefined | null
+    ? Pick<R, ResourceIdentifierKey>
+    : Warning<'Invalid Resource fields parameter', R, F> // TODO: use Api/Endpoint setup to determine default included fields
+  : never
+
+type BaseResourceToManyRelationshipIdentifier<R> = R extends Array<AnyResource>
+  ? Array<ResourceIdentifier<R[number]['type']>>
+  : never
+
+type BaseFilteredByIncludesResource<R, I, F> = R extends AnyResource
+  ? {
+      [K in keyof R]: R[K] extends Array<AnyResource>
+        ? K extends keyof I
+          ? BaseFilteredToManyRelationship<R[K], I[K], F>
+          : BaseResourceToManyRelationshipIdentifier<R[K]>
+        : R[K] extends AnyResource | null
+        ? K extends keyof I
+          ? BaseFilteredResource<Extract<R[K], AnyResource>, I[K], F> | null
+          : ResourceIdentifier<Extract<R[K], AnyResource>['type']> | null
+        : K extends keyof I
+        ? Warning<'Invalid Resource include parameter', R, K>
+        : R[K]
+    }
+  : R
+
+type Warning<T extends string, U, V> = { message: T; context: U; value: V }
+
+type BaseFilteredWithFieldsResourceX = BaseFilteredByFieldsResource<A, undefined>
+
+type BaseFilteredResourceOfType<T, R, I, F> = T extends keyof F
+  ? BaseFilteredByIncludesResource<BaseFilteredByFieldsResource<R, F[T]>, I, F>
+  : BaseFilteredByIncludesResource<R, I, F>
+
+type BaseFilteredResource<R, I, F> = R extends AnyResource
+  ? BaseFilteredResourceOfType<R['type'], R, I, F>
+  : never
+
+type BaseFilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
+  ? Array<BaseFilteredResource<R[number], I, F>>
+  : never
+
+type FilteredResource<
+  R extends AnyResource,
+  P extends ResourceParameters<R>
+> = BaseFilteredResource<R, P['include'], P['fields']>
+
+class AFilter extends ResourceParameters<A> {
+  fields = {
+    c: ['ds'],
+    e: ['f'],
+    f: ['xf'],
+  } as const
+  include = {
+    b: {
+      c: {
+        ds: null,
+      },
+    },
+    cs: null,
+  }
+}
+
+type X = FilteredResource<A, AFilter>
 
 const OK = 'OK'
 const ERROR = 'error'

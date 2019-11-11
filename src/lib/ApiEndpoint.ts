@@ -165,7 +165,7 @@ type ResourceFields<R, F> = R extends AnyResource
   : never
 
 type ToManyRelationshipIdentifier<R> = R extends Array<AnyResource>
-  ? ResourceIdentifier<R[number]['type']>[]
+  ? Array<ResourceIdentifier<R[number]['type']>>
   : never
 
 type ResourceIncludes<R, I, F> = R extends AnyResource
