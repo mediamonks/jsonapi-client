@@ -171,7 +171,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       query as any,
       resourceFilter as any,
       id,
-      `${id}/${relationshipFieldName}/`,
+      `${id}/${relationshipFieldName}`,
       relationshipField.type,
     ) as unknown) as Promise<ApiCollectionResult<FilteredResource<RR, F>, any>>
   }

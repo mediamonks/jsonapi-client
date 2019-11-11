@@ -195,7 +195,7 @@ describe('ApiEndpoint', () => {
           ])
           expect(item.data[0]).toBeInstanceOf(Comment)
           expect(mockHandleRequest.mock.calls[0][0].href).toEqual(
-            'https://www.example.com/api/posts/123/comments/?fields[Comment]=title',
+            'https://www.example.com/api/posts/123/comments?fields[Comment]=title',
           )
         }
       })
