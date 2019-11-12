@@ -14,6 +14,7 @@ import {
   either,
 } from 'isntnt'
 import { createEmptyObject } from './src/utils/data'
+import { DefaultIncludeFieldsOption } from './src/constants/setup'
 
 const ok = <T>(value: T) => OKResult.of(value)
 const error = <E extends Error | PropertyKey>(error: E) => ErrorResult.of(error)
@@ -473,6 +474,10 @@ type BaseApiSuccessResponse<R extends AnyResource, M extends SerializableObject>
   include?: Array<ApiResponseResourceData<R>>
 }
 
+type ApiResponse<R extends AnyResource, M extends SerializableObject> =
+  | ApiErrorResponse<M>
+  | ApiSuccessResponse<R, M>
+
 type ApiErrorResponse<M extends SerializableObject> = BaseApiResponse<M> & {
   errors: Array<ApiRequestError>
 }
@@ -671,35 +676,7 @@ type BaseResourceIncludeThree<R> = R extends AnyResource
     >
   : never
 
-type TestResourceIncludeThree = BaseResourceIncludeThree<A>
-
-const testResourceIncludeThree: TestResourceIncludeThree = {
-  b: {
-    c: {
-      ds: {
-        es: null,
-      },
-    },
-  },
-  cs: {
-    ds: {
-      es: {
-        f: null,
-      },
-    },
-  },
-}
-
-// RESOURCE FIELDS
-// const fields = <R extends AnyResource, F extends ResourceFieldsParameter<R>>(
-//   Resource: ResourceConstructor<R>,
-//   fields: F,
-// ): ApiQueryFieldsParameter<R, F> => new ApiQueryFieldsParameter(Resource, fields)
-
-// const include = <R extends AnyResource, I extends BaseResourceIncludeThree<R>>(
-//   Resource: ResourceConstructor<R>,
-//   include: I,
-// ): ApiQueryIncludeParameter<R, I> => new ApiQueryIncludeParameter(Resource, include as any)
+type TestResourceIncludeThree = Is<Expects<{} | null, BaseResourceIncludeThree<A>>>
 
 type ApiQueryParameterName = string
 
@@ -722,42 +699,67 @@ const PRIMARY = 'primary' as const
 
 type ApiDefaultIncludedFields = typeof NONE | typeof PRIMARY
 
-type ApiSetup = {
-  defaultIncludedRelationships: ApiDefaultIncludedFields
+type Fetch = Window['fetch']
+type FetchOptions = Parameters<Fetch>[1]
+
+type ApiSetup<S extends Partial<ApiSetupOptions>> = {
+  [K in keyof DefaultApiSetup]: K extends keyof S ? S[K] : DefaultApiSetup[K]
 }
 
-type DefaultApiSetup = {
+type ApiSetupOptions = {
+  version: JSONAPIVersion
+  defaultIncludedRelationships: ApiDefaultIncludedFields
+  fetchAdapter: Fetch
+  parseRequestURL: (url: URL) => string
+  beforeRequestOptions: (options: FetchOptions) => FetchOptions
+}
+
+type DefaultApiSetup = ApiSetupOptions & {
+  version: '1.0'
   defaultIncludedRelationships: typeof NONE
 }
 
-class Api {
-  url: URL
-  defaultIncludedRelationships: ApiDefaultIncludedFields = NONE
-  constructor(url: URL) {
-    this.url = url
-  }
+const defaultApiSetup: DefaultApiSetup = {
+  version: '1.0',
+  defaultIncludedRelationships: NONE,
+  fetchAdapter: window.fetch,
+  parseRequestURL(url: URL): string {
+    return String(url)
+  },
+  beforeRequestOptions(options: FetchOptions): FetchOptions {
+    return options
+  },
 }
 
-class ResourceApi extends Api {
-  defaultIncludedFields = PRIMARY
-  createPageQuery() {}
-  encodeURLParameter() {}
-  encodeSearchParameterName() {}
-  beforeRequestURL() {}
-  beforeRequestOptions() {}
-  afterRequestBody() {}
-  onResponseError() {}
-  onRequestError() {}
+type AnyApi = Api<ApiSetupOptions>
+
+class Api<S extends ApiSetup<any>> {
+  url: URL
+  setup: S
+  constructor(url: URL, setup: Partial<S> = EMPTY_OBJECT) {
+    this.url = url
+    this.setup = { ...defaultApiSetup, ...setup } as any
+  }
 }
 
 const url = new URL('https://example.com/')
 
+const api = new Api(url, {
+  version: '1.0',
+  defaultIncludedRelationships: 'primary',
+})['setup']
+
 type ResourcePatchValues<R extends AnyResource> = Partial<R>
 
-class ApiEndpoint<R extends AnyResource> {
+type AnyApiEndpoint = ApiEndpoint<AnyApi, any>
+
+class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
+  api: A
   path: string
   Resource: ResourceConstructor<R>
-  constructor(path: string, Resource: ResourceConstructor<R>) {
+
+  constructor(api: A, path: string, Resource: ResourceConstructor<R>) {
+    this.api = api
     this.path = path
     this.Resource = Resource
   }
@@ -765,8 +767,8 @@ class ApiEndpoint<R extends AnyResource> {
   async get<P extends ApiResourceParametersConstructor<R>>(
     resourceId: ResourceId,
     ResourceParameters: P = ApiResourceParameters as any,
-  ): Promise<Result<FilteredResource<R, InstanceType<P>>, Error>> {
-    return {} as any
+  ): Promise<BaseApiEntityResult<FilteredResource<R, InstanceType<P>>, {}>> {
+    return new ApiEntityResult({} as any, {} as any)
   }
 
   async getToOneRelationship<
@@ -776,8 +778,10 @@ class ApiEndpoint<R extends AnyResource> {
     resourceId: ResourceId,
     toOneRelationshipFieldName: N,
     ResourceRelationshipParameters: P = ApiResourceParameters as any,
-  ): Promise<Result<FilteredResource<Extract<R[N], AnyResource>, InstanceType<P>>, Error>> {
-    return {} as any
+  ): Promise<
+    BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, InstanceType<P>>, {}>
+  > {
+    return new ApiEntityResult({} as any, {} as any)
   }
 
   async getToManyRelationship<
@@ -787,17 +791,19 @@ class ApiEndpoint<R extends AnyResource> {
     resourceId: ResourceId,
     toManyRelationshipFieldName: N,
     ResourceRelationshipParameters: P = ApiResourceParameters as any,
-  ): Promise<Result<Array<FilteredResource<R[N][any], InstanceType<P>>>, Error>> {
-    return {} as any
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], InstanceType<P>>>, {}>> {
+    return new ApiCollectionResult({} as any, {} as any, {} as any)
   }
 
   async fetch<P extends ApiResourceParametersConstructor<R>>(
-    ResourceParameters: P,
-  ): Promise<Result<Array<FilteredResource<R, InstanceType<P>>>, Error>> {
-    return {} as any
+    ResourceParameters: P = ApiResourceParameters as any,
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, InstanceType<P>>>, {}>> {
+    return new ApiCollectionResult({} as any, {} as any, {} as any)
   }
 
-  create() {}
+  async create(): Promise<BaseApiEntityResult<FilteredResource<R>, {}>> {
+    return new ApiEntityResult({} as any, {} as any)
+  }
 
   update(resourceId: ResourceId, values: ResourcePatchValues<R>) {}
 
@@ -861,23 +867,6 @@ class ApiResourceParameters<R extends AnyResource> {
   }
 }
 
-const api = (...x: any[]) => {}
-const endpoint = (...x: any[]) => {}
-
-// const countries = endpoint('countries', A)
-
-// const oi: ResourceModelParameters<E> = {
-//   fields: aFields,
-//   include: {
-//     f: null,
-//   },
-// }
-
-// type ResourceModelParameters<R extends AnyResource> = {
-//   fields: ResourceFieldsParameter<R>
-//   include: ResourceIncludeParameter<R>
-// }
-
 // FILTER RESOURCE
 type BaseFilteredByFieldsResource<R, F> = R extends AnyResource
   ? F extends Exclude<keyof R, ResourceIdentifierKey>
@@ -887,7 +876,7 @@ type BaseFilteredByFieldsResource<R, F> = R extends AnyResource
     : Warning<'Invalid Resource fields parameter', R, F> // TODO: use Api/Endpoint setup to determine default included fields
   : never
 
-type TestBaseFilteredByFieldsResource = BaseFilteredByFieldsResource<A, 'b' | 'c'>
+type TestBaseFilteredByFieldsResource = BaseFilteredByFieldsResource<A, 'b'>
 
 type BaseResourceToManyRelationshipIdentifier<R> = R extends Array<AnyResource>
   ? Array<ResourceIdentifier<R[number]['type']>>
@@ -929,17 +918,142 @@ type ResourcePrimaryIncludeFields<R extends AnyResource> = WithoutNever<
   }
 >
 
-class ApiResult<R extends AnyResource | Array<AnyResource>, M extends {}> {}
+class ApiResult<R extends AnyResource | Array<AnyResource>, M extends SerializableObject> {
+  data: R
+  meta: M
+
+  constructor(data: R, meta: M) {
+    this.data = data
+    this.meta = meta
+  }
+}
+
+type BaseApiEntityResult<R, M> = { data: R; meta: M }
+
+class ApiEntityResult<R extends AnyResource, M extends SerializableObject> extends ApiResult<
+  R,
+  M
+> {}
+
+type BaseApiCollectionResult<R, M> = { data: R; meta: M; page: BaseApiCollectionPageLinks<R, M> }
+
+type BaseApiCollectionPageLinks<R, M> = {
+  first(): BaseApiCollectionResult<R, M>
+  prev(): BaseApiCollectionResult<R, M>
+  next(): BaseApiCollectionResult<R, M>
+  last(): BaseApiCollectionResult<R, M>
+}
+
+type ApiCollectionPageLinks<
+  R extends Array<AnyResource>,
+  M extends {}
+> = BaseApiCollectionPageLinks<R, M>
+
+// class ApiResourceEntity {
+//   time: number
+//   constructor() {
+//     this.time = Date.now()
+//   }
+
+//   getAge() {
+//     return Date.now() - this.time
+//   }
+// }
+
+class ApiController<A extends AnyApi> {
+  api: A
+  resources: Record<ResourceType, ResourceConstructor<any>> = createEmptyObject()
+
+  constructor(api: A) {
+    this.api = api
+  }
+
+  registerResource(Resource: ResourceConstructor<any>): void {
+    if (Resource.type in this.resources && Resource !== this.resources[Resource.type]) {
+      console.warn(`Attempt to replace Resource of type ${Resource.type}`)
+    }
+    this.resources[Resource.type] = Resource
+  }
+
+  getResourceByType(type: ResourceType): ResourceConstructor<any> {
+    return this.resources[type]
+  }
+
+  async handleFetchRequest(
+    url: URL,
+    options: Parameters<Window['fetch']>[1],
+  ): Promise<Result<ApiSuccessResponse<any, any>, Error>> {
+    const fetchAdapter: Window['fetch'] = this.api.setup.fetchAdapter
+    const requestHref = this.api.setup.parseRequestURL(url)
+    const requestOptions = this.api.setup.beforeRequestOptions(options)
+
+    return fetchAdapter(requestHref, requestOptions)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(response.statusText)
+        }
+        return response.json()
+      })
+      .then((body: ApiResponse<any, any>) => {
+        if ('errors' in body) {
+          // TODO: Parse body errors
+          throw new Error(`Found ${body.errors.length} errors in response`)
+        }
+        return OKResult.of(body)
+      })
+      .catch((error: Error) => {
+        console.info('request error', error)
+        return ErrorResult.of(error)
+      })
+  }
+
+  async getResourceEntity(): Promise<ApiEntityResult<any, any>> {
+    return this.handleFetchRequest(new URL(''), {}).then((result: any) =>
+      result
+        .map((response: ApiResourceEntityResponse<any, any>) => {
+          return new ApiEntityResult(response.data, response.meta || {})
+        })
+        .unwrap(),
+    )
+  }
+
+  async getResourceCollection(): Promise<ApiCollectionResult<any, any>> {
+    return {} as any
+  }
+}
+
+// Should receive an ApiEndpoint, use its api.controller to map each 'links objects' value
+// and prepare a method that may fetch the first/prev/next/last page. The ApiEndpoint types
+// should not matter, as the exact Resource shape is already determined at this point.
+// The resourceParameters should be used to decode the linked responses
+const createPageMethodsFromLinksObject = <R extends Array<AnyResource>, M extends {}>(
+  endpoint: ApiEndpoint<any, any>,
+  resourceParameters: ApiResourceParameters<any>,
+  links: any,
+): ApiCollectionPageLinks<R, M> => {
+  return {
+    first(): any {},
+    prev(): any {},
+    next(): any {},
+    last(): any {},
+  } as any
+}
+
+class ApiCollectionResult<
+  R extends Array<AnyResource>,
+  M extends SerializableObject
+> extends ApiResult<R, M> {
+  page: ApiCollectionPageLinks<R, M>
+  constructor(data: R, meta: M, page: ApiCollectionPageLinks<R, M>) {
+    super(data, meta)
+    this.page = page
+  }
+}
 
 type FilteredResource<
   R extends AnyResource,
   P extends ApiResourceParameters<R> = {}
 > = BaseFilteredResource<R, P['include'], P['fields']>
-
-class DefaultApiResourceParameters extends ApiResourceParameters<any> {
-  fields = {}
-  include = {}
-}
 
 class AFilter extends ApiResourceParameters<A> {
   fields = {
@@ -974,12 +1088,12 @@ class AFilter extends ApiResourceParameters<A> {
 
 type FilteredA = FilteredResource<A, { include: ResourcePrimaryIncludeFields<A> }>
 
-const as = new ApiEndpoint('as', A)
+const as = new ApiEndpoint(api, 'as', A)
 
-as.get('12').then((result) => {
-  if (result.isOK()) {
-    console.log(result.value)
-  }
+type Ca = typeof api['setup']['defaultIncludedRelationships']
+
+as.get('12', AFilter).then((result) => {
+  console.log(result)
 })
 
 class BFilter extends ApiResourceParameters<B> {
@@ -992,9 +1106,7 @@ class BFilter extends ApiResourceParameters<B> {
 }
 
 as.getToOneRelationship('12', 'b', BFilter).then((result) => {
-  if (result.isOK()) {
-    console.log(result.value)
-  }
+  console.log(result.data)
 })
 
 class CFilter extends ApiResourceParameters<C> {
@@ -1004,9 +1116,7 @@ class CFilter extends ApiResourceParameters<C> {
 }
 
 as.getToManyRelationship('12', 'cs', CFilter).then((result) => {
-  if (result.isOK()) {
-    console.log(result.value)
-  }
+  console.log(result.data)
 })
 
 const OK = 'OK'
