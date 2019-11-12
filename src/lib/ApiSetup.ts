@@ -22,6 +22,7 @@ export type ApiSetup = {
   version: JsonApiVersion
   defaultIncludeFields: DefaultIncludeFieldsOption
   createPageQuery: ApiSetupCreatePageQuery
+  transformRelationshipForURL: Transform<string>
   parseRequestError: ApiSetupParseRequestError
   beforeRequest: Transform<SerializableObject>
   adapter: Window['fetch']
@@ -38,6 +39,7 @@ export type DefaultApiSetup = ApiSetupWithDefaults<{
   version: JsonApiVersions['1_0']
   defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
   createPageQuery: Transform<ApiQueryParameter, ApiQueryParameter>
+  transformRelationshipForURL: Transform<string>
   parseRequestError: Transform<ApiResponseError, any>
   beforeRequest: Transform<SerializableObject>
   adapter: Window['fetch']
@@ -57,6 +59,7 @@ export const mergeApiDefaultSetup = mergeApiSetup({
   version: jsonApiVersions['1_0'],
   defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
+  transformRelationshipForURL: reflect,
   parseRequestError: reflect,
   beforeRequest: reflect,
   adapter: windowFetch,

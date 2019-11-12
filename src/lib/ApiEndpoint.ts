@@ -138,7 +138,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     return (this.fetchEntity(
       id,
       resourceFilter as any,
-      `/${relationshipFieldName}`,
+      `/${this.api.setup.transformRelationshipForURL!(relationshipFieldName)}`,
       relationshipField.type,
     ) as unknown) as Promise<ApiEntityResult<FilteredResource<RR, F>, any>>
   }
@@ -171,7 +171,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       query as any,
       resourceFilter as any,
       id,
-      `${id}/${relationshipFieldName}`,
+      `${id}/${this.api.setup.transformRelationshipForURL!(relationshipFieldName)}`,
       relationshipField.type,
     ) as unknown) as Promise<ApiCollectionResult<FilteredResource<RR, F>, any>>
   }
