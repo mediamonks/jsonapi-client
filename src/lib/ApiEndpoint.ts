@@ -42,21 +42,35 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     this.Resource = Resource
   }
 
-  async create(values: ResourceCreateValues<R>): Promise<any> {
+  async create(
+    values: ResourceCreateValues<R>,
+  ): Promise<ApiEntityResult<FilteredResource<R, {}>, any>> {
     const url = this.toURL()
+    if (values.type === undefined) {
+      ;(values as any).type = this.Resource.type
+    }
     return new Promise((resolve, reject) => {
-      this.api.controller
-        .encodeResource(this.Resource.type, values, keys(this.Resource.fields), [])
-        .map(async (body) => {
-          const options = createPostRequestOptions(body)
-          this.api.controller.handleRequest(url, options).then((result) => {
-            if (result.isSuccess()) {
-              resolve(result.value)
-            } else {
-              reject(result.value)
-            }
-          })
+      const result = this.api.controller.encodeResource(
+        this.Resource.type,
+        values as any,
+        keys(this.Resource.fields),
+        [],
+      )
+
+      if (result.isRejected()) {
+        reject(result.value)
+      }
+
+      return result.map((body: any) => {
+        const options = createPostRequestOptions(body)
+        return this.api.controller.handleRequest(url, options).then((result) => {
+          if (result.isSuccess()) {
+            resolve(result.value)
+          } else {
+            reject(result.value)
+          }
         })
+      })
     })
   }
 
