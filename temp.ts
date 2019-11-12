@@ -8,11 +8,11 @@ import {
   isString,
   isNull,
   isObject,
+  isUndefined,
   or,
   array,
   either,
 } from 'isntnt'
-import { isUndefined } from 'util'
 import { createEmptyObject } from './src/utils/data'
 
 const ok = <T>(value: T) => OKResult.of(value)
@@ -43,24 +43,26 @@ type ReadonlyNonEmptyArray<T> = ReadonlyArray<T> & { 0: T }
 
 // CONSTANTS
 const EMPTY_ARRAY: Array<any> = Object.freeze([]) as any
+const EMPTY_OBJECT: {} = Object.freeze(createEmptyObject())
+
 const TO_ONE_RELATIONSHIP_IDENTITY = null
 const TO_MANY_RELATIONSHIP_IDENTITY = EMPTY_ARRAY
 
-const ID = 'id'
-const TYPE = 'type'
+const ID = 'id' as const
+const TYPE = 'type' as const
 
-const ATTRIBUTES = 'attributes'
-const RELATIONSHIPS = 'relationships'
-const DATA = 'data'
+const ATTRIBUTES = 'attributes' as const
+const RELATIONSHIPS = 'relationships' as const
+const DATA = 'data' as const
 
-const OPTIONAL = 'optional'
-const REQUIRED = 'required'
+const OPTIONAL = 'optional' as const
+const REQUIRED = 'required' as const
 
-const TO_ONE = 'to-one'
-const TO_MANY = 'to-many'
+const TO_ONE = 'to-one' as const
+const TO_MANY = 'to-many' as const
 
-const FIELDS = 'fields'
-const INCLUDE = 'include'
+const FIELDS = 'fields' as const
+const INCLUDE = 'include' as const
 
 const resourceFieldRoot = {
   ATTRIBUTES,
@@ -145,7 +147,9 @@ export type ResourceFieldName = string
 export type ResourceFieldValue = AttributeValue | RelationshipValue
 export type ResourceFieldPredicate = Predicate<ResourceFieldValue>
 
-export type AttributeValue =
+export type AttributeValue = OptionalAttributeValue | RequiredAttributeValue
+export type OptionalAttributeValue = RequiredAttributeValue | undefined
+export type RequiredAttributeValue =
   | SerializablePrimitive
   | SerializableArray
   | (SerializableObject & {
@@ -153,7 +157,9 @@ export type AttributeValue =
       fields?: never
     })
 
-export type RelationshipValue = AnyResourceIdentifier | Nullable<Array<AnyResourceIdentifier>>
+export type RelationshipValue = ToOneRelationshipValue | ToManyRelationshipValue
+export type ToOneRelationshipValue = Nullable<AnyResource>
+export type ToManyRelationshipValue = Array<AnyResource>
 
 // RESOURCE FIELD
 type ResourceFieldPointer<R extends ResourceFieldRoot, N extends ResourceFieldName> = [
@@ -162,47 +168,37 @@ type ResourceFieldPointer<R extends ResourceFieldRoot, N extends ResourceFieldNa
   N,
 ]
 
-export type AttributeResourceField = ResourceField<
-  ResourceAttributesFieldRoot,
-  ResourceAttributeFieldMeta,
-  ResourceFieldName,
-  AttributeValue
->
+export type ResourceAttributeField<
+  M extends ResourceAttributeFieldMeta,
+  N extends ResourceFieldName,
+  T extends AttributeValue
+> = ResourceField<ResourceAttributesFieldRoot, M, N, T>
 
-export type OptionalAttributeResourceField = ResourceField<
-  ResourceAttributesFieldRoot,
-  ResourceOptionalAttributeFieldMeta,
-  ResourceFieldName,
-  AttributeValue
->
+export type ResourceOptionalAttributeField<
+  N extends ResourceFieldName,
+  T extends OptionalAttributeValue
+> = ResourceAttributeField<ResourceOptionalAttributeFieldMeta, N, T | undefined>
 
-export type RequiredAttributeResourceField = ResourceField<
-  ResourceAttributesFieldRoot,
-  ResourceRequiredAttributeFieldMeta,
-  ResourceFieldName,
-  AttributeValue
->
+export type ResourceRequiredAttributeField<
+  N extends ResourceFieldName,
+  T extends RequiredAttributeValue
+> = ResourceAttributeField<ResourceRequiredAttributeFieldMeta, N, T>
 
-export type RelationshipResourceField = ResourceField<
-  ResourceRelationshipsFieldRoot,
-  ResourceRelationshipFieldMeta,
-  ResourceFieldName,
-  RelationshipValue
->
+export type ResourceRelationshipField<
+  M extends ResourceRelationshipFieldMeta,
+  N extends ResourceFieldName,
+  R extends RelationshipValue
+> = ResourceField<ResourceRelationshipsFieldRoot, M, N, R>
 
-export type ToOneRelationshipResourceField = ResourceField<
-  ResourceRelationshipsFieldRoot,
-  ResourceToOneRelationshipFieldMeta,
-  ResourceFieldName,
-  RelationshipValue
->
+export type ResourceToOneRelationshipField<
+  N extends ResourceFieldName,
+  R extends ToOneRelationshipValue
+> = ResourceRelationshipField<ResourceToOneRelationshipFieldMeta, N, R>
 
-export type ToManyRelationshipResourceField = ResourceField<
-  ResourceRelationshipsFieldRoot,
-  ResourceToManyRelationshipFieldMeta,
-  ResourceFieldName,
-  RelationshipValue
->
+export type ResourceToManyRelationshipField<
+  N extends ResourceFieldName,
+  R extends ToManyRelationshipValue
+> = ResourceRelationshipField<ResourceToManyRelationshipFieldMeta, N, R>
 
 class ResourceField<
   R extends ResourceFieldRoot,
@@ -227,7 +223,7 @@ class ResourceField<
     return this.pointer.join('/')
   }
 
-  getDataValue(data: ApiResponseResourceData<any>): Result<any, string> {
+  getDataValue(data: ApiResponseResourceData<any>): Result<T, string> {
     if (!isObject(data)) {
       return error(`Invalid response: data must be an object`)
     }
@@ -243,7 +239,7 @@ class ResourceField<
       return error(`Invalid ${this.meta} relationship: must be an object with a data property`)
     }
     if (this.isOptionalAttributeField()) {
-      return ok(undefined)
+      return ok(undefined as any)
     }
     return error(`Invalid response: field "${this.name}" is missing from ${this.root}`)
   }
@@ -259,28 +255,40 @@ class ResourceField<
     }
   }
 
-  isAttributeField(): this is AttributeResourceField {
+  decodeValue(value: T): T {
+    return value
+  }
+
+  encodeValue(value: T): T {
+    return value
+  }
+
+  isAttributeField(): this is ResourceAttributeField<any, any, any> {
     return this.root === resourceFieldRoot.ATTRIBUTES
   }
 
-  isOptionalAttributeField(): this is OptionalAttributeResourceField {
+  isOptionalAttributeField(): this is ResourceOptionalAttributeField<any, any> {
     return this.isAttributeField() && this.meta === resourceAttributeFieldMeta.OPTIONAL
   }
 
-  isRequiredAttributeField(): this is RequiredAttributeResourceField {
+  isRequiredAttributeField(): this is ResourceRequiredAttributeField<any, any> {
     return this.isAttributeField() && this.meta === resourceAttributeFieldMeta.REQUIRED
   }
 
-  isRelationshipField(): this is RelationshipResourceField {
+  isRelationshipField(): this is ResourceRelationshipField<any, any, any> {
     return this.root === resourceFieldRoot.RELATIONSHIPS
   }
 
-  isToOneRelationshipField(): this is ToOneRelationshipResourceField {
+  isToOneRelationshipField(): this is ResourceToOneRelationshipField<any, any> {
     return this.isRelationshipField() && this.meta === resourceRelationshipFieldMeta.TO_ONE
   }
 
-  isToManyRelationshipField(): this is ToManyRelationshipResourceField {
+  isToManyRelationshipField(): this is ResourceToManyRelationshipField<any, any> {
     return this.isRelationshipField() && this.meta === resourceRelationshipFieldMeta.TO_MANY
+  }
+
+  static isResourceField(value: unknown): value is ResourceField<any, any, any, any> {
+    return value instanceof ResourceField
   }
 }
 
@@ -338,7 +346,9 @@ export type ResourceFieldNames<R extends AnyResource> = BaseResourceFieldNames<R
 
 export type ResourceFieldOptions<R extends AnyResource> = BaseResourceFieldOptions<R>
 
-export type ResourceFieldModel = Record<string, ResourceFieldValue> & {
+export type ResourceFieldModel = {
+  [key: string]: ResourceFieldValue
+} & {
   type?: never
   id?: never
 }
@@ -347,8 +357,10 @@ export type ResourceFieldModel = Record<string, ResourceFieldValue> & {
 export type AnyResourceIdentifier = ResourceIdentifier<ResourceType>
 export type ResourceIdentifierKey = keyof AnyResourceIdentifier
 
+// type ResourceSpecies = typeof ResourceIdentifier | typeof Resource
+
 export class ResourceIdentifier<T extends string> {
-  [Symbol.species] = ResourceIdentifier
+  // [Symbol.species]: ResourceSpecies = ResourceIdentifier
   type: T
   id: string
 
@@ -376,19 +388,57 @@ export type ResourceToManyRelationshipIdentifier<R extends AnyResource> = Array<
 export class Resource<T extends string, F extends ResourceFieldModel> extends ResourceIdentifier<
   T
 > {
+  // [Symbol.species]: ResourceSpecies = Resource
+
   constructor(values: Resource<T, F>) {
     super(values.type, values.id)
     Object.assign(this, values)
   }
 
   static type: ResourceType
-  static fields: Record<string, {}>
+  static fields: Record<string, ResourceField<any, any, any, any>> = createEmptyObject()
+}
+
+type ResourceAttributeFields<R extends AnyResource> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends RelationshipValue ? never : ResourceAttributeField<any, any, any>
+  }
+>
+
+type ResourceRelationshipFields<R extends AnyResource> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends RelationshipValue
+      ? ResourceRelationshipField<any, any, any>
+      : never
+  }
+>
+
+type ResourceToOneRelationshipFields<R extends AnyResource> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends ToOneRelationshipValue
+      ? ResourceToOneRelationshipField<any, any>
+      : never
+  }
+>
+
+type ResourceToManyRelationshipFields<R extends AnyResource> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends ToManyRelationshipValue
+      ? ResourceToManyRelationshipField<any, any>
+      : never
+  }
+>
+
+type ResourceFields<R extends AnyResource> = {
+  [K in keyof R]: R[K] extends RelationshipValue
+    ? ResourceRelationshipField<any, any, any>
+    : ResourceAttributeField<any, any, any>
 }
 
 export type ResourceConstructor<R extends AnyResource> = {
   new (resource: R): R
   type: R['type']
-  fields: Record<BaseResourceFieldNames<R>, {}>
+  fields: Record<string, ResourceField<any, any, any, any>>
 }
 
 export const resource = <T extends string>(type: T) => {
@@ -400,11 +450,11 @@ export const resource = <T extends string>(type: T) => {
   }
 }
 
+type ResourceIncludeParameter<R extends AnyResource> = BaseResourceIncludeThree<R>
+
 type ResourceFieldsParameter<R extends AnyResource> = UnionToIntersection<
   BaseResourceFieldsUnion<R>
 >
-
-type ResourceIncludeParameter<R extends AnyResource> = BaseResourceIncludeThree<R>
 
 // RESPONSE DATA
 type JSONAPIVersion = '1.0' | '1.1'
@@ -438,6 +488,8 @@ type ApiResourceEntityResponse<
   data: ApiResponseResourceData<R>
 }
 
+type TestApiResourceEntityResponse = ApiResourceEntityResponse<A, {}>
+
 type ApiResourceCollectionResponse<
   R extends AnyResource,
   M extends SerializableObject
@@ -445,20 +497,26 @@ type ApiResourceCollectionResponse<
   data: Array<ApiResponseResourceData<R>>
 }
 
+type BaseApiResponseResourceDataAttributes<R, N> = N extends keyof R
+  ? {
+      [K in N]: R[K]
+    }
+  : never
+
+type BaseApiResponseResourceDataRelationships<R, N> = N extends keyof R
+  ? {
+      [K in N]: { data: BaseApiResponseDataResourceRelationshipValue<R[K]> }
+    }
+  : never
+
 type ApiResponseResourceData<R extends AnyResource> = {
   type: R['type']
   id: ResourceId
-  attributes?: WithoutNever<
-    {
-      [K in BaseResourceAttributeNames<R>]?: R[K]
-    }
-  >
-  relationships?: {
-    [K in BaseResourceRelationshipNames<R>]?: {
-      data: BaseApiResponseDataResourceRelationshipValue<R[K]>
-    }
-  }
+  attributes: BaseApiResponseResourceDataAttributes<R, BaseResourceAttributeNames<R>>
+  relationships: BaseApiResponseResourceDataRelationships<R, BaseResourceRelationshipNames<R>>
 }
+
+type TestApiResponseResourceData = ApiResponseResourceData<FilteredA>
 
 type ApiResponseMeta<M extends SerializableObject> = {
   [K in keyof M]: M[K]
@@ -515,22 +573,6 @@ type BaseResourceRelationshipNames<T> = ValuesOf<
     [K in BaseResourceFieldNames<T>]: T[K] extends RelationshipValue ? K : never
   }
 >
-
-// type BaseResourceToOneRelationshipNames<T> = ValuesOf<
-//   {
-//     [K in BaseResourceFieldNames<T>]: T[K] extends ResourceToOneRelationship<AnyResource>
-//       ? K
-//       : never
-//   }
-// >
-
-// type BaseResourceToManyRelationshipNames<T> = ValuesOf<
-//   {
-//     [K in BaseResourceFieldNames<T>]: T[K] extends ResourceToManyRelationship<AnyResource>
-//       ? K
-//       : never
-//   }
-// >
 
 type BaseResourceFieldOptions<T> = T extends AnyResource
   ? {
@@ -649,15 +691,15 @@ const testResourceIncludeThree: TestResourceIncludeThree = {
 }
 
 // RESOURCE FIELDS
-const fields = <R extends AnyResource, F extends ResourceFieldsParameter<R>>(
-  Resource: ResourceConstructor<R>,
-  fields: F,
-): ApiQueryFieldsParameter<R, F> => new ApiQueryFieldsParameter(Resource, fields)
+// const fields = <R extends AnyResource, F extends ResourceFieldsParameter<R>>(
+//   Resource: ResourceConstructor<R>,
+//   fields: F,
+// ): ApiQueryFieldsParameter<R, F> => new ApiQueryFieldsParameter(Resource, fields)
 
-const include = <R extends AnyResource, I extends BaseResourceIncludeThree<R>>(
-  Resource: ResourceConstructor<R>,
-  include: I,
-): ApiQueryIncludeParameter<R, I> => new ApiQueryIncludeParameter(Resource, include as any)
+// const include = <R extends AnyResource, I extends BaseResourceIncludeThree<R>>(
+//   Resource: ResourceConstructor<R>,
+//   include: I,
+// ): ApiQueryIncludeParameter<R, I> => new ApiQueryIncludeParameter(Resource, include as any)
 
 type ApiQueryParameterName = string
 
@@ -675,57 +717,91 @@ class ApiQueryParameter<N extends ApiQueryParameterName, T extends ApiQueryParam
   }
 }
 
-type ApiEndpointSetup<R extends AnyResource> = {
-  defaultIncludedFields: Nullable<NonEmptyArray<BaseResourceRelationshipNames<R>>>
+const NONE = 'none' as const
+const PRIMARY = 'primary' as const
+
+type ApiDefaultIncludedFields = typeof NONE | typeof PRIMARY
+
+type ApiSetup = {
+  defaultIncludedRelationships: ApiDefaultIncludedFields
 }
 
-const defaultApiEndpointSetup: ApiEndpointSetup<any> = {
-  defaultIncludedFields: null,
+type DefaultApiSetup = {
+  defaultIncludedRelationships: typeof NONE
 }
+
+class Api {
+  url: URL
+  defaultIncludedRelationships: ApiDefaultIncludedFields = NONE
+  constructor(url: URL) {
+    this.url = url
+  }
+}
+
+class ResourceApi extends Api {
+  defaultIncludedFields = PRIMARY
+  createPageQuery() {}
+  encodeURLParameter() {}
+  encodeSearchParameterName() {}
+  beforeRequestURL() {}
+  beforeRequestOptions() {}
+  afterRequestBody() {}
+  onResponseError() {}
+  onRequestError() {}
+}
+
+const url = new URL('https://example.com/')
 
 type ResourcePatchValues<R extends AnyResource> = Partial<R>
 
-class ApiEndpoint<R extends AnyResource, S extends ApiEndpointSetup<R>> {
+class ApiEndpoint<R extends AnyResource> {
   path: string
   Resource: ResourceConstructor<R>
-  setup: S
-  constructor(path: string, Resource: ResourceConstructor<R>, setup: Partial<S> = {}) {
+  constructor(path: string, Resource: ResourceConstructor<R>) {
     this.path = path
     this.Resource = Resource
-    this.setup = { ...defaultApiEndpointSetup, ...setup } as S
   }
 
-  get(id: ResourceId): void {}
+  async get<P extends ApiResourceParametersConstructor<R>>(
+    resourceId: ResourceId,
+    ResourceParameters: P = ApiResourceParameters as any,
+  ): Promise<Result<FilteredResource<R, InstanceType<P>>, Error>> {
+    return {} as any
+  }
 
-  getToOneRelationship(id: ResourceId) {}
+  async getToOneRelationship<
+    N extends keyof ResourceToOneRelationshipFields<R>,
+    P extends ApiResourceParametersConstructor<Extract<R[N], AnyResource>>
+  >(
+    resourceId: ResourceId,
+    toOneRelationshipFieldName: N,
+    ResourceRelationshipParameters: P = ApiResourceParameters as any,
+  ): Promise<Result<FilteredResource<Extract<R[N], AnyResource>, InstanceType<P>>, Error>> {
+    return {} as any
+  }
 
-  getToManyRelationship(id: ResourceId) {}
+  async getToManyRelationship<
+    N extends keyof ResourceToManyRelationshipFields<R>,
+    P extends ApiResourceParametersConstructor<R[N][any]>
+  >(
+    resourceId: ResourceId,
+    toManyRelationshipFieldName: N,
+    ResourceRelationshipParameters: P = ApiResourceParameters as any,
+  ): Promise<Result<Array<FilteredResource<R[N][any], InstanceType<P>>>, Error>> {
+    return {} as any
+  }
 
-  getCollection() {}
+  async fetch<P extends ApiResourceParametersConstructor<R>>(
+    ResourceParameters: P,
+  ): Promise<Result<Array<FilteredResource<R, InstanceType<P>>>, Error>> {
+    return {} as any
+  }
 
   create() {}
 
-  update(id: ResourceId, values: ResourcePatchValues<R>) {}
+  update(resourceId: ResourceId, values: ResourcePatchValues<R>) {}
 
-  delete(id: ResourceId) {}
-}
-
-class ApiQueryFieldsParameter<
-  R extends AnyResource,
-  F extends ResourceFieldsParameter<R>
-> extends ApiQueryParameter<typeof FIELDS, F & ApiQueryParameterObjectValue> {
-  constructor(Resource: ResourceConstructor<R>, value: F) {
-    super(FIELDS, value as any)
-  }
-}
-
-class ApiQueryIncludeParameter<
-  R extends AnyResource,
-  I extends BaseResourceIncludeThree<R>
-> extends ApiQueryParameter<typeof INCLUDE, I & ApiQueryParameterObjectValue> {
-  constructor(Resource: ResourceConstructor<R>, value: F) {
-    super(INCLUDE, value as any)
-  }
+  delete(resourceId: ResourceId) {}
 }
 
 type ApiQueryParameterArrayValue = Array<string | number> | Array<string>
@@ -743,10 +819,6 @@ type ApiQueryParameterValue =
 type ApiQueryParameters = {
   [key: string]: ApiQueryParameterValue
 }
-
-class Api {}
-
-// JsonApi.Resource()
 
 class A extends resource('a') {
   xa!: string
@@ -776,40 +848,17 @@ class F extends resource('f') {
   xf!: string
 }
 
-const a: A = {} as any
-a['b']
-
-const aEndpoint = new ApiEndpoint('test', A)
-const aEndpointDefaultIncludedFields = aEndpoint['setup']['defaultIncludedFields']
-
-const aFields: ResourceFieldsParameter<A> = {
-  a: ['b', 'cs'],
-  b: ['c'],
-  d: ['es'],
-  f: ['xf'],
-} as const
-
-type ResourceFieldOptionsX<R extends AnyResource> = readonly Exclude<
-  keyof R,
-  ResourceIdentifierKey
->[]
-
-const aInclude: ResourceIncludeParameter<A> = {
-  cs: {
-    ds: {
-      es: {
-        f: null,
-      },
-    },
-  },
-  b: {
-    c: null,
-  },
+type ApiResourceParametersConstructor<R extends AnyResource> = {
+  new (): ApiResourceParameters<R>
 }
 
-class ResourceParameters<R extends AnyResource> {
+class ApiResourceParameters<R extends AnyResource> {
   fields?: ResourceFieldsParameter<R>
   include?: ResourceIncludeParameter<R>
+
+  static isApiResourceParameters(value: unknown): value is ApiResourceParameters<any> {
+    return value instanceof ApiResourceParameters
+  }
 }
 
 const api = (...x: any[]) => {}
@@ -817,26 +866,28 @@ const endpoint = (...x: any[]) => {}
 
 // const countries = endpoint('countries', A)
 
-const oi: ResourceModelParameters<E> = {
-  fields: aFields,
-  include: {
-    f: null,
-  },
-}
+// const oi: ResourceModelParameters<E> = {
+//   fields: aFields,
+//   include: {
+//     f: null,
+//   },
+// }
 
-type ResourceModelParameters<R extends AnyResource> = {
-  fields: ResourceFieldsParameter<R>
-  include: ResourceIncludeParameter<R>
-}
+// type ResourceModelParameters<R extends AnyResource> = {
+//   fields: ResourceFieldsParameter<R>
+//   include: ResourceIncludeParameter<R>
+// }
 
 // FILTER RESOURCE
 type BaseFilteredByFieldsResource<R, F> = R extends AnyResource
-  ? F extends ReadonlyArray<keyof R>
-    ? Pick<R, F[number] | ResourceIdentifierKey>
+  ? F extends Exclude<keyof R, ResourceIdentifierKey>
+    ? Pick<R, F | ResourceIdentifierKey>
     : F extends undefined | null
-    ? Pick<R, ResourceIdentifierKey>
+    ? ResourceIdentifier<R['type']>
     : Warning<'Invalid Resource fields parameter', R, F> // TODO: use Api/Endpoint setup to determine default included fields
   : never
+
+type TestBaseFilteredByFieldsResource = BaseFilteredByFieldsResource<A, 'b' | 'c'>
 
 type BaseResourceToManyRelationshipIdentifier<R> = R extends Array<AnyResource>
   ? Array<ResourceIdentifier<R[number]['type']>>
@@ -856,14 +907,12 @@ type BaseFilteredByIncludesResource<R, I, F> = R extends AnyResource
         ? Warning<'Invalid Resource include parameter', R, K>
         : R[K]
     }
-  : R
+  : never
 
 type Warning<T extends string, U, V> = { message: T; context: U; value: V }
 
-type BaseFilteredWithFieldsResourceX = BaseFilteredByFieldsResource<A, undefined>
-
 type BaseFilteredResourceOfType<T, R, I, F> = T extends keyof F
-  ? BaseFilteredByIncludesResource<BaseFilteredByFieldsResource<R, F[T]>, I, F>
+  ? BaseFilteredByIncludesResource<BaseFilteredByFieldsResource<R, F[T][any]>, I, F>
   : BaseFilteredByIncludesResource<R, I, F>
 
 type BaseFilteredResource<R, I, F> = R extends AnyResource
@@ -874,13 +923,27 @@ type BaseFilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
   ? Array<BaseFilteredResource<R[number], I, F>>
   : never
 
+type ResourcePrimaryIncludeFields<R extends AnyResource> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends RelationshipValue ? null : never
+  }
+>
+
+class ApiResult<R extends AnyResource | Array<AnyResource>, M extends {}> {}
+
 type FilteredResource<
   R extends AnyResource,
-  P extends ResourceParameters<R>
+  P extends ApiResourceParameters<R> = {}
 > = BaseFilteredResource<R, P['include'], P['fields']>
 
-class AFilter extends ResourceParameters<A> {
+class DefaultApiResourceParameters extends ApiResourceParameters<any> {
+  fields = {}
+  include = {}
+}
+
+class AFilter extends ApiResourceParameters<A> {
   fields = {
+    a: ['b'],
     c: ['ds'],
     e: ['f'],
     f: ['xf'],
@@ -895,7 +958,56 @@ class AFilter extends ResourceParameters<A> {
   }
 }
 
-type X = FilteredResource<A, AFilter>
+// const getPrimaryRelationshipFields = <R extends AnyResource>(
+//   Resource: ResourceConstructor<R>,
+// ): ResourcePrimaryIncludeFields<R> => {
+//   return Object.values(Resource.fields).reduce(
+//     (primaryRelationshipFields, resourceField) => {
+//       if (resourceField.isRelationshipField()) {
+//         ;(primaryRelationshipFields as any)[resourceField.name] = null
+//       }
+//       return primaryRelationshipFields
+//     },
+//     createEmptyObject() as ResourcePrimaryIncludeFields<R>,
+//   )
+// }
+
+type FilteredA = FilteredResource<A, { include: ResourcePrimaryIncludeFields<A> }>
+
+const as = new ApiEndpoint('as', A)
+
+as.get('12').then((result) => {
+  if (result.isOK()) {
+    console.log(result.value)
+  }
+})
+
+class BFilter extends ApiResourceParameters<B> {
+  fields = {
+    c: ['ds'],
+  } as const
+  include = {
+    c: null,
+  }
+}
+
+as.getToOneRelationship('12', 'b', BFilter).then((result) => {
+  if (result.isOK()) {
+    console.log(result.value)
+  }
+})
+
+class CFilter extends ApiResourceParameters<C> {
+  include = {
+    ds: null,
+  }
+}
+
+as.getToManyRelationship('12', 'cs', CFilter).then((result) => {
+  if (result.isOK()) {
+    console.log(result.value)
+  }
+})
 
 const OK = 'OK'
 const ERROR = 'error'
