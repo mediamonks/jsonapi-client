@@ -65,7 +65,26 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
         const options = createPostRequestOptions(body)
         return this.api.controller.handleRequest(url, options).then((result) => {
           if (result.isSuccess()) {
-            resolve(result.value)
+            const response = result.value
+            // TODO: handle 204 No Content response
+            if ('data' in response) {
+              const result = this.api.controller.decodeResource(
+                this.Resource.type,
+                response.data,
+                response.included,
+                {},
+                {},
+                [],
+              )
+              if (result.isSuccess()) {
+                return resolve(result.value as any)
+              } else {
+                return reject(result.value)
+              }
+            } else {
+              console.warn(`Unsupported "No Content" response`)
+              resolve(new this.Resource(body) as any)
+            }
           } else {
             reject(result.value)
           }
