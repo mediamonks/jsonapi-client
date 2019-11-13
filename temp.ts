@@ -14,7 +14,6 @@ import {
   either,
 } from 'isntnt'
 import { createEmptyObject } from './src/utils/data'
-import { DefaultIncludeFieldsOption } from './src/constants/setup'
 
 const ok = <T>(value: T) => OKResult.of(value)
 const error = <E extends Error | PropertyKey>(error: E) => ErrorResult.of(error)
@@ -169,6 +168,10 @@ type ResourceFieldPointer<R extends ResourceFieldRoot, N extends ResourceFieldNa
   N,
 ]
 
+type AnyResourceField =
+  | ResourceAttributeField<ResourceAttributeFieldMeta, ResourceFieldName, AttributeValue>
+  | ResourceRelationshipField<ResourceRelationshipFieldMeta, ResourceFieldName, RelationshipValue>
+
 export type ResourceAttributeField<
   M extends ResourceAttributeFieldMeta,
   N extends ResourceFieldName,
@@ -224,7 +227,7 @@ class ResourceField<
     return this.pointer.join('/')
   }
 
-  getDataValue(data: ApiResponseResourceData<any>): Result<T, string> {
+  getDataValue(data: ApiResponseResourceData<any>): Result<unknown, string> {
     if (!isObject(data)) {
       return error(`Invalid response: data must be an object`)
     }
@@ -374,7 +377,7 @@ export class ResourceIdentifier<T extends string> {
 // RESOURCE
 export type ResourceType = string
 export type ResourceId = string
-export type AnyResource = Resource<ResourceType, Record<string, any>>
+export type AnyResource = Resource<ResourceType, { [key: string]: ResourceFieldValue }>
 
 export type ResourceToOneRelationship<R extends AnyResource> = Nullable<R>
 export type ResourceToOneRelationshipIdentifier<R extends AnyResource> = Nullable<
@@ -439,15 +442,13 @@ type ResourceFields<R extends AnyResource> = {
 export type ResourceConstructor<R extends AnyResource> = {
   new (resource: R): R
   type: R['type']
-  fields: Record<string, ResourceField<any, any, any, any>>
+  fields: Record<ResourceFieldName, AnyResourceField>
 }
 
 export const resource = <T extends string>(type: T) => {
   return class extends Resource<T, ResourceFieldModel> {
     static type: T = type
-    static fields: Record<ResourceFieldName, ResourceField<any, any, any, any>> = Object.create(
-      null,
-    )
+    static fields: Record<ResourceFieldName, AnyResourceField> = Object.create(null)
   }
 }
 
@@ -459,6 +460,7 @@ type ResourceFieldsParameter<R extends AnyResource> = UnionToIntersection<
 
 // RESPONSE DATA
 type JSONAPIVersion = '1.0' | '1.1'
+type JSONAPIMeta = SerializableObject
 
 type BaseApiResponse<M extends SerializableObject> = {
   meta?: ApiResponseMeta<M>
@@ -468,13 +470,13 @@ type BaseApiResponse<M extends SerializableObject> = {
   }
 }
 
-type BaseApiSuccessResponse<R extends AnyResource, M extends SerializableObject> = BaseApiResponse<
-  M
-> & {
-  include?: Array<ApiResponseResourceData<R>>
+type BaseApiResponseIncludedResources<R extends AnyResource> = Array<R>
+
+type BaseApiSuccessResponse<R extends AnyResource, M extends JSONAPIMeta> = BaseApiResponse<M> & {
+  included?: BaseApiResponseIncludedResources<R>
 }
 
-type ApiResponse<R extends AnyResource, M extends SerializableObject> =
+type ApiResponse<R extends AnyResource | Array<AnyResource>, M extends JSONAPIMeta> =
   | ApiErrorResponse<M>
   | ApiSuccessResponse<R, M>
 
@@ -482,9 +484,12 @@ type ApiErrorResponse<M extends SerializableObject> = BaseApiResponse<M> & {
   errors: Array<ApiRequestError>
 }
 
-type ApiSuccessResponse<R extends AnyResource, M extends SerializableObject> =
-  | ApiResourceEntityResponse<R, M>
-  | ApiResourceCollectionResponse<R, M>
+type ApiSuccessResponse<
+  R extends AnyResource | Array<AnyResource>,
+  M extends JSONAPIMeta
+> = R extends Array<AnyResource>
+  ? ApiResourceCollectionResponse<R[number], M>
+  : ApiResourceEntityResponse<Extract<R, AnyResource>, M>
 
 type ApiResourceEntityResponse<
   R extends AnyResource,
@@ -510,7 +515,7 @@ type BaseApiResponseResourceDataAttributes<R, N> = N extends keyof R
 
 type BaseApiResponseResourceDataRelationships<R, N> = N extends keyof R
   ? {
-      [K in N]: { data: BaseApiResponseDataResourceRelationshipValue<R[K]> }
+      [K in N]: { data: R[K] }
     }
   : never
 
@@ -518,7 +523,10 @@ type ApiResponseResourceData<R extends AnyResource> = {
   type: R['type']
   id: ResourceId
   attributes: BaseApiResponseResourceDataAttributes<R, BaseResourceAttributeNames<R>>
-  relationships: BaseApiResponseResourceDataRelationships<R, BaseResourceRelationshipNames<R>>
+  relationships: BaseApiResponseResourceDataRelationships<
+    FilteredResource<R, {}>, // filter included fields
+    BaseResourceRelationshipNames<R>
+  >
 }
 
 type TestApiResponseResourceData = ApiResponseResourceData<FilteredA>
@@ -736,9 +744,11 @@ type AnyApi = Api<ApiSetupOptions>
 class Api<S extends ApiSetup<any>> {
   url: URL
   setup: S
+  controller: ApiController<this>
   constructor(url: URL, setup: Partial<S> = EMPTY_OBJECT) {
     this.url = url
     this.setup = { ...defaultApiSetup, ...setup } as any
+    this.controller = new ApiController(this)
   }
 }
 
@@ -747,7 +757,7 @@ const url = new URL('https://example.com/')
 const api = new Api(url, {
   version: '1.0',
   defaultIncludedRelationships: 'primary',
-})['setup']
+})
 
 type ResourcePatchValues<R extends AnyResource> = Partial<R>
 
@@ -764,11 +774,11 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
     this.Resource = Resource
   }
 
-  async get<P extends ApiResourceParametersConstructor<R>>(
+  async get<P extends ApiResourceParametersConstructor<R>, M extends JSONAPIMeta>(
     resourceId: ResourceId,
     ResourceParameters: P = ApiResourceParameters as any,
-  ): Promise<BaseApiEntityResult<FilteredResource<R, InstanceType<P>>, {}>> {
-    return new ApiEntityResult({} as any, {} as any)
+  ): Promise<BaseApiEntityResult<FilteredResource<R, InstanceType<P>>, M>> {
+    return this.api.controller.getResourceEntity() as any
   }
 
   async getToOneRelationship<
@@ -979,11 +989,11 @@ class ApiController<A extends AnyApi> {
     return this.resources[type]
   }
 
-  async handleFetchRequest(
+  async handleFetchRequest<R extends AnyResource | Array<AnyResource>, M extends JSONAPIMeta>(
     url: URL,
-    options: Parameters<Window['fetch']>[1],
-  ): Promise<Result<ApiSuccessResponse<any, any>, Error>> {
-    const fetchAdapter: Window['fetch'] = this.api.setup.fetchAdapter
+    options: FetchOptions,
+  ): Promise<ApiSuccessResponse<R, M>> {
+    const fetchAdapter: Fetch = this.api.setup.fetchAdapter
     const requestHref = this.api.setup.parseRequestURL(url)
     const requestOptions = this.api.setup.beforeRequestOptions(options)
 
@@ -994,31 +1004,100 @@ class ApiController<A extends AnyApi> {
         }
         return response.json()
       })
-      .then((body: ApiResponse<any, any>) => {
+      .then((body) => {
         if ('errors' in body) {
           // TODO: Parse body errors
           throw new Error(`Found ${body.errors.length} errors in response`)
         }
-        return OKResult.of(body)
-      })
-      .catch((error: Error) => {
-        console.info('request error', error)
-        return ErrorResult.of(error)
+        return body
       })
   }
 
-  async getResourceEntity(): Promise<ApiEntityResult<any, any>> {
-    return this.handleFetchRequest(new URL(''), {}).then((result: any) =>
-      result
-        .map((response: ApiResourceEntityResponse<any, any>) => {
-          return new ApiEntityResult(response.data, response.meta || {})
-        })
-        .unwrap(),
-    )
+  decodeRelationshipResource<R extends AnyResource>(
+    Resource: ResourceConstructor<R>,
+    data: ApiResponseResourceData<R>,
+    included: BaseApiResponseIncludedResources<any>, // TODO: Fix BaseApiResponseIncludedResources
+    fieldsParameter: ResourceFieldsParameter<R>,
+    includeParameter: ResourceIncludeParameter<R> | ApiDefaultIncludedFields,
+    pointer: Array<string>,
+  ) {}
+
+  decodeResource<R extends AnyResource>(
+    Resource: ResourceConstructor<R>,
+    data: ApiResponseResourceData<R>,
+    included: BaseApiResponseIncludedResources<any>, // TODO: Fix BaseApiResponseIncludedResources
+    fieldsParameter: ResourceFieldsParameter<R>,
+    includeParameter: ResourceIncludeParameter<R> | ApiDefaultIncludedFields,
+    pointer: Array<string>,
+  ) {
+    if (!isObject(data)) {
+      return fail([new Error(`Invalid data`)])
+    }
+
+    // TODO: should the data of a resource be added to the included data because
+    // a relationship MAY depend on it?
+    included.push(data)
+
+    const values: Record<ResourceFieldName, ResourceFieldValue> = createEmptyObject()
+    const errors: Array<Error> = []
+
+    const fieldNames: Array<ResourceFieldNames<R>> =
+      (fieldsParameter as any)[Resource.type] || Object.keys(Resource.fields)
+
+    if (data.type === Resource.type) {
+      values.type = data.type
+    } else {
+      errors.push(new Error(`Invalid resource type`))
+    }
+
+    if (isString(data.id)) {
+      values.id = data.id
+    } else {
+      errors.push(new Error(`Invalid resource id`))
+    }
+
+    fieldNames.forEach(<N extends ResourceFieldName>(name: N) => {
+      const field = Resource.fields[name]
+      const root = data[field.root]
+      if (isObject(root)) {
+        if (field.name in root) {
+          const value = (root as any)[field.name] // WTF?
+
+          if (field.isAttributeField()) {
+            if (field.validate(value)) {
+              values[name] = value
+            } else if (isUndefined(value)) {
+              if (field.isRequiredAttributeField()) {
+                errors.push(new Error(`Invalid data: "${field.name}" is a required field`))
+              }
+            } else {
+              errors.push(new Error(`Invalid data: "${field.name}" does not match its predicate`))
+            }
+          }
+        }
+
+        if (field.isRelationshipField()) {
+        }
+      }
+    })
   }
 
-  async getResourceCollection(): Promise<ApiCollectionResult<any, any>> {
-    return {} as any
+  async getResourceEntity<R extends AnyResource, M extends JSONAPIMeta>(): Promise<
+    ApiEntityResult<R, M>
+  > {
+    return this.handleFetchRequest<R, M>(new URL(''), {}).then((response) => {
+      response.data
+      return {} as any
+    })
+  }
+
+  async getResourceCollection<R extends Array<AnyResource>, M extends JSONAPIMeta>(): Promise<
+    ApiCollectionResult<R, M>
+  > {
+    return this.handleFetchRequest<R, M>(new URL(''), {}).then((response) => {
+      response.data
+      return {} as any
+    })
   }
 }
 
@@ -1049,6 +1128,16 @@ class ApiCollectionResult<
     this.page = page
   }
 }
+
+type FilteredIncludePrimaryResource<R extends AnyResource> = BaseFilteredResource<
+  R,
+  ResourcePrimaryIncludeFields<R>,
+  {}
+>
+
+type FilteredIncludeNoneResource<R extends AnyResource> = BaseFilteredResource<R, {}, {}>
+
+type NoneIncludedA = FilteredIncludePrimaryResource<A>
 
 type FilteredResource<
   R extends AnyResource,
@@ -1089,8 +1178,6 @@ class AFilter extends ApiResourceParameters<A> {
 type FilteredA = FilteredResource<A, { include: ResourcePrimaryIncludeFields<A> }>
 
 const as = new ApiEndpoint(api, 'as', A)
-
-type Ca = typeof api['setup']['defaultIncludedRelationships']
 
 as.get('12', AFilter).then((result) => {
   console.log(result)
