@@ -2,7 +2,9 @@ import { Api } from './Api'
 import { jsonApiVersions } from '../constants/jsonApi'
 import { defaultIncludeFieldOptions } from '../constants/setup'
 
-import { Post } from '../test-utils/Entities'
+import { Author, Comment, Post } from '../test-utils/Entities'
+import { Result } from '../utils/Result'
+import { mockData } from '../test-utils/mock-data'
 
 describe('Api', () => {
   describe('Api class', () => {
@@ -34,6 +36,69 @@ describe('Api', () => {
         expect(api.setup.version).toEqual(setup.version)
         expect(api.setup.defaultIncludeFields).toEqual(setup.defaultIncludeFields)
         expect(api.setup.parseRequestError).toEqual(setup.parseRequestError)
+      })
+
+      it('should transform the relationship url when configured via setup - toOne', async () => {
+        const url = 'https://www.example.com/api'
+        const api = new Api(new URL(url), {
+          transformRelationshipForURL: () => 'foo-bar',
+        })
+
+        const endpoint = api.endpoint('/posts', Post)
+        api.register(Author)
+
+        const mockHandleRequest = jest.fn().mockResolvedValue(
+          Result.accept({
+            data: mockData.Author.a1,
+          }),
+        )
+        api.controller.handleRequest = mockHandleRequest
+
+        try {
+          await endpoint.getToOneRelationship('123', 'author', {
+            fields: { Author: ['name'] },
+          })
+        } catch (errors) {
+          console.log(errors)
+          throw errors
+        }
+
+        expect(mockHandleRequest.mock.calls[0][0].href).toEqual(
+          'https://www.example.com/api/posts/123/foo-bar?fields[Author]=name',
+        )
+      })
+
+      it('should transform the relationship url when configured via setup - toMany', async () => {
+        const url = 'https://www.example.com/api'
+        const api = new Api(new URL(url), {
+          transformRelationshipForURL: () => 'foo-bar',
+        })
+
+        const endpoint = api.endpoint('/posts', Post)
+        api.register(Comment)
+
+        const mockHandleRequest = jest.fn().mockResolvedValue(
+          Result.accept({
+            data: [mockData.Comment.c1],
+          }),
+        )
+        api.controller.handleRequest = mockHandleRequest
+
+        try {
+          await endpoint.getToManyRelationship(
+            '123',
+            'comments',
+            {},
+            { fields: { Comment: ['title'] } },
+          )
+        } catch (errors) {
+          console.log(errors)
+          throw errors
+        }
+
+        expect(mockHandleRequest.mock.calls[0][0].href).toEqual(
+          'https://www.example.com/api/posts/123/foo-bar?fields[Comment]=title',
+        )
       })
     })
 
