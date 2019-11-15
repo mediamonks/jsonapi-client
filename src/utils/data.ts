@@ -1,6 +1,6 @@
 import { Serializable, isArray, isObject, isString } from 'isntnt'
 
-import { defaultGetRequestHeaders } from '../constants/jsonApi'
+import { defaultGetRequestHeaders, defaultPostRequestHeaders } from '../constants/jsonApi'
 
 export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> => Object.keys(value)
 
@@ -24,19 +24,25 @@ export const createDataValue = <T extends Serializable>(data: T): T => {
 export const createGetRequestOptions = () =>
   createDataValue({
     method: 'GET',
-    headers: defaultGetRequestHeaders,
+    headers: defaultPostRequestHeaders,
   })
 
 export const createPostRequestOptions = (data: Serializable) =>
   createDataValue({
     method: 'POST',
     body: JSON.stringify(data),
-    headers: defaultGetRequestHeaders,
+    headers: defaultPostRequestHeaders,
   })
 
 export const createPatchRequestOptions = (data: Serializable) =>
   createDataValue({
     method: 'PATCH',
     body: JSON.stringify(data),
-    headers: defaultGetRequestHeaders,
+    headers: defaultPostRequestHeaders,
+  })
+
+export const createDeleteRequestOptions = () =>
+  createDataValue({
+    method: 'DELETE',
+    headers: defaultPostRequestHeaders,
   })

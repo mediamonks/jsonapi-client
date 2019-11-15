@@ -4,6 +4,7 @@ import {
   keys,
   createPostRequestOptions,
   createPatchRequestOptions,
+  createDeleteRequestOptions,
 } from '../utils/data'
 
 import { Api } from './Api'
@@ -50,6 +51,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       ;(values as any).type = this.Resource.type
     }
     return new Promise((resolve, reject) => {
+      console.log(keys(this.Resource.fields))
       const result = this.api.controller.encodeResource(
         this.Resource.type,
         values as any,
@@ -77,13 +79,13 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
                 [],
               )
               if (result.isSuccess()) {
-                return resolve(result.value as any)
+                return resolve(new ApiEntityResult(result.value, response.meta) as any)
               } else {
                 return reject(result.value)
               }
             } else {
               console.warn(`Unsupported "No Content" response`)
-              resolve(new this.Resource(body) as any)
+              resolve(new ApiEntityResult(body, {} as any) as any)
             }
           } else {
             reject(result.value)
@@ -145,6 +147,12 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<ApiCollectionResult<FilteredResource<R, F>, any>> {
     return this.fetchCollection(query as any, resourceFilter) as any
+  }
+
+  async delete(id: ResourceId) {
+    const url = new URL(`${this.path}/${id}`, this.api.url)
+    const options = createDeleteRequestOptions()
+    return this.api.controller.handleRequest(url, options)
   }
 
   /**
