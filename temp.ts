@@ -331,8 +331,6 @@ export type ResourceFieldModel = {
 export type AnyResourceIdentifier = ResourceIdentifier<ResourceType>
 export type ResourceIdentifierKey = keyof AnyResourceIdentifier
 
-// type ResourceSpecies = typeof ResourceIdentifier | typeof Resource
-
 export class ResourceIdentifier<T extends string> {
   // [Symbol.species]: ResourceSpecies = ResourceIdentifier
   type: T
@@ -419,7 +417,7 @@ export type ResourceConstructor<R extends AnyResource> = {
 export const resource = <T extends string>(type: T) => {
   return class extends Resource<T, ResourceFieldModel> {
     static type: T = type
-    static fields: Record<ResourceFieldName, AnyResourceField> = Object.create(null)
+    static fields: Record<ResourceFieldName, AnyResourceField> = createEmptyObject()
   }
 }
 
@@ -441,15 +439,15 @@ type BaseApiResponse<M extends SerializableObject> = {
   }
 }
 
-type BaseApiResponseIncludedResources<R extends AnyResource> = Array<R>
+type BaseApiResponseIncludedResources = Array<AnyResource>
 
 type BaseApiSuccessResponse<R extends AnyResource, M extends JSONAPIMeta> = BaseApiResponse<M> & {
-  included?: BaseApiResponseIncludedResources<R>
+  included?: BaseApiResponseIncludedResources
 }
 
-type ApiResponse<R extends AnyResource | Array<AnyResource>, M extends JSONAPIMeta> =
+type ApiResponse<R extends AnyResource, M extends JSONAPIMeta> =
   | ApiErrorResponse<M>
-  | ApiSuccessResponse<R, M>
+  | ApiSuccessResponse<R | R[], M>
 
 type ApiErrorResponse<M extends SerializableObject> = BaseApiResponse<M> & {
   errors: Array<ApiRequestError>
@@ -762,7 +760,7 @@ class Api<S extends ApiSetup<any>> {
   decodeIncludedResource<R extends AnyResource>(
     Resource: ResourceConstructor<R>,
     identifier: ResourceIdentifier<R['type']>,
-    included: BaseApiResponseIncludedResources<any>, // TODO: fix BaseApiResponseIncludedResources
+    included: BaseApiResponseIncludedResources | undefined,
     fieldsParameter: ResourceFieldsParameter<R>,
     includeParameter: ResourceIncludeParameter<R>,
     pointer: ReadonlyArray<string>,
@@ -793,7 +791,7 @@ class Api<S extends ApiSetup<any>> {
   decodeResource<R extends AnyResource>(
     Resource: ResourceConstructor<R>,
     data: ApiResponseResourceData<R>,
-    included: BaseApiResponseIncludedResources<any> | undefined, // TODO: fix BaseApiResponseIncludedResources
+    included: BaseApiResponseIncludedResources | undefined,
     fieldsParameter: ResourceFieldsParameter<R>,
     includeParameter: ResourceIncludeParameter<R>,
     pointer: ReadonlyArray<string>,
@@ -905,12 +903,12 @@ class Api<S extends ApiSetup<any>> {
   async getResourceEntity<
     R extends AnyResource,
     M extends JSONAPIMeta,
-    P extends ApiResourceParametersConstructor<R>
+    P extends ApiResourceParameters<R>
   >(
     endpoint: ApiEndpoint<this, R>,
     resourcePath: string,
-    ResourceParameters: P,
-  ): Promise<BaseApiEntityResult<FilteredResource<R, InstanceType<P>>, M>> {
+    ResourceParameters: new () => P,
+  ): Promise<BaseApiEntityResult<FilteredResource<R, P>, M>> {
     const url = new URL(resourcePath, this.url) // TODO: add search params to url
     const resourceParameters = new ResourceParameters()
 
@@ -931,11 +929,15 @@ class Api<S extends ApiSetup<any>> {
     })
   }
 
-  async getResourceCollection<R extends AnyResource, M extends JSONAPIMeta>(
+  async getResourceCollection<
+    R extends AnyResource,
+    M extends JSONAPIMeta,
+    P extends ApiResourceParameters<R>
+  >(
     endpoint: ApiEndpoint<this, R>,
     resourcePath: string,
-    ResourceParameters: ApiResourceParametersConstructor<R>,
-  ): Promise<ApiCollectionResult<R[], M>> {
+    ResourceParameters: new () => P,
+  ): Promise<BaseApiCollectionResult<FilteredResource<R, P>[], M>> {
     const url = new URL(resourcePath, this.url) // TODO: add search params to url
     const resourceParameters = new ResourceParameters()
 
@@ -985,10 +987,10 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
     this.Resource = Resource
   }
 
-  async get<P extends ApiResourceParametersConstructor<R>, M extends JSONAPIMeta>(
+  async get<P extends ApiResourceParameters<R>, M extends JSONAPIMeta>(
     resourceId: ResourceId,
-    ResourceParameters: P = ApiResourceParameters as any,
-  ): Promise<BaseApiEntityResult<FilteredResource<R, InstanceType<P>>, M>> {
+    ResourceParameters: new () => P = ApiResourceParameters as any,
+  ): Promise<BaseApiEntityResult<FilteredResource<R, P>, M>> {
     return (this.api.getResourceEntity as PreventExcessivelyDeepRecursionError)(
       this,
       resourceId,
@@ -998,14 +1000,12 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
 
   async getToOneRelationship<
     N extends keyof ResourceToOneRelationshipFields<R>,
-    P extends ApiResourceParametersConstructor<Extract<R[N], AnyResource>>
+    P extends ApiResourceParameters<Extract<R[N], AnyResource>>
   >(
     resourceId: ResourceId,
     toOneRelationshipFieldName: N,
-    ResourceRelationshipParameters: P = ApiResourceParameters as any,
-  ): Promise<
-    BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, InstanceType<P>>, {}>
-  > {
+    ResourceRelationshipParameters: new () => P = ApiResourceParameters as any,
+  ): Promise<BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, P>, any>> {
     return (this.api.getResourceEntity as PreventExcessivelyDeepRecursionError)(
       this,
       `${resourceId}/${this.api.setup.transformRelationshipPath(
@@ -1017,12 +1017,12 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
 
   async getToManyRelationship<
     N extends keyof ResourceToManyRelationshipFields<R>,
-    P extends ApiResourceParametersConstructor<R[N][any]>
+    P extends ApiResourceParameters<R[N][any]>
   >(
     resourceId: ResourceId,
     toManyRelationshipFieldName: N,
-    ResourceRelationshipParameters: P = ApiResourceParameters as any,
-  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], InstanceType<P>>>, {}>> {
+    ResourceRelationshipParameters: new () => P = ApiResourceParameters as any,
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], P>>, {}>> {
     return (this.api.getResourceEntity as PreventExcessivelyDeepRecursionError)(
       this,
       `${resourceId}/${this.api.setup.transformRelationshipPath(
@@ -1032,9 +1032,10 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
     )
   }
 
-  async getCollection<P extends ApiResourceParametersConstructor<R>>(
-    ResourceParameters: P = ApiResourceParameters as any,
-  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, InstanceType<P>>>, {}>> {
+  async getCollection<P extends ApiResourceParameters<R>>(
+    queryParameters: Nullable<ApiQueryParameters> = null,
+    ResourceParameters: new () => P = ApiResourceParameters as any,
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, P>>, {}>> {
     return new ApiCollectionResult({} as any, {} as any, {} as any)
   }
 
@@ -1091,9 +1092,7 @@ class F extends resource('f') {
   xf!: string
 }
 
-type ApiResourceParametersConstructor<R extends AnyResource> = {
-  new (): ApiResourceParameters<R>
-}
+type ApiResourceParametersConstructor<P extends ApiResourceParameters<any>> = new () => P
 
 class ApiResourceParameters<R extends AnyResource> {
   fields?: ResourceFieldsParameter<R>
@@ -1110,7 +1109,7 @@ type BaseFilteredByFieldsResource<R, F> = R extends AnyResource
     ? Pick<R, F | ResourceIdentifierKey>
     : F extends undefined | null
     ? ResourceIdentifier<R['type']>
-    : Warning<'Invalid Resource fields parameter', R, F> // TODO: use Api/Endpoint setup to determine default included fields
+    : Warning<'Invalid Resource fields parameter', R, F> // TODO: use Api#setup to determine default included fields
   : never
 
 type TestBaseFilteredByFieldsResource = BaseFilteredByFieldsResource<A, 'b'>
@@ -1273,8 +1272,9 @@ type FilteredA = FilteredResource<A, { include: ResourcePrimaryIncludeFields<A> 
 
 const as = new ApiEndpoint(apiX, 'as', A)
 
-const oi = apiX.getResourceEntity(as, 'test', AFilter).then((result) => {
+const oi = apiX.getResourceEntity(as, 'as/12', AFilter).then((result) => {
   result.data
+  return result.data
 })
 
 as.get('12', AFilter).then((result) => {
@@ -1289,6 +1289,10 @@ class BFilter extends ApiResourceParameters<B> {
     c: null,
   }
 }
+
+as.getCollection(null, AFilter).then((result) => {
+  console.log(result.data)
+})
 
 as.getToOneRelationship('12', 'b', BFilter).then((result) => {
   console.log(result.data)
