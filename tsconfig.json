@@ -3,6 +3,7 @@
   "include": ["src", "temp.ts"],
   "compilerOptions": {
     "target": "esnext",
+    "lib": ["es2019", "dom"],
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,

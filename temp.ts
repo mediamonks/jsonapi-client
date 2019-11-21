@@ -1,21 +1,21 @@
 import {
+  isString,
+  isObject,
+  isUndefined,
+  either,
+  isArray,
+  isNone,
   Predicate,
   Static,
   Some,
   None,
   shape,
-  literal,
-  isString,
-  isNull,
-  isObject,
-  isUndefined,
-  or,
-  array,
-  either,
-  isArray,
+  at,
+  isFunction,
 } from 'isntnt'
 import { createEmptyObject } from './src/utils/data'
-import { ok, error, Result } from './Result'
+import { Validation } from './Validation'
+import { parseResourceParameters, joinParameters, parseApiQuery } from './formatting'
 
 // UTIL-TYPES
 type Nullable<T> = T | null
@@ -39,7 +39,7 @@ type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
   ? I
   : never
 
-type NonEmptyArray<T> = Array<T> & { 0: T }
+// type NonEmptyArray<T> = Array<T> & { 0: T }
 type ReadonlyNonEmptyArray<T> = ReadonlyArray<T> & { 0: T }
 
 // CONSTANTS
@@ -58,9 +58,6 @@ const REQUIRED = 'required' as const
 
 const TO_ONE = 'to-one' as const
 const TO_MANY = 'to-many' as const
-
-const FIELDS = 'fields' as const
-const INCLUDE = 'include' as const
 
 const resourceFieldRoot = {
   ATTRIBUTES,
@@ -83,12 +80,6 @@ const resourceFieldMeta = {
 } as const
 
 // PREDICATES
-const isResourceIdentifierOfTypeFactory = <T extends ResourceType>(type: T) =>
-  shape({
-    type: literal(type),
-    id: isString,
-  })
-
 const isResourceIdentifierKey = either(TYPE, ID)
 
 const createRulesValidator = (label: string, rules: Array<[Predicate<any>, string]>) => <T>(
@@ -106,11 +97,9 @@ const not = <P extends Predicate<any>>(predicate: P) => (
   value: unknown,
 ): value is Exclude<Some | None, Static<P>> => !predicate(value)
 
-const notResourceIdentifierKey = not(isResourceIdentifierKey)
-
 const validateFieldName = createRulesValidator('field name', [
   [isString, 'be a string'],
-  [notResourceIdentifierKey, `not be a resource identifier key (${TYPE} or ${ID})`],
+  [not(isResourceIdentifierKey), `not be a resource identifier key (${TYPE} or ${ID})`],
 ])
 
 // DATA-TYPES
@@ -140,8 +129,11 @@ export type ResourceFieldPredicate = Predicate<ResourceFieldValue>
 
 export type AttributeValue = OptionalAttributeValue | RequiredAttributeValue
 export type OptionalAttributeValue = RequiredAttributeValue | undefined
+export type NullableAttributeValue = RequiredAttributeValue | null
 export type RequiredAttributeValue =
-  | SerializablePrimitive
+  | string
+  | number
+  | boolean
   | SerializableArray
   | (SerializableObject & {
       relationships?: never
@@ -152,22 +144,29 @@ export type RelationshipValue = ToOneRelationshipValue | ToManyRelationshipValue
 export type ToOneRelationshipValue = Nullable<AnyResource>
 export type ToManyRelationshipValue = Array<AnyResource>
 
+export type OptionalAttribute<T extends AttributeValue> = T | undefined
+export type NullableAttribute<T extends AttributeValue> = T | null
+export type RequiredAttribute<T extends AttributeValue> = T
+
+export type ToOneRelationship<R extends AnyResource> = Nullable<R>
+export type ToManyRelationship<R extends AnyResource> = Array<R>
+
 // RESOURCE FIELD
-type ResourceFieldPointer<R extends ResourceFieldRoot, N extends ResourceFieldName> = [
+export type ResourceFieldPointer<R extends ResourceFieldRoot, N extends ResourceFieldName> = [
   typeof DATA,
   R,
   N,
 ]
 
-type AnyResourceField =
+export type AnyResourceField =
   | ResourceAttributeField<ResourceAttributeFieldMeta, ResourceFieldName, AttributeValue>
-  | ResourceRelationshipField<ResourceRelationshipFieldMeta, ResourceFieldName, RelationshipValue>
+  | ResourceRelationshipField<ResourceRelationshipFieldMeta, ResourceFieldName, ResourceType>
 
-export type ResourceAttributeField<
-  M extends ResourceAttributeFieldMeta,
-  N extends ResourceFieldName,
-  T extends AttributeValue
-> = ResourceField<ResourceAttributesFieldRoot, M, N, T>
+// export type ResourceAttributeField<
+//   M extends ResourceAttributeFieldMeta,
+//   N extends ResourceFieldName,
+//   T extends AttributeValue
+// > = ResourceField<ResourceAttributesFieldRoot, M, N, T>
 
 export type ResourceOptionalAttributeField<
   N extends ResourceFieldName,
@@ -179,23 +178,23 @@ export type ResourceRequiredAttributeField<
   T extends RequiredAttributeValue
 > = ResourceAttributeField<ResourceRequiredAttributeFieldMeta, N, T>
 
-export type ResourceRelationshipField<
-  M extends ResourceRelationshipFieldMeta,
-  N extends ResourceFieldName,
-  R extends RelationshipValue
-> = ResourceField<ResourceRelationshipsFieldRoot, M, N, R>
+// export type ResourceRelationshipField<
+//   M extends ResourceRelationshipFieldMeta,
+//   N extends ResourceFieldName,
+//   R extends RelationshipValue
+// > = ResourceField<ResourceRelationshipsFieldRoot, M, N, R>
 
 export type ResourceToOneRelationshipField<
   N extends ResourceFieldName,
-  R extends ToOneRelationshipValue
-> = ResourceRelationshipField<ResourceToOneRelationshipFieldMeta, N, R>
+  T extends ResourceType
+> = ResourceRelationshipField<ResourceToOneRelationshipFieldMeta, N, T>
 
 export type ResourceToManyRelationshipField<
   N extends ResourceFieldName,
-  R extends ToManyRelationshipValue
-> = ResourceRelationshipField<ResourceToManyRelationshipFieldMeta, N, R>
+  T extends ResourceType
+> = ResourceRelationshipField<ResourceToManyRelationshipFieldMeta, N, T>
 
-class ResourceField<
+export class ResourceField<
   R extends ResourceFieldRoot,
   M extends ValuesOf<ResourceFieldMeta[R]>,
   N extends ResourceFieldName,
@@ -205,28 +204,15 @@ class ResourceField<
   readonly meta: M
   readonly name: N
   readonly pointer: ResourceFieldPointer<R, N>
-  readonly validate: Predicate<T>
-  constructor(root: R, meta: M, name: N, predicate: Predicate<T>) {
+  constructor(root: R, meta: M, name: N) {
     this.root = root
     this.meta = meta
     this.name = validateFieldName(name)
     this.pointer = [DATA, root, name]
-    this.validate = predicate
   }
 
   toString(): string {
     return this.pointer.join('/')
-  }
-
-  setDataValue(data: ApiResponseResourceData<any>, value: Static<this['validate']>): void {
-    if (this.root in data) {
-      if (!isUndefined(value)) {
-        data[this.root]![this.name] = value as any // todo: investigate any cast fix
-      }
-    } else {
-      data[this.root] = createEmptyObject()
-      return this.setDataValue(data, value)
-    }
   }
 
   decodeValue(value: T): T {
@@ -266,50 +252,81 @@ class ResourceField<
   }
 }
 
-const toOneRelationshipField = <T extends ResourceType>(type: T) => (
-  target: any,
-  name: ResourceFieldName,
-): any => {
-  const isBaseResourceIdentifierValue = or(isNull, isResourceIdentifierOfTypeFactory(type))
-  target.fields[name] = new ResourceField(
-    resourceFieldRoot.RELATIONSHIPS,
+export class ResourceAttributeField<
+  M extends ResourceAttributeFieldMeta,
+  N extends ResourceFieldName,
+  T extends AttributeValue
+> extends ResourceField<typeof ATTRIBUTES, M, N, RelationshipValue> {
+  readonly predicate: Predicate<T>
+  constructor(kind: M, name: N, predicate: Predicate<T>) {
+    super('attributes', kind, name)
+    this.predicate = predicate
+  }
+}
+
+export class ResourceRelationshipField<
+  M extends ResourceRelationshipFieldMeta,
+  N extends ResourceFieldName,
+  T extends ResourceType
+> extends ResourceField<typeof RELATIONSHIPS, M, N, ResourceIdentifier<T>> {
+  readonly type: T
+  constructor(kind: M, name: N, type: T) {
+    super('relationships', kind, name)
+    this.type = type
+  }
+}
+
+export const toOneRelationship = <T extends ResourceType>(
+  type: T | (() => ResourceConstructor<AnyResource>),
+) => (target: any, name: ResourceFieldName): any => {
+  if (isFunction(type)) {
+    type = type().type as T
+  }
+  target.constructor.fields[name] = new ResourceRelationshipField(
     resourceRelationshipFieldMeta.TO_ONE,
     name,
-    isBaseResourceIdentifierValue,
+    type,
   )
 }
 
-const toManyRelationshipField = <T extends ResourceType>(type: T) => (
+export const toManyRelationship = <T extends ResourceType>(type: T) => (
   target: any,
   name: ResourceFieldName,
 ): any => {
-  const isBaseResourceIdentifierValue = array(isResourceIdentifierOfTypeFactory(type))
-  target.fields[name] = new ResourceField(
-    resourceFieldRoot.RELATIONSHIPS,
+  target.constructor.fields[name] = new ResourceRelationshipField(
     resourceRelationshipFieldMeta.TO_MANY,
     name,
-    isBaseResourceIdentifierValue,
+    type,
   )
 }
 
-const optionalAttribute = <T extends AttributeValue>(predicate: Predicate<T>) => (
+export const optionalAttribute = <T extends AttributeValue>(predicate: Predicate<T>) => (
   target: any,
   name: ResourceFieldName,
 ): any => {
-  target.fields[name] = new ResourceField(
-    resourceFieldRoot.ATTRIBUTES,
+  target.constructor.fields[name] = new ResourceAttributeField(
     resourceAttributeFieldMeta.OPTIONAL,
     name,
     predicate,
   )
 }
 
-const requiredAttribute = <T extends AttributeValue>(predicate: Predicate<T>) => (
+export const nullableAttribute = <T extends AttributeValue>(predicate: Predicate<T>) => (
   target: any,
   name: ResourceFieldName,
 ): any => {
-  target.fields[name] = new ResourceField(
-    resourceFieldRoot.ATTRIBUTES,
+  target.constructor.fields[name] = new ResourceAttributeField(
+    resourceAttributeFieldMeta.OPTIONAL,
+    name,
+    predicate,
+  )
+}
+
+export const requiredAttribute = <T extends AttributeValue>(predicate: Predicate<T>) => (
+  target: any,
+  name: ResourceFieldName,
+): any => {
+  target.constructor.fields[name] = new ResourceAttributeField(
     resourceAttributeFieldMeta.REQUIRED,
     name,
     predicate,
@@ -320,9 +337,7 @@ export type ResourceFieldNames<R extends AnyResource> = BaseResourceFieldNames<R
 
 export type ResourceFieldOptions<R extends AnyResource> = BaseResourceFieldOptions<R>
 
-export type ResourceFieldModel = {
-  [key: string]: ResourceFieldValue
-} & {
+export type ResourceFieldModel = Record<ResourceFieldName, ResourceFieldValue> & {
   type?: never
   id?: never
 }
@@ -332,7 +347,6 @@ export type AnyResourceIdentifier = ResourceIdentifier<ResourceType>
 export type ResourceIdentifierKey = keyof AnyResourceIdentifier
 
 export class ResourceIdentifier<T extends string> {
-  // [Symbol.species]: ResourceSpecies = ResourceIdentifier
   type: T
   id: string
 
@@ -345,40 +359,32 @@ export class ResourceIdentifier<T extends string> {
 // RESOURCE
 export type ResourceType = string
 export type ResourceId = string
-export type AnyResource = Resource<ResourceType, Record<string, ResourceFieldValue>>
-
-export type ResourceToOneRelationship<R extends AnyResource> = Nullable<R>
-export type ResourceToOneRelationshipIdentifier<R extends AnyResource> = Nullable<
-  ResourceIdentifier<R['type']>
+export type AnyResource = ApiResource<
+  {
+    [key: string]: ResourceFieldValue
+  } & {
+    type: ResourceType
+    id: ResourceId
+  }
 >
 
-export type ResourceToManyRelationship<R extends AnyResource> = Array<R>
-export type ResourceToManyRelationshipIdentifier<R extends AnyResource> = Array<
-  ResourceIdentifier<R['type']>
->
-
-export class Resource<
-  T extends ResourceType,
-  F extends ResourceFieldModel
-> extends ResourceIdentifier<T> {
-  // [Symbol.species]: ResourceSpecies = Resource
-
-  constructor(values: Resource<T, F>) {
+export class ApiResource<R extends AnyResource> extends ResourceIdentifier<R['type']> {
+  constructor(values: R) {
     super(values.type, values.id)
     Object.assign(this, values)
   }
 
-  static type: ResourceType
   static fields: Record<ResourceFieldName, AnyResourceField> = createEmptyObject()
+  static Identifier: new (id: ResourceId) => ResourceIdentifier<any>
 }
 
-type ResourceAttributeFields<R extends AnyResource> = WithoutNever<
+export type ResourceAttributeFields<R extends AnyResource> = WithoutNever<
   {
     [K in keyof R]: R[K] extends RelationshipValue ? never : ResourceAttributeField<any, any, any>
   }
 >
 
-type ResourceRelationshipFields<R extends AnyResource> = WithoutNever<
+export type ResourceRelationshipFields<R extends AnyResource> = WithoutNever<
   {
     [K in keyof R]: R[K] extends RelationshipValue
       ? ResourceRelationshipField<any, any, any>
@@ -386,7 +392,7 @@ type ResourceRelationshipFields<R extends AnyResource> = WithoutNever<
   }
 >
 
-type ResourceToOneRelationshipFields<R extends AnyResource> = WithoutNever<
+export type ResourceToOneRelationshipFields<R extends AnyResource> = WithoutNever<
   {
     [K in keyof R]: R[K] extends ToOneRelationshipValue
       ? ResourceToOneRelationshipField<any, any>
@@ -394,15 +400,15 @@ type ResourceToOneRelationshipFields<R extends AnyResource> = WithoutNever<
   }
 >
 
-type ResourceToManyRelationshipFields<R extends AnyResource> = WithoutNever<
+export type ResourceToManyRelationshipFields<R extends AnyResource> = WithoutNever<
   {
     [K in keyof R]: R[K] extends ToManyRelationshipValue
-      ? ResourceToManyRelationshipField<any, any>
+      ? ResourceToManyRelationshipField<ResourceFieldName, any>
       : never
   }
 >
 
-type ResourceFields<R extends AnyResource> = {
+export type ResourceFields<R extends AnyResource> = {
   [K in keyof R]: R[K] extends RelationshipValue
     ? ResourceRelationshipField<any, any, any>
     : ResourceAttributeField<any, any, any>
@@ -412,18 +418,36 @@ export type ResourceConstructor<R extends AnyResource> = {
   new (resource: R): R
   type: R['type']
   fields: Record<ResourceFieldName, AnyResourceField>
+  Identifier: new (id: ResourceId) => AnyResourceIdentifier
 }
 
-export const resource = <T extends string>(type: T) => {
-  return class extends Resource<T, ResourceFieldModel> {
+export type BaseResourceFieldsModel<T> = {
+  [K in keyof T]: K extends ResourceIdentifierKey
+    ? ResourceFieldError<'Invalid Field Name', K>
+    : T[K] extends ResourceFieldValue
+    ? T[K]
+    : ResourceFieldError<'Invalid Field Value', { [X in K]: T[K] }>
+}
+
+export type ResourceFieldError<M extends string, T> = M & { value: T }
+
+export const resource = <T extends ResourceType>(type: T) => {
+  return class Resource<
+    M extends BaseResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
+  > extends ApiResource<ResourceIdentifier<T> & M> {
     static type: T = type
     static fields: Record<ResourceFieldName, AnyResourceField> = createEmptyObject()
+    static Identifier = class extends ResourceIdentifier<T> {
+      constructor(id: ResourceId) {
+        super(type, id)
+      }
+    }
   }
 }
 
-type ResourceIncludeParameter<R extends AnyResource> = BaseResourceIncludeThree<R>
+export type ResourceIncludeParameter<R extends AnyResource> = BaseResourceIncludeThree<R>
 
-type ResourceFieldsParameter<R extends AnyResource> = Partial<
+export type ResourceFieldsParameter<R extends AnyResource> = Partial<
   UnionToIntersection<BaseResourceFieldsUnion<R>>
 >
 
@@ -530,18 +554,19 @@ export type ApiRequestError = {
 }
 
 // BASE TYPES
-type BaseApiResponseDataResourceRelationshipValue<T> = T extends ResourceToManyRelationship<
-  AnyResource
->
+type BaseApiResponseDataResourceRelationshipValue<T> = T extends ToManyRelationship<AnyResource>
   ? Array<BaseResourceTypeIdentifier<T[number]['type']>>
   : Nullable<BaseResourceTypeIdentifier<Extract<T, AnyResourceIdentifier>['type']>>
 
 type BaseResourceTypeIdentifier<T> = T extends ResourceType ? ResourceIdentifier<T> : never
 
-type BaseResourceFieldNames<T> = ValuesOf<
-  {
-    [K in keyof T]: K extends string ? (K extends ResourceIdentifierKey ? never : K) : never
-  }
+type BaseResourceFieldNames<T> = Exclude<
+  ValuesOf<
+    {
+      [K in keyof T]: K extends string ? (K extends ResourceIdentifierKey ? never : K) : never
+    }
+  >,
+  undefined
 >
 
 type BaseResourceAttributeNames<T> = ValuesOf<
@@ -562,9 +587,6 @@ type BaseResourceFieldOptions<T> = T extends AnyResource
     }
   : never
 
-// Base Resource Type
-type BaseResourceType<R> = R extends AnyResource ? R['type'] : never
-
 // Extracts a Resource from a RelationshipValue
 type BaseRelationshipResource<T> = T extends Array<AnyResource>
   ? T[number]
@@ -575,10 +597,13 @@ type BaseResourceTypeUnion<R, T = never> = R extends AnyResource
   ? R['type'] extends T
     ? T
     :
-        | BaseResourceType<R>
-        | {
-            [K in keyof R]: BaseResourceTypeUnion<BaseRelationshipResource<R[K]>, T | R['type']>
-          }[keyof R]
+        | R['type']
+        | Exclude<
+            {
+              [K in keyof R]: BaseResourceTypeUnion<BaseRelationshipResource<R[K]>, T | R['type']>
+            }[keyof R],
+            undefined
+          >
   : never
 
 type TestBaseResourceTypeUnionA = Is<
@@ -590,9 +615,12 @@ type TestBaseResourceTypeUnionNotResourceType = Not<Expects<ResourceType, BaseRe
 
 // Extracts the Resources of all relationships in a Resource
 type BaseResourceRelationshipsUnion<R> = R extends AnyResource
-  ? {
-      [K in keyof R]: BaseResourceUnion<BaseRelationshipResource<R[K]>, never>
-    }[keyof R]
+  ? Exclude<
+      {
+        [K in keyof R]: BaseResourceUnion<BaseRelationshipResource<R[K]>, never>
+      }[keyof R],
+      undefined
+    >
   : never
 
 type TestBaseResourceRelationshipsUnionFromA = Is<
@@ -607,9 +635,12 @@ type BaseResourceUnion<R, T = never> = R extends AnyResource
     ? R
     :
         | R
-        | {
-            [K in keyof R]: BaseResourceUnion<BaseRelationshipResource<R[K]>, T | R['type']>
-          }[keyof R]
+        | Exclude<
+            {
+              [K in keyof R]: BaseResourceUnion<BaseRelationshipResource<R[K]>, T | R['type']>
+            }[keyof R],
+            undefined
+          >
   : never
 
 type TestBaseResourceUnionFromA = Is<Expects<A | B | C | D | E | F, BaseResourceUnion<A>>>
@@ -617,14 +648,19 @@ type TestBaseResourceUnionFromC = Is<Expects<A | B | C | D | E | F, BaseResource
 type TestBaseResourceUnionFromE = Is<Expects<E | F, BaseResourceUnion<E>>>
 type TestBaseResourceUnionNotAnyResource = Not<Expects<AnyResource, BaseResourceUnion<A>>>
 
+type BaseResourceFieldsUnionA = BaseResourceFieldsUnion<A>
+
 type BaseResourceFieldsUnion<R, T = never> = R extends AnyResource
   ? R['type'] extends T
     ? BaseResourceFieldOptions<R>
     :
         | BaseResourceFieldOptions<R>
-        | {
-            [K in keyof R]: BaseResourceFieldsUnion<BaseRelationshipResource<R[K]>, T | R['type']>
-          }[keyof R]
+        | Exclude<
+            {
+              [K in keyof R]: BaseResourceFieldsUnion<BaseRelationshipResource<R[K]>, T | R['type']>
+            }[keyof R],
+            undefined
+          >
   : never
 
 type TestResourceFieldsUnion = Is<
@@ -679,58 +715,98 @@ type ApiDefaultIncludedFields = typeof NONE | typeof PRIMARY
 type Fetch = Window['fetch']
 type FetchOptions = RequestInit
 
+type ApiSetupWithDefaults<S extends Partial<ApiSetupOptions>> = Exclude<
+  keyof ApiSetupOptions,
+  keyof S
+> extends never
+  ? DefaultApiSetup
+  : Omit<DefaultApiSetup, keyof S> &
+      {
+        [K in keyof S]: S[K]
+      }
+
 type ApiSetup<S extends Partial<ApiSetupOptions>> = {
   [K in keyof DefaultApiSetup]: K extends keyof S ? S[K] : DefaultApiSetup[K]
 }
+
+type Transform<I, O = I> = (value: I, ...rest: unknown[]) => O
 
 type ApiSetupOptions = {
   version: JSONAPIVersion
   defaultIncludedRelationships: ApiDefaultIncludedFields
   fetchAdapter: Fetch
-  beforeRequest(request: Request): Request
-  transformRelationshipPath(name: ResourceFieldName): ResourceFieldName
+  beforeRequest: Transform<Request>
+  transformRelationshipPath: Transform<ResourceFieldName>
+  createPageQuery: Contract<[any], ApiQueryParameterValue>
 }
+
+type Contract<T extends Array<any>, O> = (...rest: T) => O
 
 type DefaultApiSetup = ApiSetupOptions & {
   version: '1.0'
   defaultIncludedRelationships: typeof NONE
 }
 
+const JSONAPIVersions = ['1.0', '1.1'] as const
+
+const isJSONAPIVersion = either(...JSONAPIVersions)
+const isBodyWithJSONAPIVersion = shape({ jsonapi: at('version', not(isUndefined)) })
+
+// type SetupWithDefaults<S extends Partial<ApiSetupOptions>> = Required<
+//   {
+//     [K in keyof ApiSetupOptions]: K extends keyof S ? S[K] | 1 : DefaultApiSetup[K] | 0
+//   }
+// >
+
+// type OI = SetupWithDefaults<{
+//   version: '1.0'
+// }>
+
+const reflect = <T>(value: T): T => value
+
 const defaultApiSetup: DefaultApiSetup = {
   version: '1.0',
   defaultIncludedRelationships: NONE,
   fetchAdapter: window.fetch,
-  beforeRequest(request: Request): Request {
-    return request
-  },
-  transformRelationshipPath(name: ResourceFieldName): ResourceFieldName {
-    return name
-  },
+  beforeRequest: reflect,
+  transformRelationshipPath: reflect,
+  createPageQuery: reflect,
 }
 
-type AnyApi = Api<ApiSetupOptions>
+type AnyApiClient = ApiClient<any>
 
-class Api<S extends ApiSetup<any>> {
+export class ApiClient<S extends Partial<ApiSetupOptions>> {
   url: URL
-  setup: S
+  setup: ApiSetupWithDefaults<S>
   resources: Record<ResourceType, ResourceConstructor<AnyResource>> = createEmptyObject()
 
-  constructor(url: URL, setup: Partial<S> = EMPTY_OBJECT) {
+  constructor(url: URL, setup: S = EMPTY_OBJECT as any) {
     this.url = url
     this.setup = { ...defaultApiSetup, ...setup } as any
   }
 
-  registerResource(Resource: ResourceConstructor<any>): void {
+  endpoint<R extends AnyResource>(
+    path: string,
+    Resource: ResourceConstructor<R>,
+  ): ApiEndpoint<this, R> {
+    return new ApiEndpoint(this, path, Resource)
+  }
+
+  register(...resources: Array<ResourceConstructor<any>>): void {
+    resources.forEach((Resource) => this.addResource(Resource))
+  }
+
+  addResource(Resource: ResourceConstructor<any>): void {
     if (Resource.type in this.resources && Resource !== this.resources[Resource.type]) {
       console.warn(`Attempt to replace Resource of type ${Resource.type}`)
     }
     this.resources[Resource.type] = Resource
   }
 
-  getResourceByType(type: ResourceType): ResourceConstructor<any> {
+  getResourceByType(type: ResourceType): ResourceConstructor<AnyResource> {
     const Resource = this.resources[type]
     if (isUndefined(Resource)) {
-      throw new Error(`Resource of type "${type}" does not exist on Api`)
+      throw new Error(`Resource of type "${type}" does not exist on ApiClient`)
     }
     return Resource
   }
@@ -739,8 +815,8 @@ class Api<S extends ApiSetup<any>> {
     url: URL,
     options: FetchOptions,
   ): Promise<ApiSuccessResponse<R, M>> {
-    const fetchAdapter: Fetch = this.setup.fetchAdapter
-    const request = this.setup.beforeRequest(new Request(url.href, options))
+    const fetchAdapter: Fetch = this.setup.fetchAdapter!
+    const request = this.setup.beforeRequest!(new Request(url.href, options))
     return fetchAdapter(request)
       .then((response) => {
         if (!response.ok) {
@@ -749,11 +825,22 @@ class Api<S extends ApiSetup<any>> {
         return response.json()
       })
       .then((body) => {
-        if ('errors' in body) {
+        if (isBodyWithJSONAPIVersion(body)) {
+          if (!isJSONAPIVersion(body.jsonapi.version)) {
+            throw new Error(`Invalid JSON:API version`)
+          } else if (body.jsonapi.version !== this.setup.version) {
+            throw new Error(`JSON:API version must equal ${this.setup.version}`)
+          }
+        }
+        if (isArray(body.errors)) {
           // TODO: parse body errors
           throw new Error(`Found ${body.errors.length} errors in response`)
         }
         return body
+      })
+      .catch((error) => {
+        console.warn(error)
+        throw new Error(`Invalid Response`)
       })
   }
 
@@ -764,28 +851,84 @@ class Api<S extends ApiSetup<any>> {
     fieldsParameter: ResourceFieldsParameter<R>,
     includeParameter: ResourceIncludeParameter<R>,
     pointer: ReadonlyArray<string>,
-  ): Result<R, Error> {
+  ): Validation<R, ApiError<any>[]> {
     if (isUndefined(included)) {
-      return error(new Error(`Missing included resource data`))
+      return Validation.failure([
+        new ApiResponseError(`Included resource data is undefined`, included, ['included']),
+      ])
     }
-    const data = included.find(
+    const includedData = included.find(
       (includedData) => includedData.type === identifier.type && includedData.id === identifier.id,
     )
-    if (isUndefined(data)) {
-      return error(
-        new Error(
-          `Could not find included Resource of type "${Resource.type}" with id "${identifier.id}"`,
+    if (isUndefined(includedData)) {
+      return Validation.failure([
+        new ApiResponseError(
+          `Included resource not found for Resource "${Resource.type}" with id "${identifier.id}"`,
+          identifier,
+          pointer,
         ),
-      )
+      ])
     }
     return (this.decodeResource as PreventExcessivelyDeepRecursionError)(
       Resource,
-      data,
+      includedData,
       included,
       fieldsParameter,
       includeParameter,
       pointer.concat(identifier.id),
     )
+  }
+
+  decodeResourceIdentifier<R extends AnyResource>(
+    Resource: ResourceConstructor<R>,
+    identifier: ResourceIdentifier<R['type']>,
+    pointer: ReadonlyArray<string>,
+  ): Validation<ResourceIdentifier<R['type']>, ApiError<any>[]> {
+    if (!isObject(identifier)) {
+      return Validation.failure([
+        new ApiResponseError(`Resource identifier must be an object`, identifier, pointer),
+      ])
+    }
+
+    const result: Partial<ResourceIdentifier<R['type']>> = createEmptyObject()
+    const errors: Array<ApiValidationError> = []
+
+    if (identifier.type === Resource.type) {
+      result.type = identifier.type
+    } else {
+      errors.push(
+        new ApiValidationError(
+          `Resource type must equal ${Resource.type}`,
+          identifier.type,
+          pointer.concat('type'),
+        ),
+      )
+    }
+
+    if (isString(identifier.id)) {
+      result.id = identifier.id
+    } else {
+      errors.push(
+        new ApiValidationError(`Resource id must be a string`, identifier.id, pointer.concat('id')),
+      )
+    }
+
+    return errors.length
+      ? Validation.failure(errors)
+      : Validation.success(result as ResourceIdentifier<R['type']>)
+  }
+
+  getResourceField<R extends AnyResource>(
+    Resource: ResourceConstructor<R>,
+    name: ResourceFieldName,
+  ): AnyResourceField {
+    const field = Resource.fields[name]
+    if (isUndefined(field)) {
+      throw new Error(
+        `Field of name "${name}" does not exist on Resource of type "${Resource.type}"`,
+      )
+    }
+    return field
   }
 
   decodeResource<R extends AnyResource>(
@@ -795,109 +938,152 @@ class Api<S extends ApiSetup<any>> {
     fieldsParameter: ResourceFieldsParameter<R>,
     includeParameter: ResourceIncludeParameter<R>,
     pointer: ReadonlyArray<string>,
-  ): Result<R, Error> {
-    if (!isObject(data)) {
-      return error(new Error(`Invalid data`))
-    }
+  ): Validation<R, ApiError<any>[]> {
+    return this.decodeResourceIdentifier(Resource, data, pointer).map((validation) => {
+      if (validation.isFailure()) {
+        return validation
+      }
 
-    // TODO: should the data of a resource be added to the included data because
-    // a relationship MAY depend on it?
-    if (isArray(included)) {
-      included.push(data)
-    }
+      // TODO: should the data of a resource be added to the included data because
+      // a relationship MAY depend on it?
+      if (isArray(included)) {
+        included.push(data)
+      }
 
-    const resource: Record<ResourceFieldName, ResourceFieldValue> = createEmptyObject()
-    const fieldNames: Array<ResourceFieldNames<R>> =
-      (fieldsParameter as any)[Resource.type] || Object.keys(Resource.fields)
+      const resource = validation.value as Record<ResourceFieldName, any>
+      const errors: Array<ApiError<any>> = []
+      const fieldNames: Array<ResourceFieldNames<R>> =
+        (fieldsParameter as any)[Resource.type] || Object.keys(Resource.fields)
 
-    if (data.type === Resource.type) {
-      resource.type = data.type
-    } else {
-      return error(new Error(`Invalid resource type`))
-    }
-
-    if (isString(data.id)) {
-      resource.id = data.id
-    } else {
-      return error(new Error(`Invalid resource id`))
-    }
-
-    fieldNames.forEach(<N extends ResourceFieldName>(name: N) => {
-      const field = Resource.fields[name]
-      const root = data[field.root]
-      if (isObject(root)) {
-        if (field.name in root) {
-          const value = (root as any)[field.name] // WTF?
-
+      fieldNames.forEach(<N extends ResourceFieldName>(name: N) => {
+        const field = this.getResourceField(Resource, name)
+        const root = data[field.root]
+        if (isObject(root)) {
+          const value = (root as any)[name] // WTF?
           if (field.isAttributeField()) {
-            if (field.validate(value)) {
+            if (field.predicate(value)) {
               resource[name] = value
-            } else if (isUndefined(value)) {
+            } else if (isNone(value)) {
               if (field.isRequiredAttributeField()) {
-                return error(new Error(`Invalid data: "${field.name}" is a required field`))
+                errors.push(
+                  new ApiValidationError(
+                    `Value for attribute field "${field.name}" of Resource "${Resource.type}" is required`,
+                    value,
+                    pointer.concat(field.pointer),
+                  ),
+                )
               }
             } else {
-              return error(new Error(`Invalid data: "${field.name}" does not match its predicate`))
-            }
-          }
-
-          if (!field.validate(value.data)) {
-            return error(
-              new Error(`Invalid data: "${field.name}" must be a ${field.meta} relationship value`),
-            )
-          }
-
-          if (field.isToOneRelationshipField()) {
-            if (isNull(value)) {
-              resource[name] = value
-            } else {
-              const RelationshipResource = this.getResourceByType(value.type)
-              const relationshipIncludeParameter = (includeParameter as any)[name] || EMPTY_OBJECT
-              const result: Result<AnyResource, Error> = (this.decodeIncludedResource as any)(
-                RelationshipResource,
-                value,
-                included,
-                fieldsParameter,
-                relationshipIncludeParameter,
-                pointer.concat(field.pointer),
+              errors.push(
+                new ApiValidationError(
+                  `Value for attribute field "${field.name}" of Resource "${Resource.type}" does not match its predicate`,
+                  value,
+                  pointer.concat(field.pointer),
+                ),
               )
-              if (result.isOK()) {
-                resource[name] = result.value
+            }
+          } else if (field.isToOneRelationshipField()) {
+            const RelationshipResource = this.getResourceByType(field.type)
+            const resourceData = (value || EMPTY_OBJECT).data
+            if (isNone(resourceData)) {
+              resource[name] = null
+            } else {
+              if (name in includeParameter) {
+                const relationshipIncludeParameter = (includeParameter as any)[name] || EMPTY_OBJECT
+                this.decodeIncludedResource(
+                  RelationshipResource,
+                  resourceData,
+                  included,
+                  fieldsParameter as PreventExcessivelyDeepRecursionError,
+                  relationshipIncludeParameter,
+                  pointer.concat(field.pointer),
+                )
+                  .mapSuccess((value) => {
+                    resource[name] = value
+                  })
+                  .mapFailure((value) => {
+                    value.forEach((error) => errors.push(error))
+                  })
               } else {
-                return error(new Error(`Invalid resource relationship at "${field.name}"`))
+                this.decodeResourceIdentifier(
+                  RelationshipResource,
+                  resourceData,
+                  pointer.concat(field.pointer),
+                )
+                  .mapSuccess((value) => {
+                    resource[name] = value
+                  })
+                  .mapFailure((value) => {
+                    value.forEach((error) => errors.push(error))
+                  })
               }
             }
           } else if (field.isToManyRelationshipField()) {
-            const resources: Array<AnyResource> = []
-            const errors = []
-            value.forEach((identifier: AnyResourceIdentifier) => {
-              const RelationshipResource = this.getResourceByType(value.type)
-              const relationshipIncludeParameter = (includeParameter as any)[name] || EMPTY_OBJECT
-              const result: Result<AnyResource, Error> = (this.decodeIncludedResource as any)(
-                RelationshipResource,
-                identifier,
-                included,
-                fieldsParameter,
-                relationshipIncludeParameter,
-                pointer.concat(field.pointer),
+            const RelationshipResource = this.getResourceByType(field.type)
+            const relationshipPointer = pointer.concat(field.pointer)
+            const resourceData: Array<AnyResource> = (value || EMPTY_OBJECT).data
+
+            if (isUndefined(resourceData)) {
+              resource[name] = []
+            } else if (!isArray(resourceData)) {
+              errors.push(
+                new ApiResponseError(
+                  `Value for to-many relationship  field "${field.name}" of Resource "${Resource.type}" must be an Array`,
+                  resourceData,
+                  pointer.concat(field.pointer),
+                ),
               )
-              if (result.isOK()) {
-                resources.push(result.value)
-              } else {
-                errors.push(new Error(`Invalid resource relationship at "${field.name}"`))
-              }
-            })
-            if (errors.length) {
-              return error(`Found ${errors.length} invalid resources in to-many relationship`)
+            } else if (name in includeParameter) {
+              resource[name] = []
+              resourceData.forEach((identifier) => {
+                const relationshipIncludeParameter = (includeParameter as any)[name] || EMPTY_OBJECT
+                this.decodeIncludedResource(
+                  RelationshipResource,
+                  identifier,
+                  included,
+                  fieldsParameter as PreventExcessivelyDeepRecursionError,
+                  relationshipIncludeParameter,
+                  relationshipPointer,
+                )
+                  .mapSuccess((value) => {
+                    resource[name].push(value)
+                  })
+                  .mapFailure((value) => {
+                    value.forEach((error) => errors.push(error))
+                  })
+              })
             } else {
-              resource[name] = resources
+              resource[name] = []
+              resourceData.forEach((identifier: AnyResource) => {
+                this.decodeResourceIdentifier(RelationshipResource, identifier, relationshipPointer)
+                  .mapSuccess((value) => {
+                    resource[name].push(value)
+                  })
+                  .mapFailure((value) => {
+                    value.forEach((error) => errors.push(error))
+                  })
+              })
             }
           }
+        } else if (field.isRequiredAttributeField()) {
+          errors.push(
+            new ApiResponseError(
+              `Data ${field.root} must be an object with a "${name}" property`,
+              root,
+              pointer,
+            ),
+          )
+        } else if (field.isToManyRelationshipField()) {
+          resource[name] = []
+        } else {
+          resource[name] = null
         }
-      }
-    })
+      })
 
-    return ok(new Resource(resource as any))
+      return errors.length
+        ? Validation.failure(errors)
+        : Validation.success(new Resource(resource as any))
+    })
   }
 
   async getResourceEntity<
@@ -905,95 +1091,117 @@ class Api<S extends ApiSetup<any>> {
     M extends JSONAPIMeta,
     P extends ApiResourceParameters<R>
   >(
-    endpoint: ApiEndpoint<this, R>,
-    resourcePath: string,
+    Resource: ResourceConstructor<R>,
+    path: string,
     ResourceParameters: new () => P,
   ): Promise<BaseApiEntityResult<FilteredResource<R, P>, M>> {
-    const url = new URL(resourcePath, this.url) // TODO: add search params to url
     const resourceParameters = new ResourceParameters()
+    const url = new URL(path, this.url) // TODO: add search params to url
+    url.search = joinParameters(
+      parseResourceParameters(resourceParameters as PreventExcessivelyDeepRecursionError),
+    )
 
     return this.handleFetchRequest<R, M>(url, {} /* TODO: add options */).then((response) => {
       return this.decodeResource(
-        endpoint.Resource as any, // (1) This is odd, R (that extends AnyResource) seems to be incompatible with AnyResource
+        Resource as any, // (1) This is odd, R (that extends AnyResource) is incompatible with AnyResource
         response.data,
         response.included,
-        resourceParameters.fields || (EMPTY_OBJECT as any),
-        resourceParameters.include || createDefaultIncludeParameters(endpoint),
+        resourceParameters.fields || EMPTY_OBJECT,
+        resourceParameters.include || createDefaultIncludeParameters(this, Resource),
         EMPTY_ARRAY, // Use frozen array to catch property modifications
       )
-        .map((resource: AnyResource) => {
+        .mapSuccess((value: AnyResource) => {
           // AnyResource Should be R, see 1
-          return new ApiEntityResult(resource, response.meta || {})
+          return new ApiEntityResult(value, response.meta || {})
         })
-        .unwrap() as any // See 1
+        .unwrap() as any
     })
   }
 
-  async getResourceCollection<
-    R extends AnyResource,
-    M extends JSONAPIMeta,
-    P extends ApiResourceParameters<R>
-  >(
-    endpoint: ApiEndpoint<this, R>,
-    resourcePath: string,
+  async getResourceCollection<R extends AnyResource, P extends ApiResourceParameters<R>>(
+    Resource: ResourceConstructor<R>,
+    path: string,
+    queryParameters: Nullable<ApiQueryParameters<this>>,
     ResourceParameters: new () => P,
-  ): Promise<BaseApiCollectionResult<FilteredResource<R, P>[], M>> {
-    const url = new URL(resourcePath, this.url) // TODO: add search params to url
+  ): Promise<BaseApiCollectionResult<FilteredResource<R, P>[], SerializableObject>> {
     const resourceParameters = new ResourceParameters()
+    const url = new URL(path, this.url) // TODO: add search params to url
+    url.search = joinParameters(
+      parseResourceParameters(resourceParameters as PreventExcessivelyDeepRecursionError).concat(
+        parseApiQuery(this, queryParameters || EMPTY_OBJECT),
+      ),
+    )
 
-    return this.handleFetchRequest<R[], M>(url, {} /* TODO: add options */).then((response) => {
-      const resources: Array<R> = []
-      const errors: Array<Error> = []
-      ;(response as ApiResourceCollectionResponse<R, M>).data.forEach((resourceData: any) => {
-        const result = this.decodeIncludedResource(
-          endpoint.Resource as any, // (1) This is odd, R (that extends AnyResource) seems to be incompatible with AnyResource
-          resourceData,
-          response.included as any, // TODO: fix
-          resourceParameters.fields || (EMPTY_OBJECT as any),
-          resourceParameters.include || createDefaultIncludeParameters(endpoint),
-          EMPTY_ARRAY, // Use frozen array to catch property modifications
+    return this.handleFetchRequest<R[], SerializableObject>(url, {} /* TODO: add options */).then(
+      (response) => {
+        const resources: Array<R> = []
+        const errors: Array<Error> = []
+        ;(response as ApiResourceCollectionResponse<R, SerializableObject>).data.forEach(
+          (resourceData: any) => {
+            this.decodeResource(
+              Resource as any, // (1) This is odd, R (that extends AnyResource) seems to be incompatible with AnyResource
+              resourceData,
+              response.included, // TODO: fix
+              resourceParameters.fields || EMPTY_OBJECT,
+              resourceParameters.include || createDefaultIncludeParameters(this, Resource as any),
+              EMPTY_ARRAY, // Use frozen array to catch property modifications
+            )
+              .mapSuccess((value) => {
+                resources.push(value as R)
+              })
+              .mapFailure((value) => {
+                errors.push(...value)
+              })
+          },
         )
-        if (result.isOK()) {
-          resources.push(result.value as R)
-        } else {
-          errors.push(result.value)
+        if (errors.length) {
+          throw errors
         }
-      })
-      if (errors.length) {
-        throw new Error(`Found ${errors.length} errors`)
-      }
-      return new ApiCollectionResult(resources, response.meta || {}, {} as any) as any
-    })
+        return new ApiCollectionResult(resources, response.meta || {}, {} as any) as any
+      },
+    )
   }
 }
 
-const urlX = new URL('https://example.com/')
+class ApiError<T> extends Error {
+  readonly value: T
+  readonly pointer: ReadonlyArray<string>
+  constructor(message: string, value: T, pointer: ReadonlyArray<string>) {
+    super(message)
+    this.value = value
+    this.pointer = pointer
+  }
+}
 
-const apiX = new Api(urlX, {
-  version: '1.0',
-  defaultIncludedRelationships: 'primary',
-})
+class ApiResponseError extends ApiError<unknown> {
+  name = 'Invalid JSON:API response'
+}
+
+class ApiValidationError extends ApiError<unknown> {
+  name = 'Invalid JSON:API data'
+}
 
 type ResourcePatchValues<R extends AnyResource> = Partial<R>
 
-class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
-  api: A
+export class ApiEndpoint<A extends AnyApiClient, R extends AnyResource> {
+  client: A
   path: string
   Resource: ResourceConstructor<R>
 
-  constructor(api: A, path: string, Resource: ResourceConstructor<R>) {
-    this.api = api
+  constructor(client: A, path: string, Resource: ResourceConstructor<R>) {
+    this.client = client
     this.path = path
     this.Resource = Resource
+    client.register(Resource)
   }
 
-  async get<P extends ApiResourceParameters<R>, M extends JSONAPIMeta>(
+  async get<P extends ApiResourceParameters<R>>(
     resourceId: ResourceId,
     ResourceParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiEntityResult<FilteredResource<R, P>, M>> {
-    return (this.api.getResourceEntity as PreventExcessivelyDeepRecursionError)(
-      this,
-      resourceId,
+  ): Promise<BaseApiEntityResult<FilteredResource<R, P>, SerializableObject>> {
+    return (this.client.getResourceEntity as PreventExcessivelyDeepRecursionError)(
+      this.Resource,
+      [this.path, resourceId].join('/'),
       ResourceParameters,
     )
   }
@@ -1003,14 +1211,22 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
     P extends ApiResourceParameters<Extract<R[N], AnyResource>>
   >(
     resourceId: ResourceId,
-    toOneRelationshipFieldName: N,
+    name: N & ResourceFieldName,
     ResourceRelationshipParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, P>, any>> {
-    return (this.api.getResourceEntity as PreventExcessivelyDeepRecursionError)(
-      this,
-      `${resourceId}/${this.api.setup.transformRelationshipPath(
-        toOneRelationshipFieldName as string,
-      )}`,
+  ): Promise<
+    BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, P>, SerializableObject>
+  > {
+    const field = this.client.getResourceField(this.Resource, name)
+    if (!field.isToOneRelationshipField()) {
+      throw new Error(`Field "${name}" must be a ${field.meta} relationship`)
+    }
+    const RelationshipResource = this.client.getResourceByType(field.type)
+    const fieldURLPath = this.client.setup.transformRelationshipPath(name)
+
+    // Api#getResourceEntity as any because ResourceRelationshipParameters
+    return (this.client.getResourceEntity as any)(
+      RelationshipResource,
+      createURLPath(this.path, resourceId, fieldURLPath),
       ResourceRelationshipParameters,
     )
   }
@@ -1020,23 +1236,35 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
     P extends ApiResourceParameters<R[N][any]>
   >(
     resourceId: ResourceId,
-    toManyRelationshipFieldName: N,
+    name: N & ResourceFieldName,
+    queryParameters: Nullable<ApiQueryParameters<A>> = null,
     ResourceRelationshipParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], P>>, {}>> {
-    return (this.api.getResourceEntity as PreventExcessivelyDeepRecursionError)(
-      this,
-      `${resourceId}/${this.api.setup.transformRelationshipPath(
-        toManyRelationshipFieldName as string,
-      )}`,
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], P>>, SerializableObject>> {
+    const field = this.client.getResourceField(this.Resource, name)
+    if (!field.isToManyRelationshipField()) {
+      throw new Error(`Field "${name}" must be a ${field.meta} relationship`)
+    }
+    const RelationshipResource = this.client.getResourceByType(field.type)
+    const fieldURLPath = this.client.setup.transformRelationshipPath(name)
+    // Api#getResourceCollection as any because ResourceRelationshipParameters
+    return (this.client.getResourceCollection as any)(
+      RelationshipResource,
+      createURLPath(this.path, resourceId, fieldURLPath),
+      queryParameters,
       ResourceRelationshipParameters,
     )
   }
 
   async getCollection<P extends ApiResourceParameters<R>>(
-    queryParameters: Nullable<ApiQueryParameters> = null,
+    queryParameters: Nullable<ApiQueryParameters<A>> = null,
     ResourceParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, P>>, {}>> {
-    return new ApiCollectionResult({} as any, {} as any, {} as any)
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, P>>, SerializableObject>> {
+    return (this.client.getResourceCollection as PreventExcessivelyDeepRecursionError)(
+      this.Resource,
+      this.path,
+      queryParameters,
+      ResourceParameters,
+    )
   }
 
   async create(): Promise<BaseApiEntityResult<FilteredResource<R>, {}>> {
@@ -1048,53 +1276,30 @@ class ApiEndpoint<A extends AnyApi, R extends AnyResource> {
   delete(resourceId: ResourceId) {}
 }
 
-type ApiQueryParameterArrayValue = Array<string | number> | Array<string>
-type ApiQueryParameterObjectValue = {
+export type ApiQueryParameterArrayValue = Array<string | number>
+export type ApiQueryParameterObjectValue = {
   [key: string]: ApiQueryParameterValue
 }
 
-type ApiQueryParameterValue =
+export type ApiQueryParameterValue =
   | string
   | number
   | boolean
   | ApiQueryParameterArrayValue
   | ApiQueryParameterObjectValue
 
-type ApiQueryParameters = {
+export type ApiQueryParameters<A extends AnyApiClient> = {
   [key: string]: ApiQueryParameterValue
+} & {
+  page?: Parameters<A['setup']['createPageQuery']>[0]
+} & {
+  include?: never
+  fields?: never
 }
 
-class A extends resource('a') {
-  xa!: string
-  @toOneRelationshipField('b') b!: B | null
-  @toManyRelationshipField('c') cs!: C[]
-}
+export type ApiResourceParametersConstructor<P extends ApiResourceParameters<any>> = new () => P
 
-class B extends resource('b') {
-  @toOneRelationshipField('c') c!: C | null
-}
-
-class C extends resource('c') {
-  @requiredAttribute(isString) name!: string
-  @toManyRelationshipField('d') ds!: D[]
-}
-
-class D extends resource('d') {
-  @toManyRelationshipField('e') es!: E[]
-  @toOneRelationshipField('a') a!: A | null
-}
-
-class E extends resource('e') {
-  @toOneRelationshipField('f') f!: F | null
-}
-
-class F extends resource('f') {
-  xf!: string
-}
-
-type ApiResourceParametersConstructor<P extends ApiResourceParameters<any>> = new () => P
-
-class ApiResourceParameters<R extends AnyResource> {
+export class ApiResourceParameters<R extends AnyResource> {
   fields?: ResourceFieldsParameter<R>
   include?: ResourceIncludeParameter<R>
 
@@ -1141,7 +1346,7 @@ type BaseFilteredResourceOfType<T, R, I, F> = T extends keyof F
   : BaseFilteredByIncludesResource<R, I, F>
 
 type BaseFilteredResource<R, I, F> = R extends AnyResource
-  ? BaseFilteredResourceOfType<R['type'], R, I, F>
+  ? UnionToIntersection<BaseFilteredResourceOfType<R['type'], R, I, F>>
   : never
 
 type BaseFilteredToManyRelationship<R, I, F> = R extends Array<AnyResource>
@@ -1202,6 +1407,8 @@ const createPageMethodsFromLinksObject = <R extends Array<AnyResource>, M extend
   } as any
 }
 
+const createURLPath = (...path: Array<string>): string => path.join('/')
+
 class ApiCollectionResult<
   R extends Array<AnyResource>,
   M extends SerializableObject
@@ -1222,35 +1429,17 @@ type FilteredIncludePrimaryResource<R extends AnyResource> = BaseFilteredResourc
 
 type FilteredIncludeNoneResource<R extends AnyResource> = BaseFilteredResource<R, {}, {}>
 
-type NoneIncludedA = FilteredIncludePrimaryResource<A>
-
-type FilteredResource<
+export type FilteredResource<
   R extends AnyResource,
   P extends ApiResourceParameters<R> = {}
 > = BaseFilteredResource<R, P['include'], P['fields']>
 
-class AFilter extends ApiResourceParameters<A> {
-  fields = {
-    a: ['b'],
-    c: ['ds'],
-    e: ['f'],
-    f: ['xf'],
-  } as const
-  include = {
-    b: {
-      c: {
-        ds: null,
-      },
-    },
-    cs: null,
-  }
-}
-
-const createDefaultIncludeParameters = <E extends ApiEndpoint<any, any>>(
-  endpoint: E,
+const createDefaultIncludeParameters = (
+  client: ApiClient<any>,
+  Resource: ResourceConstructor<any>,
 ): ResourceIncludeParameter<AnyResource> => {
-  return endpoint.api.setup.defaultIncludedRelationships === PRIMARY
-    ? getPrimaryRelationshipParameter(endpoint.Resource)
+  return client.setup.defaultIncludedRelationships !== NONE
+    ? getPrimaryRelationshipParameter(Resource)
     : EMPTY_OBJECT
 }
 
@@ -1268,45 +1457,101 @@ const getPrimaryRelationshipParameter = <R extends AnyResource>(
   )
 }
 
+// DEMO RESOURCES
+class A extends resource('a')<A> {
+  xa?: string
+  @toOneRelationship('b') b!: B | null
+  @toManyRelationship('c') cs!: C[]
+}
+
+class B extends resource('b')<B> {
+  @toOneRelationship('c') c!: C | null
+}
+
+class C extends resource('c')<C> {
+  @requiredAttribute(isString) name!: string
+  @toManyRelationship('d') ds!: D[]
+}
+
+class D extends resource('d')<D> {
+  @toManyRelationship('e') es!: E[]
+  @toOneRelationship('a') a!: A | null
+}
+
+class E extends resource('e')<E> {
+  @toOneRelationship('f') f!: F | null
+}
+
+class F extends resource('f')<F> {
+  xf!: string
+}
+
+const demoURL = new URL('https://example.com/')
+
+const demoClient = new ApiClient(demoURL, {
+  version: '1.1',
+})
+
 type FilteredA = FilteredResource<A, { include: ResourcePrimaryIncludeFields<A> }>
 
-const as = new ApiEndpoint(apiX, 'as', A)
+// class AFilter extends ApiResourceParameters<A> {
+//   fields = {
+//     a: ['b', 'cs'],
+//     c: ['ds'],
+//     e: ['f'],
+//     f: ['xf'],
+//   } as const
+//   include = {
+//     b: {
+//       c: {
+//         ds: null,
+//       },
+//     },
+//     cs: null,
+//   }
+// }
 
-const oi = apiX.getResourceEntity(as, 'as/12', AFilter).then((result) => {
-  result.data
-  return result.data
-})
+// const as = new ApiEndpoint(demoClient, 'as', A)
 
-as.get('12', AFilter).then((result) => {
-  console.log(result)
-})
+// as.get('12', AFilter).then((result) => {
+//   result.data.b
+// })
 
-class BFilter extends ApiResourceParameters<B> {
-  fields = {
-    c: ['ds'],
-  } as const
-  include = {
-    c: null,
-  }
-}
+// const oi = apiX.getResourceEntity(as, 'as/12', AFilter).then((result) => {
+//   result.data
+//   return result.data
+// })
 
-as.getCollection(null, AFilter).then((result) => {
-  console.log(result.data)
-})
+// as.get('12', AFilter).then((result) => {
+//   console.log(result)
+// })
 
-as.getToOneRelationship('12', 'b', BFilter).then((result) => {
-  console.log(result.data)
-})
+// class BFilter extends ApiResourceParameters<B> {
+//   fields = {
+//     c: ['ds'],
+//   } as const
+//   include = {
+//     c: null,
+//   }
+// }
 
-class CFilter extends ApiResourceParameters<C> {
-  include = {
-    ds: null,
-  }
-}
+// as.getCollection(null, AFilter).then((result) => {
+//   console.log(result.data)
+// })
 
-as.getToManyRelationship('12', 'cs', CFilter).then((result) => {
-  console.log(result.data)
-})
+// as.getToOneRelationship('12', 'b', BFilter).then((result) => {
+//   console.log(result.data)
+// })
+
+// class CFilter extends ApiResourceParameters<C> {
+//   include = {
+//     ds: null,
+//   }
+// }
+
+// as.getToManyRelationship('12', 'cs', CFilter).then((result) => {
+//   console.log(result.data)
+// })
 
 // Type assertion types
 type Is<T extends Ok<any, any>> = T
@@ -1320,3 +1565,13 @@ type Expects<Expected, Input> = Extract<Expected extends Input ? 1 : 0, 0> exten
 
 type Ok<T, U> = { result: 'OK'; expected: T; actual: U }
 type Err<T, U> = { result: 'ERR'; expected: T; actual: U }
+
+namespace JSONAPI {
+  export const resourceOfType = resource
+  export const Client = ApiClient
+  export const Endpoint = ApiEndpoint
+  export const Resource = ApiResource
+  export const ResourceParameters = ApiResourceParameters
+}
+
+export default JSONAPI

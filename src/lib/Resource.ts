@@ -36,7 +36,7 @@ type ResourceFieldsModel<F extends ResourceFields<any>> = {
     ? F[K]
     : F[K] extends AttributeValue
     ? F[K]
-    : never
+    : 'INVALID FIELD VALUE'
 }
 
 export type ResourceRelationship<T> = null extends T
