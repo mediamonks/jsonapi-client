@@ -452,8 +452,8 @@ export type ResourceFieldsParameter<R extends AnyResource> = Partial<
 >
 
 // RESPONSE DATA
-type JSONAPIVersion = '1.0' | '1.1'
-type JSONAPIMeta = SerializableObject
+export type JSONAPIVersion = '1.0' | '1.1'
+export type JSONAPIMeta = SerializableObject
 
 type BaseApiResponse<M extends SerializableObject> = {
   meta?: ApiResponseMeta<M>
@@ -725,10 +725,6 @@ type ApiSetupWithDefaults<S extends Partial<ApiSetupOptions>> = Exclude<
         [K in keyof S]: S[K]
       }
 
-type ApiSetup<S extends Partial<ApiSetupOptions>> = {
-  [K in keyof DefaultApiSetup]: K extends keyof S ? S[K] : DefaultApiSetup[K]
-}
-
 type Transform<I, O = I> = (value: I, ...rest: unknown[]) => O
 
 type ApiSetupOptions = {
@@ -747,7 +743,7 @@ type DefaultApiSetup = ApiSetupOptions & {
   defaultIncludedRelationships: typeof NONE
 }
 
-const JSONAPIVersions = ['1.0', '1.1'] as const
+const JSONAPIVersions: Array<JSONAPIVersion> = ['1.0', '1.1']
 
 const isJSONAPIVersion = either(...JSONAPIVersions)
 const isBodyWithJSONAPIVersion = shape({ jsonapi: at('version', not(isUndefined)) })
@@ -1198,7 +1194,7 @@ export class ApiEndpoint<A extends AnyApiClient, R extends AnyResource> {
   async get<P extends ApiResourceParameters<R>>(
     resourceId: ResourceId,
     ResourceParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiEntityResult<FilteredResource<R, P>, SerializableObject>> {
+  ): Promise<BaseApiEntityResult<FilteredResource<R, P>, JSONAPIMeta>> {
     return (this.client.getResourceEntity as PreventExcessivelyDeepRecursionError)(
       this.Resource,
       [this.path, resourceId].join('/'),
@@ -1213,9 +1209,7 @@ export class ApiEndpoint<A extends AnyApiClient, R extends AnyResource> {
     resourceId: ResourceId,
     name: N & ResourceFieldName,
     ResourceRelationshipParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<
-    BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, P>, SerializableObject>
-  > {
+  ): Promise<BaseApiEntityResult<FilteredResource<Extract<R[N], AnyResource>, P>, JSONAPIMeta>> {
     const field = this.client.getResourceField(this.Resource, name)
     if (!field.isToOneRelationshipField()) {
       throw new Error(`Field "${name}" must be a ${field.meta} relationship`)
@@ -1239,7 +1233,7 @@ export class ApiEndpoint<A extends AnyApiClient, R extends AnyResource> {
     name: N & ResourceFieldName,
     queryParameters: Nullable<ApiQueryParameters<A>> = null,
     ResourceRelationshipParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], P>>, SerializableObject>> {
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R[N][any], P>>, JSONAPIMeta>> {
     const field = this.client.getResourceField(this.Resource, name)
     if (!field.isToManyRelationshipField()) {
       throw new Error(`Field "${name}" must be a ${field.meta} relationship`)
@@ -1258,7 +1252,7 @@ export class ApiEndpoint<A extends AnyApiClient, R extends AnyResource> {
   async getCollection<P extends ApiResourceParameters<R>>(
     queryParameters: Nullable<ApiQueryParameters<A>> = null,
     ResourceParameters: new () => P = ApiResourceParameters as any,
-  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, P>>, SerializableObject>> {
+  ): Promise<BaseApiCollectionResult<Array<FilteredResource<R, P>>, JSONAPIMeta>> {
     return (this.client.getResourceCollection as PreventExcessivelyDeepRecursionError)(
       this.Resource,
       this.path,
@@ -1267,7 +1261,7 @@ export class ApiEndpoint<A extends AnyApiClient, R extends AnyResource> {
     )
   }
 
-  async create(): Promise<BaseApiEntityResult<FilteredResource<R>, {}>> {
+  async create(): Promise<BaseApiEntityResult<FilteredResource<R>, JSONAPIMeta>> {
     return new ApiEntityResult({} as any, {} as any)
   }
 
@@ -1485,12 +1479,6 @@ class E extends resource('e')<E> {
 class F extends resource('f')<F> {
   xf!: string
 }
-
-const demoURL = new URL('https://example.com/')
-
-const demoClient = new ApiClient(demoURL, {
-  version: '1.1',
-})
 
 type FilteredA = FilteredResource<A, { include: ResourcePrimaryIncludeFields<A> }>
 

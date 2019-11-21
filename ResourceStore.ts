@@ -8,10 +8,11 @@ import {
   ResourceType,
   ResourceToOneRelationshipFields,
   ResourceFieldName,
+  ToOneRelationship,
+  JSONAPIMeta,
+  ApiQueryParameters,
 } from './temp'
-import { ValuesOf, WithoutNever } from './src/types/util'
-import { Person } from './examples/next/resources/jsonapi-server/Person'
-import { Article } from './examples/next/resources/jsonapi-server/Article'
+import { ValuesOf } from './src/types/util'
 
 export class ResourceStore<T extends Array<ApiEndpoint<any, any>>> {
   endpoints: T
@@ -19,11 +20,18 @@ export class ResourceStore<T extends Array<ApiEndpoint<any, any>>> {
     this.endpoints = endpoints
   }
 
-  entity<R extends AnyResource, P extends ApiResourceParameters<R>>(
-    Resource: ResourceConstructor<R>,
-    filter: new () => P,
-  ): ResourceEntity<this, R, P> {
-    return new (ResourceEntity as any)(this, Resource, filter)
+  entity<R extends T[number]['Resource'], P extends ApiResourceParameters<InstanceType<R>>>(
+    Resource: R,
+    ResourceFilter: new () => P,
+  ): ResourceEntity<this, InstanceType<R>, P> {
+    return new (ResourceEntity as any)(this, Resource, ResourceFilter)
+  }
+
+  collection<R extends T[number]['Resource'], P extends ApiResourceParameters<InstanceType<R>>>(
+    Resource: R,
+    ResourceFilter: new () => P,
+  ): ResourceCollection<this, InstanceType<R>, P> {
+    return new (ResourceCollection as any)(this, Resource, ResourceFilter)
   }
 
   getEndpointByType(type: ResourceType): this['endpoints'][number] {
@@ -32,28 +40,38 @@ export class ResourceStore<T extends Array<ApiEndpoint<any, any>>> {
   }
 }
 
-class ResourceEntity<
+class ResourceState<
   S extends ResourceStore<ApiEndpoint<any, any>[]>,
   R extends AnyResource,
   P extends ApiResourceParameters<R>
 > {
   store: S
   Resource: ResourceConstructor<R>
-  filter: P
-  value: FilteredResource<R, P> | null = null
+  ResourceFilter: new () => P
+  errors: Array<Error> = []
+  meta: JSONAPIMeta | null = null
 
-  constructor(store: S, Resource: ResourceConstructor<R>, filter: P) {
+  constructor(store: S, Resource: ResourceConstructor<R>, ResourceFilter: new () => P) {
     this.store = store
     this.Resource = Resource
-    this.filter = filter
+    this.ResourceFilter = ResourceFilter
   }
+}
+
+class ResourceEntity<
+  S extends ResourceStore<ApiEndpoint<any, any>[]>,
+  R extends AnyResource,
+  P extends ApiResourceParameters<R>
+> extends ResourceState<S, R, P> {
+  data: FilteredResource<R, P> | null = null
 
   async load(id: ResourceId): Promise<void> {
     this.store
       .getEndpointByType(this.Resource.type)
-      .get(id, this.filter as any)
+      .get(id, this.ResourceFilter as any)
       .then((result) => {
-        this.value = result.data as any
+        this.data = result.data as any
+        this.meta = result.meta
       })
       .catch((error) => {
         console.error(error)
@@ -61,28 +79,80 @@ class ResourceEntity<
       })
   }
 
-  async loadFrom<X extends AnyResource, N extends keyof ResourceToOneRelationshipFields<X>>(
-    Resource: ResourceConstructor<BaseResourceWithToOneRelationshipTo<X, R>>,
+  async loadFrom<T extends AnyResource, N extends keyof ResourceToOneRelationshipFields<T>>(
+    Resource: ResourceConstructor<ResourceWithToOneRelationshipTo<T, R>>,
     id: ResourceId,
     fieldName: N & ResourceFieldName,
   ): Promise<void> {
     return this.store
       .getEndpointByType(Resource.type)
-      .getToOneRelationship(id, fieldName, this.filter as any)
+      .getToOneRelationship(id, fieldName, this.ResourceFilter as any)
       .then((result) => {
-        this.value = result.data as any
+        this.data = result.data as any
+        this.meta = result.meta
       })
       .catch((error) => {
         console.error(error)
         throw new Error(`Failed to load resource`)
       })
   }
+
+  // create a Resource
+  async save() {}
+
+  // update a Resource
+  async edit() {}
 }
 
-type BaseResourceWithToOneRelationshipTo<T, R> = ValuesOf<
+class ResourceCollection<
+  S extends ResourceStore<ApiEndpoint<any, any>[]>,
+  R extends AnyResource,
+  P extends ApiResourceParameters<R>
+> extends ResourceState<S, R, P> {
+  data: Array<FilteredResource<R, P>> = []
+
+  async load(
+    queryParameters: ApiQueryParameters<S['endpoints'][number]['client']> | null = null,
+  ): Promise<void> {
+    this.store
+      .getEndpointByType(this.Resource.type)
+      .getCollection(queryParameters, this.ResourceFilter as any)
+      .then((result) => {
+        this.data = result.data as any
+        this.meta = result.meta
+      })
+      .catch((error) => {
+        console.error(error)
+        throw new Error(`Failed to load resource`)
+      })
+  }
+
+  async loadFrom<T extends AnyResource, N extends keyof ResourceToOneRelationshipFields<T>>(
+    Resource: ResourceConstructor<ResourceWithToOneRelationshipTo<T, R>>,
+    id: ResourceId,
+    fieldName: N & ResourceFieldName,
+    queryParameters: ApiQueryParameters<S['endpoints'][number]['client']> | null = null,
+  ): Promise<void> {
+    return this.store
+      .getEndpointByType(Resource.type)
+      .getToManyRelationship(id, fieldName, queryParameters, this.ResourceFilter as any)
+      .then((result) => {
+        this.data = result.data as any
+        this.meta = result.meta
+      })
+      .catch((error) => {
+        console.error(error)
+        throw new Error(`Failed to load resource`)
+      })
+  }
+
+  async loadMoreBefore() {}
+
+  async loadMoreAfter() {}
+}
+
+type ResourceWithToOneRelationshipTo<T extends AnyResource, R extends AnyResource> = ValuesOf<
   {
-    [K in keyof T]: T[K] extends R | null ? T : never
+    [K in keyof T]: T[K] extends ToOneRelationship<R> ? T : never
   }
 >
-
-type Oi = BaseResourceWithToOneRelationshipTo<Article, Person>
