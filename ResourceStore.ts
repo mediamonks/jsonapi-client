@@ -64,17 +64,15 @@ export class ResourceStore<T extends Array<ApiEndpoint<any, any>>> {
   }
 
   entity<R extends T[number]['Resource'], P extends ApiResourceParameters<InstanceType<R>>>(
-    Resource: R,
-    ResourceParameters: ApiResourceParametersConstructor<InstanceType<R>, P>,
+    ResourceParameters: ApiResourceParametersConstructor<R, P>,
   ): ResourceEntity<this, InstanceType<R>, P> {
-    return new (ResourceEntity as any)(this, Resource, ResourceParameters)
+    return new (ResourceEntity as any)(this, ResourceParameters)
   }
 
   collection<R extends T[number]['Resource'], P extends ApiResourceParameters<InstanceType<R>>>(
-    Resource: R,
-    ResourceParameters: ApiResourceParametersConstructor<InstanceType<R>, P>,
+    ResourceParameters: ApiResourceParametersConstructor<R, P>,
   ): ResourceCollection<this, InstanceType<R>, P> {
-    return new (ResourceCollection as any)(this, Resource, ResourceParameters)
+    return new (ResourceCollection as any)(this, ResourceParameters)
   }
 
   getResourceCacheByType(type: ResourceType) {
@@ -112,19 +110,16 @@ class ResourceState<
   P extends ApiResourceParameters<R>
 > {
   store: S
-  Resource: ResourceConstructor<R>
-  ResourceFilter: ApiResourceParametersConstructor<R, P>
+  ResourceParameters: ApiResourceParametersConstructor<ResourceConstructor<R>, P>
   error: Error | null = null
   meta: JSONAPIMeta | null = null
 
   constructor(
     store: S,
-    Resource: ResourceConstructor<R>,
-    ResourceFilter: ApiResourceParametersConstructor<R, P>,
+    ResourceFilter: ApiResourceParametersConstructor<ResourceConstructor<R>, P>,
   ) {
     this.store = store
-    this.Resource = Resource
-    this.ResourceFilter = ResourceFilter
+    this.ResourceParameters = ResourceFilter
   }
 }
 
@@ -137,8 +132,8 @@ class ResourceEntity<
 
   async load(id: ResourceId): Promise<void> {
     this.store
-      .getEndpointByType(this.Resource.type)
-      .get(id, this.ResourceFilter as any)
+      .getEndpointByType(this.ResourceParameters.Resource.type)
+      .get(id, this.ResourceParameters as any)
       .then((result) => {
         this.data = result.data as any
         this.meta = result.meta
@@ -159,7 +154,7 @@ class ResourceEntity<
   ): Promise<void> {
     return this.store
       .getEndpointByType(Resource.type)
-      .getToOneRelationship(id, fieldName, this.ResourceFilter as any)
+      .getToOneRelationship(id, fieldName, this.ResourceParameters as any)
       .then((result) => {
         this.data = result.data as any
         this.meta = result.meta
@@ -191,8 +186,8 @@ class ResourceCollection<
     queryParameters: ApiQueryParameters<S['endpoints'][number]['client']> | null = null,
   ): Promise<void> {
     return this.store
-      .getEndpointByType(this.Resource.type)
-      .getCollection(queryParameters, this.ResourceFilter as any)
+      .getEndpointByType(this.ResourceParameters.Resource.type)
+      .getCollection(queryParameters, this.ResourceParameters as any)
       .then((result) => {
         this.data = result.data as any
         this.meta = result.meta
@@ -214,7 +209,7 @@ class ResourceCollection<
   ): Promise<void> {
     return this.store
       .getEndpointByType(Resource.type)
-      .getToManyRelationship(id, fieldName, queryParameters, this.ResourceFilter as any)
+      .getToManyRelationship(id, fieldName, queryParameters, this.ResourceParameters as any)
       .then((result) => {
         this.data = result.data as any
         this.meta = result.meta

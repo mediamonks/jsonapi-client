@@ -1352,22 +1352,26 @@ export type ApiQueryParameters<A extends AnyApiClient> = {
 }
 
 export type ApiResourceParametersConstructor<
-  R extends AnyResource,
-  P extends ApiResourceParameters<R>
+  R extends ResourceConstructor<any>,
+  P extends ApiResourceParameters<InstanceType<R>>
 > = {
   new (): P
-  type: R['type']
+  Resource: R
 }
 
 export class ApiResourceParameters<R extends AnyResource> {
   fields?: ResourceFieldsParameter<R>
   include?: ResourceIncludeParameter<R>
 
-  static type: ResourceType
+  static Resource: ResourceConstructor<any>
 
   static isApiResourceParameters(value: unknown): value is ApiResourceParameters<any> {
     return value instanceof ApiResourceParameters
   }
+}
+
+export namespace ApiResourceParameters {
+  export type Resource<R extends AnyResource> = ApiResource<R>
 }
 
 // FILTER RESOURCE
@@ -1616,11 +1620,12 @@ namespace JSONAPI {
   export const resourceOfType = resource
   export const Client = ApiClient
   export const Endpoint = ApiEndpoint
+
   export const Resource = ApiResource
   export const ResourceParameters = ApiResourceParameters
   export const resourceParameters = <R extends AnyResource>(Resource: ResourceConstructor<R>) => {
     return class extends ApiResourceParameters<R> {
-      static type: R['type'] = Resource.type
+      static Resource: ResourceConstructor<R> = Resource
     }
   }
 
