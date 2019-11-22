@@ -16,6 +16,16 @@ import {
 import { createEmptyObject } from './src/utils/data'
 import { Validation } from './Validation'
 import { parseResourceParameters, joinParameters, parseApiQuery } from './formatting'
+import { NonEmptyArray } from './src/types/util'
+
+type CursorPaginationPageQuery =
+  | { before: string; after?: never; size?: number }
+  | { before?: never; after: string; size?: number }
+  | { before: string; after: string; size?: never }
+
+export const cursorPagination = (
+  pageQuery: CursorPaginationPageQuery,
+): Required<CursorPaginationPageQuery> => pageQuery as any
 
 // UTIL-TYPES
 type Nullable<T> = T | null
@@ -943,19 +953,6 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
       : Validation.success(result as ResourceIdentifier<R['type']>)
   }
 
-  getResourceField<R extends AnyResource>(
-    Resource: ResourceConstructor<R>,
-    name: ResourceFieldName,
-  ): AnyResourceField {
-    const field = Resource.fields[name]
-    if (isUndefined(field)) {
-      throw new Error(
-        `Field of name "${name}" does not exist on Resource of type "${Resource.type}"`,
-      )
-    }
-    return field
-  }
-
   decodeResource<R extends AnyResource>(
     Resource: ResourceConstructor<R>,
     data: ApiResponseResourceData<R>,
@@ -1111,6 +1108,39 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
     })
   }
 
+  getResourceField<R extends AnyResource>(
+    Resource: ResourceConstructor<R>,
+    name: ResourceFieldName,
+  ): AnyResourceField {
+    const field = Resource.fields[name]
+    if (isUndefined(field)) {
+      throw new Error(
+        `Field of name "${name}" does not exist on Resource of type "${Resource.type}"`,
+      )
+    }
+    return field
+  }
+
+  createDefaultIncludeParameters(
+    Resource: ResourceConstructor<any>,
+  ): ResourceIncludeParameter<AnyResource> {
+    return this.setup.defaultIncludedRelationships !== NONE
+      ? getPrimaryRelationshipParameter(Resource)
+      : createEmptyObject()
+  }
+
+  createURL(
+    path: string,
+    resourceParameters: Nullable<ApiResourceParameters<any>> = null,
+    queryParameters: Nullable<ApiQueryParameters<this>> = null,
+  ): URL {
+    const url = new URL(path, this.url)
+    url.search = joinParameters(
+      parseResourceParameters(resourceParameters).concat(parseApiQuery(this, queryParameters)),
+    )
+    return url
+  }
+
   async getResourceEntity<
     R extends AnyResource,
     M extends JSONAPIMeta,
@@ -1121,10 +1151,7 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
     ResourceParameters: new () => P,
   ): Promise<BaseApiEntityResult<FilteredResource<R, P>, M>> {
     const resourceParameters = new ResourceParameters()
-    const url = new URL(path, this.url) // TODO: add search params to url
-    url.search = joinParameters(
-      parseResourceParameters(resourceParameters as PreventExcessivelyDeepRecursionError),
-    )
+    const url = this.createURL(path, resourceParameters as PreventExcessivelyDeepRecursionError)
 
     return this.handleFetchRequest<R, M>(url, {} /* TODO: add options */).then((response) => {
       return this.decodeResource(
@@ -1132,7 +1159,7 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
         response.data,
         response.included,
         resourceParameters.fields || EMPTY_OBJECT,
-        resourceParameters.include || createDefaultIncludeParameters(this, Resource),
+        resourceParameters.include || this.createDefaultIncludeParameters(Resource),
         EMPTY_ARRAY, // Use frozen array to catch property modifications
       )
         .mapSuccess((value: AnyResource) => {
@@ -1150,11 +1177,10 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
     ResourceParameters: new () => P,
   ): Promise<BaseApiCollectionResult<FilteredResource<R, P>[], SerializableObject>> {
     const resourceParameters = new ResourceParameters()
-    const url = new URL(path, this.url) // TODO: add search params to url
-    url.search = joinParameters(
-      parseResourceParameters(resourceParameters as PreventExcessivelyDeepRecursionError).concat(
-        parseApiQuery(this, queryParameters || EMPTY_OBJECT),
-      ),
+    const url = this.createURL(
+      path,
+      resourceParameters as PreventExcessivelyDeepRecursionError,
+      queryParameters,
     )
 
     return this.handleFetchRequest<R[], SerializableObject>(url, {} /* TODO: add options */).then(
@@ -1168,7 +1194,7 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
               resourceData,
               response.included, // TODO: fix
               resourceParameters.fields || EMPTY_OBJECT,
-              resourceParameters.include || createDefaultIncludeParameters(this, Resource as any),
+              resourceParameters.include || this.createDefaultIncludeParameters(Resource),
               EMPTY_ARRAY, // Use frozen array to catch property modifications
             )
               .mapSuccess((value) => {
@@ -1319,16 +1345,25 @@ export type ApiQueryParameters<A extends AnyApiClient> = {
   [key: string]: ApiQueryParameterValue
 } & {
   page?: Parameters<A['setup']['createPageQuery']>[0]
+  sort?: NonEmptyArray<string>
 } & {
   include?: never
   fields?: never
 }
 
-export type ApiResourceParametersConstructor<P extends ApiResourceParameters<any>> = new () => P
+export type ApiResourceParametersConstructor<
+  R extends AnyResource,
+  P extends ApiResourceParameters<R>
+> = {
+  new (): P
+  type: R['type']
+}
 
 export class ApiResourceParameters<R extends AnyResource> {
   fields?: ResourceFieldsParameter<R>
   include?: ResourceIncludeParameter<R>
+
+  static type: ResourceType
 
   static isApiResourceParameters(value: unknown): value is ApiResourceParameters<any> {
     return value instanceof ApiResourceParameters
@@ -1442,7 +1477,6 @@ class ApiCollectionResult<
 > extends ApiResult<R, M> {
   page: ApiCollectionPageLinks<R, M>
   constructor(data: R, meta: M, page: ApiCollectionPageLinks<R, M>) {
-    // TODO: remove any
     super(data, meta)
     this.page = page
   }
@@ -1460,15 +1494,6 @@ export type FilteredResource<
   R extends AnyResource,
   P extends ApiResourceParameters<R> = {}
 > = BaseFilteredResource<R, P['include'], P['fields']>
-
-const createDefaultIncludeParameters = (
-  client: ApiClient<any>,
-  Resource: ResourceConstructor<any>,
-): ResourceIncludeParameter<AnyResource> => {
-  return client.setup.defaultIncludedRelationships !== NONE
-    ? getPrimaryRelationshipParameter(Resource)
-    : EMPTY_OBJECT
-}
 
 const getPrimaryRelationshipParameter = <R extends AnyResource>(
   Resource: ResourceConstructor<R>,
@@ -1593,7 +1618,11 @@ namespace JSONAPI {
   export const Endpoint = ApiEndpoint
   export const Resource = ApiResource
   export const ResourceParameters = ApiResourceParameters
-  export const resourceParameters = () => {}
+  export const resourceParameters = <R extends AnyResource>(Resource: ResourceConstructor<R>) => {
+    return class extends ApiResourceParameters<R> {
+      static type: R['type'] = Resource.type
+    }
+  }
 
   export type Version = JSONAPIVersion
   export type Meta = JSONAPIMeta

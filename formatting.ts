@@ -23,36 +23,44 @@ const EMPTY_ARRAY: [] = Object.freeze([]) as any
 
 const PAGE = 'page' as const
 const SORT = 'sort' as const
+
+const FIELDS = 'fields' as const
 const INCLUDE = 'include' as const
 
 export const parseApiQuery = <T extends ApiQueryParameters<any>>(
   api: ApiClient<any>,
-  values: T,
-): ReadonlyArray<string> => {
-  return Object.keys(values)
-    .sort()
-    .flatMap((name) => {
-      switch (name) {
-        case PAGE:
-          return parseApiQueryParameter(name, api.setup.createPageQuery(values[name]))
-        case SORT:
-          return parseApiQueryParameter(
-            name,
-            parseApiQueryParameterArray((values[name] as any).map(String)),
-          )
-        default:
-          return parseApiQueryParameter(name, (values as any)[name])
-      }
-    })
-}
+  values: T | null,
+): ReadonlyArray<string> =>
+  isSome(values)
+    ? Object.keys(values)
+        .sort()
+        .flatMap((name) => {
+          switch (name) {
+            case PAGE:
+              return parseApiQueryParameter(name, api.setup.createPageQuery(values[name]))
+            case SORT:
+              return parseApiQueryParameter(
+                name,
+                parseApiQueryParameterArray((values[name] as any).map(String)),
+              )
+            case FIELDS: {
+              throw new Error(`Fields parameter is not allowed in queryParameters`)
+            }
+            default:
+              return parseApiQueryParameter(name, (values as any)[name])
+          }
+        })
+    : EMPTY_ARRAY
 
 export const joinParameters = (parameters: ReadonlyArray<string>): string =>
   parameters.length ? `${PARAMETER_PREFIX}${parameters.join(PARAMETERS_DELIMITER)}` : EMPTY_STRING
 
 export const parseResourceParameters = (
-  parameters: ApiResourceParameters<any>,
+  parameters: ApiResourceParameters<any> | null,
 ): ReadonlyArray<string> =>
-  parseFieldsParameter(parameters.fields).concat(parseIncludeParameter(parameters.include))
+  isSome(parameters)
+    ? parseFieldsParameter(parameters.fields).concat(parseIncludeParameter(parameters.include))
+    : EMPTY_ARRAY
 
 export const parseResourceIncludeParameters = () => {}
 
@@ -83,13 +91,13 @@ const parseFieldsParameter = (value?: ResourceFieldsParameter<any>): ReadonlyArr
         .sort()
         .filter((type) => isArray(value[type]) && value[type]!.length)
         .flatMap((type) =>
-          parseApiQueryParameter(parseParameterName('fields', type), value[type]!.slice().sort()),
+          parseApiQueryParameter(parseParameterName(FIELDS, type), value[type]!.slice().sort()),
         )
     : EMPTY_ARRAY
 
 const parseIncludeParameter = (value?: ResourceIncludeParameter<any>): ReadonlyArray<string> =>
   isSome(value)
-    ? parseApiQueryParameterValue('include', getIncludeParameter([], value) as Array<string>)
+    ? parseApiQueryParameterValue(INCLUDE, getIncludeParameter([], value) as Array<string>)
     : EMPTY_ARRAY
 
 const parseApiQueryParameter = (
@@ -100,9 +108,11 @@ const parseApiQueryParameter = (
     return parseApiQueryParameterValue(name, parseApiQueryParameterArray(value))
   }
   if (isObject(value)) {
-    return (Object.keys(value) as any).flatMap((key: string) =>
-      parseApiQueryParameterValue(parseParameterName(name, key), value[key]),
-    )
+    return Object.keys(value)
+      .sort()
+      .flatMap((key: string) =>
+        parseApiQueryParameterValue(parseParameterName(name, key), value[key]),
+      )
   }
   return parseApiQueryParameterValue(name, value)
 }
@@ -118,7 +128,7 @@ const parseApiQueryParameterValue = (
     return [[name, value].join(PARAMETER_DELIMITER)]
   }
   if (isArray(value)) {
-    return parseApiQueryParameterValue(name, parseApiQueryParameterArray(value.sort()))
+    return parseApiQueryParameterValue(name, parseApiQueryParameterArray(value))
   }
   return EMPTY_ARRAY
 }
