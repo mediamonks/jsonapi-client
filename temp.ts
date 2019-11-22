@@ -368,7 +368,7 @@ export type AnyResource = ApiResource<
   }
 >
 
-export class ApiResource<R extends AnyResource> extends ResourceIdentifier<R['type']> {
+class ApiResource<R extends AnyResource> extends ResourceIdentifier<R['type']> {
   constructor(values: R) {
     super(values.type, values.id)
     Object.assign(this, values)
@@ -395,7 +395,20 @@ export type ResourceRelationshipFields<R extends AnyResource> = WithoutNever<
 export type ResourceToOneRelationshipFields<R extends AnyResource> = WithoutNever<
   {
     [K in keyof R]: R[K] extends ToOneRelationshipValue
-      ? ResourceToOneRelationshipField<any, any>
+      ? ResourceToOneRelationshipField<K & ResourceFieldName, Extract<R[K], AnyResource>['type']>
+      : never
+  }
+>
+
+export type ResourceToOneRelationshipFieldsOfType<
+  R extends AnyResource,
+  T extends ResourceType
+> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends ToOneRelationshipValue
+      ? Extract<R[K], AnyResource>['type'] extends T
+        ? ResourceToOneRelationshipField<K & ResourceFieldName, Extract<R[K], AnyResource>['type']>
+        : never
       : never
   }
 >
@@ -403,7 +416,20 @@ export type ResourceToOneRelationshipFields<R extends AnyResource> = WithoutNeve
 export type ResourceToManyRelationshipFields<R extends AnyResource> = WithoutNever<
   {
     [K in keyof R]: R[K] extends ToManyRelationshipValue
-      ? ResourceToManyRelationshipField<ResourceFieldName, any>
+      ? ResourceToManyRelationshipField<K & ResourceFieldName, R[K][number]['type']>
+      : never
+  }
+>
+
+export type ResourceToManyRelationshipFieldsOfType<
+  R extends AnyResource,
+  T extends ResourceType
+> = WithoutNever<
+  {
+    [K in keyof R]: R[K] extends ToManyRelationshipValue
+      ? R[K][number]['type'] extends T
+        ? ResourceToManyRelationshipField<K & ResourceFieldName, R[K][number]['type']>
+        : R[K]
       : never
   }
 >
@@ -457,7 +483,7 @@ export type JSONAPIMeta = SerializableObject
 
 type BaseApiResponse<M extends SerializableObject> = {
   meta?: ApiResponseMeta<M>
-  links?: ApiLinksObject
+  links?: JSONAPILinksObject
   jsonapi?: {
     version?: JSONAPIVersion
   }
@@ -474,7 +500,7 @@ type ApiResponse<R extends AnyResource, M extends JSONAPIMeta> =
   | ApiSuccessResponse<R | R[], M>
 
 type ApiErrorResponse<M extends SerializableObject> = BaseApiResponse<M> & {
-  errors: Array<ApiRequestError>
+  errors: Array<JSONAPIErrorObject>
 }
 
 type ApiSuccessResponse<
@@ -528,20 +554,20 @@ type ApiResponseMeta<M extends SerializableObject> = {
   [K in keyof M]: M[K]
 }
 
-type ApiLinksObjectValue =
+type JSONAPILinksObjectValue =
   | string
   | {
       href: string
       meta: ApiResponseMeta<SerializableObject>
     }
 
-type ApiLinksObject = {
-  [key: string]: ApiLinksObjectValue | null
+type JSONAPILinksObject = {
+  [key: string]: JSONAPILinksObjectValue | null
 }
 
-export type ApiRequestError = {
+export type JSONAPIErrorObject = {
   id?: string
-  links?: ApiLinksObject
+  links?: JSONAPILinksObject
   meta?: ApiResponseMeta<SerializableObject>
   status?: string
   code?: string
@@ -816,16 +842,23 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
     return fetchAdapter(request)
       .then((response) => {
         if (!response.ok) {
-          throw new Error(response.statusText)
+          throw new ApiRequestError(`${response.status} ${response.statusText}`, response, [])
         }
         return response.json()
       })
       .then((body) => {
         if (isBodyWithJSONAPIVersion(body)) {
           if (!isJSONAPIVersion(body.jsonapi.version)) {
-            throw new Error(`Invalid JSON:API version`)
+            throw new ApiResponseError(`Invalid JSON:API version`, body.jsonapi.version, [
+              'jsonapi',
+              'version',
+            ])
           } else if (body.jsonapi.version !== this.setup.version) {
-            throw new Error(`JSON:API version must equal ${this.setup.version}`)
+            throw new ApiResponseError(
+              `JSON:API version must equal ${this.setup.version}`,
+              body.jsonapi.version,
+              ['jsonapi', 'version'],
+            )
           }
         }
         if (isArray(body.errors)) {
@@ -833,10 +866,6 @@ export class ApiClient<S extends Partial<ApiSetupOptions>> {
           throw new Error(`Found ${body.errors.length} errors in response`)
         }
         return body
-      })
-      .catch((error) => {
-        console.warn(error)
-        throw new Error(`Invalid Response`)
       })
   }
 
@@ -1167,6 +1196,10 @@ class ApiError<T> extends Error {
     this.value = value
     this.pointer = pointer
   }
+}
+
+class ApiRequestError extends ApiError<unknown> {
+  name = 'Failed JSON:API request'
 }
 
 class ApiResponseError extends ApiError<unknown> {
@@ -1560,6 +1593,13 @@ namespace JSONAPI {
   export const Endpoint = ApiEndpoint
   export const Resource = ApiResource
   export const ResourceParameters = ApiResourceParameters
+  export const resourceParameters = () => {}
+
+  export type Version = JSONAPIVersion
+  export type Meta = JSONAPIMeta
+  export type ErrorObject = JSONAPIErrorObject
+  export type LinksObject = JSONAPILinksObject
+  export type LinksObjectValue = JSONAPILinksObjectValue
 }
 
 export default JSONAPI
