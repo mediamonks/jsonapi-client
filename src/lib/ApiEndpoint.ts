@@ -1,4 +1,4 @@
-import { EMPTY_OBJECT } from '../constants/data'
+import { EMPTY_OBJECT, EMPTY_ARRAY } from '../constants/data'
 import {
   createGetRequestOptions,
   keys,
@@ -51,7 +51,6 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       ;(values as any).type = this.Resource.type
     }
     return new Promise((resolve, reject) => {
-      console.log(keys(this.Resource.fields))
       const result = this.api.controller.encodeResource(
         this.Resource.type,
         values as any,
@@ -70,18 +69,18 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
             const response = result.value
             // TODO: handle 204 No Content response
             if ('data' in response) {
-              const result = this.api.controller.decodeResource(
+              const resource = this.api.controller.decodeResource(
                 this.Resource.type,
                 response.data,
                 response.included,
-                {},
-                {},
+                EMPTY_OBJECT,
+                EMPTY_OBJECT,
                 [],
               )
               if (result.isSuccess()) {
-                return resolve(new ApiEntityResult(result.value, response.meta) as any)
+                return resolve(new ApiEntityResult(resource.value, response.meta) as any)
               } else {
-                return reject(result.value)
+                return reject(resource.value)
               }
             } else {
               console.warn(`Unsupported "No Content" response`)
@@ -112,7 +111,20 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
           const options = createPatchRequestOptions(body)
           this.api.controller.handleRequest(url, options).then((result) => {
             if (result.isSuccess()) {
-              resolve(result.value)
+              const response = result.value
+              const resource = this.api.controller.decodeResource(
+                this.Resource.type,
+                response.data,
+                [],
+                EMPTY_OBJECT,
+                EMPTY_OBJECT,
+                [],
+              )
+              if (resource.isSuccess()) {
+                resolve(new ApiEntityResult(resource.value, response.meta || {}))
+              } else {
+                reject(resource.value)
+              }
             } else {
               reject(result.value)
             }

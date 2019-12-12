@@ -303,6 +303,9 @@ export class ApiController<S extends Partial<ApiSetup>> {
       }
 
       const value = (values as any)[name]
+      if (isUndefined(value)) {
+        return;
+      }
       if (field.isAttributeField()) {
         if (field.validate(value)) {
           ;(data.attributes || (data.attributes = createEmptyObject()))[name] = value

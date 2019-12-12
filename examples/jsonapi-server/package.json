@@ -13,6 +13,6 @@
     "parcel": "^1.12.3"
   },
   "dependencies": {
-    "isntnt": "^1.0.2"
+    "isntnt": "^1.2.0"
   }
 }

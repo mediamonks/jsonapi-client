@@ -46,9 +46,7 @@ const isLatLong = tuple(isNumber, isNumber)
 
 class City extends resource('city')<City> {
   @requiredAttribute(isString) name!: RequiredAttribute<string>
-  @requiredAttribute(isLatLong) latLong!: RequiredAttribute<
-    Static<typeof isLatLong>
-  >
+  @requiredAttribute(isLatLong) latLong!: RequiredAttribute<Static<typeof isLatLong>>
   @toOneRelationship('country') country!: Country | null
 }
 
@@ -106,25 +104,28 @@ countries
   .then(console.log)
 
 people
-  .fetch({
-    page: 12,
-    sort: [ascend('name'), descend('age')],
-    filter: 'name=12&whatever=40',
-    fields: {
-      country: ['name'],
-      city: ['name'],
+  .fetch(
+    {
+      page: 12,
+      sort: [ascend('name'), descend('age')],
     },
-    include: {
-      country: null,
-      city: {
-        country: {
-          citizens: {
-            city: null,
+    {
+      fields: {
+        country: ['name'],
+        city: ['name'],
+      },
+      include: {
+        country: null,
+        city: {
+          country: {
+            citizens: {
+              city: null,
+            },
           },
         },
       },
     },
-  })
+  )
   .then((q) => {
     console.log('people', q)
   })
