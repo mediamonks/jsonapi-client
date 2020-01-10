@@ -7,7 +7,7 @@ export type ValuesOf<T> = T[keyof T]
 
 export type ExtendsOrNever<T, X> = T extends X ? T : never
 
-export type NonEmptyArray<T> = Array<T> & { 0: T }
+export type NonEmptyArray<T> = ReadonlyArray<T> & { 0: T }
 
 export type WithoutNever<T> = Pick<
   T,

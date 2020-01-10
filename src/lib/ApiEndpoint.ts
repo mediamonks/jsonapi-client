@@ -1,4 +1,4 @@
-import { EMPTY_OBJECT, EMPTY_ARRAY } from '../constants/data'
+import { EMPTY_OBJECT } from '../constants/data'
 import {
   createGetRequestOptions,
   keys,
@@ -144,7 +144,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     id: ResourceId,
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<ApiEntityResult<FilteredResource<R, F>, any>> {
-    return this.fetchEntity(id, resourceFilter) as any
+    return this.fetchEntity(id, resourceFilter as any) as any
   }
 
   /**
@@ -154,7 +154,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param query
    * @param resourceFilter
    */
-  async fetch<Q extends ApiQueryFiltersParameters<R, S>, F extends ApiQueryResourceParameters<R>>(
+  async fetch<Q extends ApiQueryFiltersParameters<S>, F extends ApiQueryResourceParameters<R>>(
     query: Q = EMPTY_OBJECT as Q,
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<ApiCollectionResult<FilteredResource<R, F>, any>> {
@@ -208,7 +208,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   async getToManyRelationship<
     RI extends ResourceToManyRelationshipNames<R>,
     RR extends R[RI] extends ToManyRelationship<AnyResource> ? R[RI][number] : never,
-    Q extends ApiQueryFiltersParameters<RR, S>,
+    Q extends ApiQueryFiltersParameters<S>,
     F extends ApiQueryResourceParameters<RR>
   >(
     id: ResourceId,
@@ -235,7 +235,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     relationshipPath: string = '',
     relationResourceType: ResourceType = '',
   ): Promise<ApiEntityResult<FilteredResource<AnyResource, F>, any>> {
-    const queryParameters = new ApiQuery(this.api, { ...resourceFilter })
+    const queryParameters = new ApiQuery(this.api, { ...resourceFilter } as any)
     const url = new URL(`${id}${relationshipPath}${String(queryParameters)}`, `${this}/`)
 
     const options = createGetRequestOptions()
@@ -255,7 +255,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   }
 
   private async fetchCollection<
-    Q extends ApiQueryFiltersParameters<AnyResource, S>,
+    Q extends ApiQueryFiltersParameters<any>,
     F extends ApiQueryResourceParameters<R>
   >(
     query: Q = EMPTY_OBJECT as Q,
@@ -263,8 +263,8 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     id: ResourceId = '',
     relationshipPath: string = '',
     relationResourceType: ResourceType = '',
-  ): Promise<ApiCollectionResult<FilteredResource<AnyResource, F>, any>> {
-    const queryParameters = new ApiQuery(this.api, { ...query, ...resourceFilter })
+  ): Promise<ApiCollectionResult<FilteredResource<AnyResource, any>, any>> {
+    const queryParameters = new ApiQuery(this.api, { ...query, ...resourceFilter } as any)
     const url = new URL(
       `${relationshipPath}${String(queryParameters)}`,
       relationshipPath ? `${this}/` : this.toURL(),
@@ -281,7 +281,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
             const result = this.processResponse(
               response,
               resource,
-              resourceFilter,
+              resourceFilter as any,
               id,
               relationResourceType,
             )
@@ -296,7 +296,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
           if (errors.length) {
             reject(errors)
           } else {
-            resolve(new ApiCollectionResult(values as Array<any>, response.meta))
+            resolve(new ApiCollectionResult(values as Array<any>, response.meta) as any)
           }
         })
       })
@@ -319,7 +319,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
         relationResourceType,
         resource,
         response.included,
-        resourceFilter.fields,
+        resourceFilter.fields as any,
         resourceFilter.include,
         [this.Resource.type, parentId, relationResourceType],
       )
@@ -329,7 +329,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       this.Resource.type,
       resource,
       response.included,
-      resourceFilter.fields,
+      resourceFilter.fields as any,
       resourceFilter.include,
       [this.Resource.type, resource.id],
     )
@@ -338,20 +338,18 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   toString(): string {
     // ensure trailing "/"
     const apiUrl = this.api.toString().replace(/\/*$/, '/')
-
     return `${apiUrl}${this.path}`
   }
 
   toURL(): URL {
     // ensure trailing "/"
     const apiUrl = this.api.toString().replace(/\/*$/, '/')
-
     return new URL(this.path, apiUrl)
   }
 }
 
 type ResourceFields<R, F> = R extends AnyResource
-  ? F extends Array<keyof R>
+  ? F extends ReadonlyArray<keyof R> | Array<keyof R>
     ? Pick<R, F[number] | ResourceIdentifierKey>
     : never
   : never

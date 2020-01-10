@@ -1,19 +1,6 @@
-export class ApiSortRule<T extends string> {
-  readonly name: T
-  readonly ascending: boolean
-  constructor(name: T, ascending: boolean) {
-    this.name = name
-    this.ascending = ascending
-  }
+export const sort = <T extends string>(name: T, ascending: boolean): string =>
+  ascending ? name : `-${name}`
 
-  toString(): string {
-    return this.ascending ? this.name : `-${this.name}`
-  }
-}
+export const ascend = <T extends string>(name: T): string => sort(name, true)
 
-export const sort = <T extends string>(name: T, ascending: boolean): ApiSortRule<T> =>
-  new ApiSortRule(name, ascending)
-
-export const ascend = <T extends string>(name: T): ApiSortRule<T> => sort(name, true)
-
-export const descend = <T extends string>(name: T): ApiSortRule<T> => sort(name, false)
+export const descend = <T extends string>(name: T): string => sort(name, false)

@@ -27,16 +27,22 @@ export {
   ApiSetupWithDefaults,
   DefaultApiSetup,
 } from './lib/ApiSetup'
-export { ascend, descend, sort, ApiSortRule } from './lib/ApiSortRule'
+export { ApiEntityResult, ApiCollectionResult } from './lib/ApiResult'
+export { ascend, descend, sort } from './lib/ApiSortRule'
 export {
   resource,
   AnyResource,
+  ResourceId,
+  ResourceCreateValues,
+  ResourcePatchValues,
   ResourceAttributes,
   ResourceAttributeNames,
   ResourceConstructor,
   ResourceFieldNames,
   ResourceRelationships,
   ResourceRelationshipNames,
+  ResourceToManyRelationshipNames,
+  ResourceToOneRelationshipNames,
   ResourceType,
 } from './lib/Resource'
 export {

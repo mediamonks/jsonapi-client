@@ -1,4 +1,13 @@
-import { isArray, isString, isSerializableNumber, isObject, isTrue, isNone, isSome } from 'isntnt'
+import {
+  isArray,
+  isString,
+  isSerializableNumber,
+  isObject,
+  isTrue,
+  isNone,
+  isSome,
+  Intersect,
+} from 'isntnt'
 
 import {
   EMPTY_OBJECT,
@@ -13,9 +22,8 @@ import {
 import { jsonApiReservedParameterNames } from '../constants/jsonApi'
 import { NonEmptyArray, ValuesOf } from '../types/util'
 import { Api } from './Api'
-import { ApiSortRule } from './ApiSortRule'
 import { ApiSetupCreatePageQuery, ApiSetup } from './ApiSetup'
-import { AnyResource, ResourceAttributeNames } from './Resource'
+import { AnyResource } from './Resource'
 import { RelationshipValue } from './ResourceRelationship'
 import { ResourceIdentifierKey } from './ResourceIdentifier'
 import { ResourceFieldName } from './ResourceField'
@@ -26,9 +34,7 @@ export type ApiQueryPageParameter<
   ? Parameters<T['createPageQuery']>[0]
   : ApiQueryParameter
 
-export type ApiQuerySortParameter<R extends AnyResource> = Array<
-  ApiSortRule<ResourceAttributeNames<R>>
->
+export type ApiQuerySortParameter = Array<string>
 
 export type ApiQueryFilterParameter = {
   [key: string]: ApiQueryParameterValue
@@ -44,15 +50,12 @@ export type BaseRelationshipResource<T> = T extends Array<AnyResource>
 
 export type ApiQueryResourceParameters<R extends AnyResource> = Partial<{
   include: BaseApiQueryIncludeParameters<R>
-  fields: BaseApiQueryFieldsParameter<R>
+  fields: Intersect<Partial<BaseApiQueryFieldsParameter<R>>>
 }>
 
-export type ApiQueryFiltersParameters<
-  R extends AnyResource,
-  S extends Partial<ApiSetup>
-> = Partial<{
+export type ApiQueryFiltersParameters<S extends Partial<ApiSetup>> = Partial<{
   page: ApiQueryPageParameter<S>
-  sort: ApiQuerySortParameter<R>
+  sort: ApiQuerySortParameter
   filter: ApiQueryFilterParameter
 }>
 
@@ -69,7 +72,7 @@ export type ApiQueryParameters =
       include: BaseApiQueryIncludeParameters<any>
       fields: { [key: string]: NonEmptyArray<string> }
       page: ApiQueryPageParameter<ApiSetup>
-      sort: ApiQuerySortParameter<any>
+      sort: ApiQuerySortParameter
       filter: ApiQueryFilterParameter
     }>
   | {
@@ -99,7 +102,7 @@ const parseApiQuery = <T extends ApiQueryParameters>(api: Api<any>, values: T): 
         case jsonApiReservedParameterNames.SORT:
           return parseApiQueryParameter(
             name,
-            parseApiQueryParameterArray((values[name] as Array<ApiSortRule<any>>).map(String)),
+            parseApiQueryParameterArray((values[name] as Array<string>).map(String)),
           )
         case jsonApiReservedParameterNames.INCLUDE:
           return parseIncludeParameter(name, (values as any)[name] || EMPTY_OBJECT)
