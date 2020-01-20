@@ -1,4 +1,14 @@
-import { isArray, isString, isSerializableNumber, isObject, isTrue, isNone, isSome } from 'isntnt'
+// TODO: refactor
+import {
+  isArray,
+  isString,
+  isSerializableNumber,
+  isObject,
+  isTrue,
+  isNone,
+  isSome,
+  Intersect,
+} from 'isntnt'
 
 import {
   EMPTY_OBJECT,
@@ -16,9 +26,8 @@ import { Api } from './Api'
 import { ApiSortRule } from './ApiSortRule'
 import { ApiSetupCreatePageQuery, ApiSetup } from './ApiSetup'
 import { AnyResource, ResourceAttributeNames } from './Resource'
-import { RelationshipValue } from './ResourceRelationship'
 import { ResourceIdentifierKey } from './ResourceIdentifier'
-import { ResourceFieldName } from './ResourceField'
+import { ResourceFieldName, RelationshipValue } from './ResourceField'
 
 export type ApiQueryPageParameter<
   T extends Partial<ApiSetup>
@@ -44,7 +53,7 @@ export type BaseRelationshipResource<T> = T extends Array<AnyResource>
 
 export type ApiQueryResourceParameters<R extends AnyResource> = Partial<{
   include: BaseApiQueryIncludeParameters<R>
-  fields: BaseApiQueryFieldsParameter<R>
+  fields: Readonly<BaseApiQueryFieldsParameter<R>>
 }>
 
 export type ApiQueryFiltersParameters<
@@ -177,7 +186,7 @@ const parseApiQueryParameterArray = (value: Array<string | number>): string => {
     .join(LIST_PARAMETER_VALUE_DELIMITER)
 }
 
-export type BaseApiQueryIncludeParameters<T> = T extends RelationshipValue<AnyResource>
+export type BaseApiQueryIncludeParameters<T> = T extends RelationshipValue
   ?
       | null
       | {
@@ -188,9 +197,9 @@ export type BaseApiQueryIncludeParameters<T> = T extends RelationshipValue<AnyRe
 type BaseApiQueryFieldsParameter<T, X extends string = never> = T extends AnyResource
   ? T['type'] extends X
     ? never
-    :
+    : Intersect<
         | {
-            [K in T['type']]: NonEmptyArray<
+            [K in T['type']]?: NonEmptyArray<
               Exclude<Extract<keyof T, string>, ResourceIdentifierKey>
             >
           }
@@ -202,4 +211,5 @@ type BaseApiQueryFieldsParameter<T, X extends string = never> = T extends AnyRes
               >
             }
           >
+      >
   : never

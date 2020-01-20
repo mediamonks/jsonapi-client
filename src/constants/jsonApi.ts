@@ -18,11 +18,7 @@ export const jsonApiReservedParameterNames = {
 
 export const jsonApiContentType = 'application/vnd.api+json'
 
-export const defaultGetRequestHeaders = {
-  ['Content-Type']: jsonApiContentType,
-}
-
-export const defaultPostRequestHeaders = {
+export const defaultRequestHeaders = {
   ['Accept']: jsonApiContentType,
   ['Content-Type']: jsonApiContentType,
 }

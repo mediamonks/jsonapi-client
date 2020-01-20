@@ -1,12 +1,8 @@
-import { EMPTY_OBJECT } from '../constants/data'
-import {
-  createGetRequestOptions,
-  keys,
-  createPostRequestOptions,
-  createPatchRequestOptions,
-  createDeleteRequestOptions,
-} from '../utils/data'
+import dedent from 'dedent'
+import { at, isArray, isNone, isUndefined } from 'isntnt'
 
+import { __DEV__, EMPTY_OBJECT, DebugErrorCode, ResourceDocumentKey } from '../constants/data'
+import { keys, createEmptyObject, createRequestOptions, RequestMethod } from '../utils/data'
 import { Api } from './Api'
 import { ApiQuery, ApiQueryResourceParameters, ApiQueryFiltersParameters } from './ApiQuery'
 import { ApiSetup } from './ApiSetup'
@@ -17,19 +13,14 @@ import {
   ResourceId,
   ResourceToManyRelationshipNames,
   ResourceToOneRelationshipNames,
-  ResourceType,
   ResourcePatchValues,
 } from './Resource'
 import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
 import { ApiEntityResult, ApiCollectionResult } from './ApiResult'
-import {
-  ToManyRelationship,
-  ToManyRelationshipField,
-  ToOneRelationshipField,
-} from './ResourceRelationship'
-import { Result } from '../utils/Result'
-import { ResourceData } from './ApiController'
-import { ApiError } from './ApiError'
+import { PreventExcessiveRecursionError } from '../types/util'
+import { SerializableObject } from '../types/data'
+
+const isToManyResponse = at(ResourceDocumentKey.DATA, isArray)
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly api: Api<S>
@@ -37,7 +28,6 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   readonly Resource: ResourceConstructor<R>
 
   constructor(api: Api<S>, path: string, Resource: ResourceConstructor<R>) {
-    api.controller.addResource(Resource)
     this.api = api
     this.path = path.replace(/^\/*(.*?)\/*$/, '$1') // ensure no leading nor trailing "/"
     this.Resource = Resource
@@ -47,14 +37,13 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     values: ResourceCreateValues<R>,
   ): Promise<ApiEntityResult<FilteredResource<R, {}>, any>> {
     const url = this.toURL()
-    if (values.type === undefined) {
+    if (isUndefined(values.type)) {
       ;(values as any).type = this.Resource.type
     }
     return new Promise((resolve, reject) => {
-      console.log(keys(this.Resource.fields))
       const result = this.api.controller.encodeResource(
-        this.Resource.type,
-        values as any,
+        this.Resource as any,
+        values as AnyResource,
         keys(this.Resource.fields),
         [],
       )
@@ -64,14 +53,14 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       }
 
       return result.map((body: any) => {
-        const options = createPostRequestOptions(body)
-        return this.api.controller.handleRequest(url, options).then((result) => {
+        const options = createRequestOptions(url, RequestMethod.POST, body)
+        return this.api.controller.handleRequest(options).then((result) => {
           if (result.isSuccess()) {
             const response = result.value
             // TODO: handle 204 No Content response
-            if ('data' in response) {
+            if (ResourceDocumentKey.DATA in response) {
               const result = this.api.controller.decodeResource(
-                this.Resource.type,
+                this.Resource as any,
                 response.data,
                 response.included,
                 {},
@@ -97,20 +86,20 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
 
   async patch(id: ResourceId, values: ResourcePatchValues<R>): Promise<any> {
     const url = new URL(`${this.path}/${id}`, this.api.url)
-    if (values.id === undefined) {
-      ;(values as any).id = id
+    if (isUndefined(values[ResourceDocumentKey.ID])) {
+      ;(values as any)[ResourceDocumentKey.ID] = id
     }
     return new Promise((resolve, reject) => {
       this.api.controller
         .encodeResource(
-          this.Resource.type,
+          this.Resource,
           values as any,
           keys(this.Resource.fields).filter((name) => name in values),
           [],
         )
         .map((body) => {
-          const options = createPatchRequestOptions(body)
-          this.api.controller.handleRequest(url, options).then((result) => {
+          const options = createRequestOptions(url, RequestMethod.PATCH, body)
+          this.api.controller.handleRequest(options).then((result) => {
             if (result.isSuccess()) {
               resolve(result.value)
             } else {
@@ -121,6 +110,12 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     })
   }
 
+  async delete(id: ResourceId) {
+    const url = new URL(`${this.path}/${id}`, this.api.url)
+    const options = createRequestOptions(url, RequestMethod.DELETE)
+    return this.api.controller.handleRequest(options)
+  }
+
   /**
    * Get a single entity
    * /api/posts/123
@@ -128,60 +123,63 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param id
    * @param resourceFilter
    */
-  async get<F extends ApiQueryResourceParameters<R>>(
+  async getOne<F extends ApiQueryResourceParameters<R>>(
     id: ResourceId,
+    resourceQuery: F = EMPTY_OBJECT as F,
+  ): Promise<ApiEntityResult<FilteredResource<R, F>, SerializableObject>> {
+    return this.fetchEntity(this.Resource as ResourceConstructor<any>, resourceQuery, [
+      id,
+    ]) as PreventExcessiveRecursionError
+  }
+
+  async getToOneRelationship<
+    T extends ResourceToOneRelationshipNames<R>,
+    F extends ApiQueryResourceParameters<Extract<R[T], AnyResource>>
+  >(
+    id: ResourceId,
+    fieldName: T,
     resourceFilter: F = EMPTY_OBJECT as F,
-  ): Promise<ApiEntityResult<FilteredResource<R, F>, any>> {
-    return this.fetchEntity(id, resourceFilter) as any
+  ): Promise<ApiEntityResult<FilteredResource<Extract<R[T], AnyResource>, F>, SerializableObject>> {
+    const field = this.Resource.fields[fieldName]
+    if (isNone(field)) {
+      if (__DEV__) {
+        throw new Error(
+          dedent`[ApiEndpoint{${this.path}}#getToOneRelationship] Field "${fieldName}" does not exist on Resource of type "${this.Resource.type}`,
+        )
+      }
+      throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any)
+    }
+    if (!field.isToOneRelationship()) {
+      if (__DEV__) {
+        throw new Error(
+          dedent`[ApiEndpoint{${this.path}}#getToOneRelationship] Field "${fieldName}" is not a to-one relationship on Resource of type "${this.Resource.type}"`,
+        )
+      }
+      throw new Error(DebugErrorCode.FIELD_OF_WRONG_TYPE as any)
+    }
+    const RelationshipResource = field.getResource()
+    return this.fetchEntity(RelationshipResource, resourceFilter as any, [
+      id,
+      this.api.setup.transformRelationshipForURL!(fieldName),
+    ]) as PreventExcessiveRecursionError
   }
 
   /**
-   * Get an entity collection
+   * Get a resource collection
    * /api/posts/
    *
    * @param query
    * @param resourceFilter
    */
-  async fetch<Q extends ApiQueryFiltersParameters<R, S>, F extends ApiQueryResourceParameters<R>>(
-    query: Q = EMPTY_OBJECT as Q,
-    resourceFilter: F = EMPTY_OBJECT as F,
-  ): Promise<ApiCollectionResult<FilteredResource<R, F>, any>> {
-    return this.fetchCollection(query as any, resourceFilter) as any
-  }
-
-  async delete(id: ResourceId) {
-    const url = new URL(`${this.path}/${id}`, this.api.url)
-    const options = createDeleteRequestOptions()
-    return this.api.controller.handleRequest(url, options)
-  }
-
-  /**
-   * Fetch a 1-to-1 relationship for an entity
-   * /api/posts/123/author
-   *
-   * @param id
-   * @param relationshipFieldName
-   * @param resourceFilter
-   */
-  async getToOneRelationship<
-    RI extends ResourceToOneRelationshipNames<R>,
-    RR extends Extract<R[RI], AnyResource>,
-    F extends ApiQueryResourceParameters<RR>
-  >(
-    id: ResourceId,
-    relationshipFieldName: RI,
-    resourceFilter: F = EMPTY_OBJECT as F,
-  ): Promise<ApiEntityResult<FilteredResource<RR, F>, any>> {
-    const relationshipField = this.Resource.fields[relationshipFieldName] as ToOneRelationshipField<
-      RR['type']
-    >
-
-    return (this.fetchEntity(
-      id,
-      resourceFilter as any,
-      `/${this.api.setup.transformRelationshipForURL!(relationshipFieldName)}`,
-      relationshipField.type,
-    ) as unknown) as Promise<ApiEntityResult<FilteredResource<RR, F>, any>>
+  async getMany<F extends ApiQueryResourceParameters<R>>(
+    query: object | null = EMPTY_OBJECT, // TODO: type query ('object') correctly
+    resourceFilter: F | null = null,
+  ): Promise<ApiCollectionResult<FilteredResource<R, F>, SerializableObject>> {
+    return this.fetchCollection(
+      this.Resource as ResourceConstructor<any>,
+      query || EMPTY_OBJECT,
+      resourceFilter || EMPTY_OBJECT,
+    ) as PreventExcessiveRecursionError
   }
 
   /**
@@ -194,47 +192,67 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param resourceFilter
    */
   async getToManyRelationship<
-    RI extends ResourceToManyRelationshipNames<R>,
-    RR extends R[RI] extends ToManyRelationship<AnyResource> ? R[RI][number] : never,
-    Q extends ApiQueryFiltersParameters<RR, S>,
-    F extends ApiQueryResourceParameters<RR>
+    T extends ResourceToManyRelationshipNames<R>,
+    F extends ApiQueryResourceParameters<R[T][any]>
   >(
     id: ResourceId,
-    relationshipFieldName: RI,
-    query: Q = EMPTY_OBJECT as Q,
+    fieldName: T,
+    query: object | null = EMPTY_OBJECT, // TODO: type query ('object') correctly
     resourceFilter: F = EMPTY_OBJECT as F,
-  ): Promise<ApiCollectionResult<FilteredResource<RR, F>, any>> {
-    const relationshipField: ToManyRelationshipField<RR['type']> = this.Resource.fields[
-      relationshipFieldName
-    ] as any
-
-    return (this.fetchCollection(
-      query as any,
+  ): Promise<ApiCollectionResult<FilteredResource<R[T][any], F>, SerializableObject>> {
+    const field = this.Resource.fields[fieldName]
+    if (isNone(field)) {
+      if (__DEV__) {
+        throw new Error(
+          dedent`[ApiEndpoint{${this.path}}#getToManyRelationShip] Field "${fieldName}" does not exist on Resource of type "${this.Resource.type}`,
+        )
+      }
+      throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any)
+    }
+    if (!field.isToManyRelationship()) {
+      if (__DEV__) {
+        throw new Error(
+          dedent`[ApiEndpoint{${this.path}}#getToManyRelationShip] Field "${fieldName}" is not a to-many relationship on Resource of type "${this.Resource.type}"`,
+        )
+      }
+      throw new Error(DebugErrorCode.FIELD_OF_WRONG_TYPE as any)
+    }
+    const RelationshipResource = field.getResource()
+    return this.fetchCollection(
+      RelationshipResource,
+      query || EMPTY_OBJECT,
       resourceFilter as any,
-      id,
-      `${id}/${this.api.setup.transformRelationshipForURL!(relationshipFieldName)}`,
-      relationshipField.type,
-    ) as unknown) as Promise<ApiCollectionResult<FilteredResource<RR, F>, any>>
+      [id, this.api.setup.transformRelationshipForURL!(fieldName)],
+    ) as PreventExcessiveRecursionError
   }
 
   private async fetchEntity<F extends ApiQueryResourceParameters<AnyResource>>(
-    id: ResourceId,
+    Resource: ResourceConstructor<AnyResource>,
     resourceFilter: F = EMPTY_OBJECT as F,
-    relationshipPath: string = '',
-    relationResourceType: ResourceType = '',
+    path: Array<string> = [],
   ): Promise<ApiEntityResult<FilteredResource<AnyResource, F>, any>> {
-    const queryParameters = new ApiQuery(this.api, { ...resourceFilter })
-    const url = new URL(`${id}${relationshipPath}${String(queryParameters)}`, `${this}/`)
+    const queryParameters = new ApiQuery(this.api, resourceFilter as any)
+    const url = new URL(`${path.join('/')}${String(queryParameters)}`, `${this}/`)
 
-    const options = createGetRequestOptions()
+    const options = createRequestOptions(url, RequestMethod.GET)
     return new Promise(async (resolve, reject) => {
-      this.api.controller.handleRequest(url, options).then((request) => {
+      this.api.controller.handleRequest(options).then((request) => {
         const result = request.flatMap((response) =>
-          this.processResponse(response, response.data, resourceFilter, id, relationResourceType),
+          this.api.controller.decodeResource(
+            Resource,
+            response.data,
+            response.included,
+            resourceFilter.fields,
+            resourceFilter.include,
+            [],
+          ),
         )
 
         if (result.isSuccess()) {
-          resolve(new ApiEntityResult(result.value, request.value.meta) as any)
+          resolve(new ApiEntityResult(
+            result.value,
+            request.value.meta || createEmptyObject(),
+          ) as any)
         } else {
           reject(result.value)
         }
@@ -246,100 +264,97 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     Q extends ApiQueryFiltersParameters<AnyResource, S>,
     F extends ApiQueryResourceParameters<R>
   >(
+    Resource: ResourceConstructor<AnyResource>,
     query: Q = EMPTY_OBJECT as Q,
     resourceFilter: F = EMPTY_OBJECT as F,
-    id: ResourceId = '',
-    relationshipPath: string = '',
-    relationResourceType: ResourceType = '',
+    path: Array<string> = [],
   ): Promise<ApiCollectionResult<FilteredResource<AnyResource, F>, any>> {
     const queryParameters = new ApiQuery(this.api, { ...query, ...resourceFilter })
     const url = new URL(
-      `${relationshipPath}${String(queryParameters)}`,
-      relationshipPath ? `${this}/` : this.toURL(),
+      `${path.join('/')}${String(queryParameters)}`,
+      path.length ? `${this}/` : this.toURL(),
     )
 
     return new Promise((resolve, reject) => {
-      const options = createGetRequestOptions()
-      this.api.controller.handleRequest(url, options).then((request) => {
+      const options = createRequestOptions(url, RequestMethod.GET)
+      this.api.controller.handleRequest(options).then((request) => {
         request.map((response) => {
           const errors: Array<Error> = []
           const values: Array<FilteredResource<R, F>> = []
 
-          response.data.forEach((resource: any) => {
-            const result = this.processResponse(
-              response,
-              resource,
-              resourceFilter,
-              id,
-              relationResourceType,
-            )
+          if (isToManyResponse(response)) {
+            response.data.forEach((resource: any) => {
+              const result = this.api.controller.decodeResource(
+                Resource,
+                resource,
+                response.included,
+                resourceFilter.fields,
+                resourceFilter.include,
+                [Resource.type, resource.id],
+              )
 
-            if (result.isSuccess()) {
-              values.push(result.value as any)
-            } else {
-              errors.push(...(result.value as any))
-            }
-          })
+              if (result.isSuccess()) {
+                values.push(result.value as any)
+              } else {
+                errors.push(...(result.value as any))
+              }
+            })
+          } else if (__DEV__) {
+            throw new Error(
+              dedent`[ApiEndpoint{${this.path}}#fetchCollection] Invalid to-many response, data must be an Array`,
+            )
+          }
 
           if (errors.length) {
             reject(errors)
           } else {
-            resolve(new ApiCollectionResult(values as Array<any>, response.meta))
+            resolve(new ApiCollectionResult(values as Array<any>, response.meta || {}))
           }
         })
       })
     })
   }
 
-  private processResponse(
-    response: any,
-    resource: ResourceData<AnyResource>,
-    resourceFilter: ApiQueryResourceParameters<AnyResource>,
-    parentId: ResourceId = '',
-    relationResourceType: ResourceType = '',
-  ): Result<AnyResource | null, ApiError<any>[]> {
-    if (relationResourceType) {
-      if (response === null) {
-        return Result.accept(null)
-      }
-
-      return this.api.controller.decodeResource(
-        relationResourceType,
-        resource,
-        response.included,
-        resourceFilter.fields,
-        resourceFilter.include,
-        [this.Resource.type, parentId, relationResourceType],
-      )
-    }
-
-    return this.api.controller.decodeResource(
-      this.Resource.type,
-      resource,
-      response.included,
-      resourceFilter.fields,
-      resourceFilter.include,
-      [this.Resource.type, resource.id],
-    )
-  }
-
   toString(): string {
     // ensure trailing "/"
     const apiUrl = this.api.toString().replace(/\/*$/, '/')
-
     return `${apiUrl}${this.path}`
   }
 
   toURL(): URL {
     // ensure trailing "/"
     const apiUrl = this.api.toString().replace(/\/*$/, '/')
-
     return new URL(this.path, apiUrl)
+  }
+
+  // LEGACY
+  async get<F extends ApiQueryResourceParameters<R>>(
+    id: ResourceId,
+    resourceFilter: F = EMPTY_OBJECT as F,
+  ): Promise<ApiEntityResult<FilteredResource<R, F>, any>> {
+    if (__DEV__) {
+      console.warn(
+        dedent`ApiEndpoint#get is deprecated in favor of ApiEndpoint#getOne, use that instead`,
+      )
+    }
+    return this.getOne(id, resourceFilter) as PreventExcessiveRecursionError
+  }
+
+  async fetch<F extends ApiQueryResourceParameters<R>>(
+    query: object | null = EMPTY_OBJECT,
+    resourceFilter: F = EMPTY_OBJECT as F,
+  ): Promise<ApiCollectionResult<FilteredResource<R, F>, any>> {
+    if (__DEV__) {
+      console.warn(
+        dedent`ApiEndpoint#fetch is deprecated in favor of ApiEndpoint#getMany, use that instead`,
+      )
+    }
+    return this.getMany(query as any, resourceFilter as any) as any
   }
 }
 
 type ResourceFields<R, F> = R extends AnyResource
-  ? F extends Array<keyof R>
+  ? F extends ReadonlyArray<keyof R>
     ? Pick<R, F[number] | ResourceIdentifierKey>
     : never
   : never
@@ -359,7 +374,7 @@ type ResourceIncludes<R, I, F> = R extends AnyResource
           ? BaseFilteredResource<Extract<R[K], AnyResource>, I[K], F> | null
           : ResourceIdentifier<Extract<R[K], AnyResource>['type']> | null
         : K extends keyof I
-        ? Warning<'Invalid include parameter: field is not a relationship', K>
+        ? Warning<'Invalid include parameter: not a relationship field', K>
         : R[K]
     }
   : never
@@ -385,8 +400,6 @@ type Warning<T extends string, U> = Error & {
   message: T
   value: U
 }
-
-// type NotAResourceWarning<T> = Warning<'Not a Resource', T>
 
 export type ApiEndpointResource<E extends ApiEndpoint<any, any>> = E extends ApiEndpoint<
   infer R,

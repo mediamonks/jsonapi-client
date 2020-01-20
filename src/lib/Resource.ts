@@ -1,8 +1,7 @@
 import { ValuesOf, ExtendsOrNever } from '../types/util'
 import { ResourceFields, ResourceField } from './ResourceField'
 import { ResourceIdentifier, ResourceIdentifierKey } from './ResourceIdentifier'
-import { RelationshipValue, ToManyRelationship, ToOneRelationship } from './ResourceRelationship'
-import { AttributeValue } from './ResourceAttribute'
+import { RelationshipValue, AttributeValue } from './ResourceField'
 import { BaseRelationshipResource } from './ApiQuery'
 
 export type ResourceType = string
@@ -23,13 +22,13 @@ export type ResourceRelationshipNames<R extends AnyResource> = ValuesOf<
 
 export type ResourceToOneRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: R[K] extends ToOneRelationship<AnyResource> ? K : never
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null ? K : never
   }
 >
 
 export type ResourceToManyRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: R[K] extends ToManyRelationship<AnyResource> ? K : never
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource[] ? K : never
   }
 >
 
@@ -45,27 +44,19 @@ export type ResourceAttributes<R extends AnyResource> = Pick<R, ResourceAttribut
 type ResourceFieldsModel<F extends ResourceFields<any>> = {
   [K in keyof F]: K extends ResourceIdentifierKey
     ? never
-    : F[K] extends RelationshipValue<AnyResource>
+    : F[K] extends RelationshipValue
     ? F[K]
-    : F[K] extends AttributeValue
+    : F[K] extends AttributeValue | null
     ? F[K]
     : never
 }
-
-// export type BaseRelationshipResource<T> = null extends T
-//   ? T extends AnyResource
-//     ? Extract<T, AnyResource>
-//     : never
-//   : T extends Array<AnyResource>
-//   ? T[number]
-//   : never
 
 export const resource = <T extends ResourceType>(type: T) => {
   return class Resource<
     M extends ResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
   > extends ResourceIdentifier<T> {
     static type: T = type
-    static fields: Record<ResourceType, ResourceField<any>> = Object.create(null)
+    static fields: Record<ResourceType, ResourceField<any, any>> = Object.create(null)
     constructor(data: ResourceIdentifier<T> & M) {
       super(data.type, data.id)
       Object.assign(this, data)
@@ -75,7 +66,7 @@ export const resource = <T extends ResourceType>(type: T) => {
 
 export type ResourceConstructor<R extends AnyResource> = {
   type: R['type']
-  fields: Record<ResourceType, ResourceField<any>>
+  fields: Record<ResourceType, ResourceField<any, any>>
   new (data: R): R
 }
 

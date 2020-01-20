@@ -25,6 +25,7 @@ export type ApiSetup = {
   transformRelationshipForURL: Transform<string>
   parseRequestError: ApiSetupParseRequestError
   beforeRequest: Transform<SerializableObject>
+  fetchAdapter: Window['fetch']
   adapter: Window['fetch']
 }
 
@@ -42,6 +43,7 @@ export type DefaultApiSetup = ApiSetupWithDefaults<{
   transformRelationshipForURL: Transform<string>
   parseRequestError: Transform<ApiResponseError, any>
   beforeRequest: Transform<SerializableObject>
+  fetchAdapter: Window['fetch']
   adapter: Window['fetch']
 }>
 
@@ -62,5 +64,6 @@ export const mergeApiDefaultSetup = mergeApiSetup({
   transformRelationshipForURL: reflect,
   parseRequestError: reflect,
   beforeRequest: reflect,
+  fetchAdapter: windowFetch,
   adapter: windowFetch,
 })

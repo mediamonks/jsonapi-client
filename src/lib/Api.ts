@@ -22,9 +22,7 @@ export class Api<S extends Partial<ApiSetup>> {
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
-    resources.forEach((Resource) => {
-      this.controller.addResource(Resource)
-    })
+    console.warn(`Api#register is deprecated`)
   }
 
   toString(): string {

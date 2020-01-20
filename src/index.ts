@@ -1,5 +1,15 @@
 import { Api } from './lib/Api'
-export default Api
+import { ApiSetup } from './lib/ApiSetup'
+import { resource as resourceOfType } from './lib/Resource'
+
+export namespace JSONAPI {
+  export const resource = resourceOfType
+  export const client = <S extends Partial<ApiSetup>>(url: URL, setup: S = {} as S) => {
+    return new Api(url, setup)
+  }
+}
+
+export default JSONAPI
 
 export {
   ApiEndpoint,
@@ -39,24 +49,18 @@ export {
   ResourceRelationshipNames,
   ResourceType,
 } from './lib/Resource'
+export { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
 export {
   optionalAttribute,
   requiredAttribute,
-  AttributeField,
+  Attribute,
+  AttributeFlag,
   AttributeValue,
-  OptionalAttribute,
-  OptionalAttributeField,
-  RequiredAttribute,
-  RequiredAttributeField,
-} from './lib/ResourceAttribute'
-export { ResourceField, ResourceFieldName, ResourceFields } from './lib/ResourceField'
-export { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
-export {
+  Relationship,
+  RelationshipFlag,
+  RelationshipValue,
+  ResourceFieldName,
+  ResourceFields,
   toManyRelationship,
   toOneRelationship,
-  RelationshipField,
-  ToManyRelationshipField,
-  ToOneRelationshipField,
-  ToManyRelationship,
-  ToOneRelationship,
-} from './lib/ResourceRelationship'
+} from './lib/ResourceField'

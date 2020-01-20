@@ -1,7 +1,7 @@
 import { isArray, isUndefined, isNone, isSome, isString } from 'isntnt'
 import dedent from 'dedent'
 
-import { EMPTY_OBJECT } from '../constants/data'
+import { EMPTY_OBJECT, ResourceDocumentKey, __DEV__, DebugErrorCode } from '../constants/data'
 import { createEmptyObject, keys, createDataValue } from '../utils/data'
 import { Result } from '../utils/Result'
 
@@ -14,13 +14,9 @@ import {
   ResourceConstructor,
   ResourceAttributes,
   ResourceRelationships,
-  ResourceType,
 } from './Resource'
-import { AttributeField, AttributeValue } from './ResourceAttribute'
+import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
-import { RelationshipField, RelationshipValue } from './ResourceRelationship'
-
-type ApiResources = Record<string, ResourceConstructor<AnyResource>>
 
 export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
   attributes: ResourceAttributes<R>
@@ -29,90 +25,81 @@ export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> 
 
 export class ApiController<S extends Partial<ApiSetup>> {
   api: Api<S>
-  resources: ApiResources = createEmptyObject()
-
   constructor(api: Api<S>) {
     this.api = api
   }
 
-  addResource<R extends AnyResource>(Resource: ResourceConstructor<R>): void {
-    if (Resource.type in this.resources) {
-      console.warn(`Duplicate resource ${Resource.type}.`)
-    }
-    ;(this.resources as any)[Resource.type] = Resource
-  }
-
-  getResource<T extends ResourceType>(type: T): ResourceConstructor<ResourceIdentifier<T>> {
-    if (isUndefined(this.resources[type])) {
-      throw new Error(`Resource of type "${type}" does not exist`)
-    }
-    return (this.resources as any)[type]
-  }
-
-  async handleRequest(url: URL, options: any): Promise<Result<any, ApiRequestError<any>[]>> {
-    if (isNone(this.api.setup.adapter)) {
-      throw new Error(dedent`No fetch adapter provided.
+  async handleRequest(options: any): Promise<Result<any, ApiRequestError<any>[]>> {
+    if (isNone(this.api.setup.fetchAdapter)) {
+      if (__DEV__) {
+        throw new Error(dedent`No fetch adapter provided.
         When not running in a browser that doesn't support fetch, you need to provide polyfill fetch.
         When running in node, you can pass "node-fetch" as an adapter to the Api setup.
         If you want to mock, you can use "fetch-mock".
       `)
+      }
+      throw new Error(DebugErrorCode.MISSING_FETCH_ADAPTER as any)
     }
 
-    const request = await this.api.setup.adapter(url.href, this.api.setup.beforeRequest!(options))
-    return request
+    const response = await this.api.setup.fetchAdapter((this.api.setup.beforeRequest!(
+      options,
+    ) as unknown) as Request)
+    if (!response.ok) {
+      throw new ApiResponseError(response.statusText, response.status)
+    }
+    return response
       .json()
-      .then((response): any => {
-        return 'errors' in response
-          ? Result.reject(response.errors.map(this.api.setup.parseRequestError))
-          : Result.accept(response)
+      .then((data): any => {
+        return ResourceDocumentKey.ERRORS in data
+          ? Result.reject(data.errors.map(this.api.setup.parseRequestError))
+          : Result.accept(data)
       })
-      .catch((error) => Result.reject(new ApiRequestError('Invalid request', error)))
+      .catch((error) => Result.reject(new ApiResponseError(dedent`Invalid request`, error)))
   }
 
-  getAttributeValue<F extends AttributeField<any>>(
+  getAttributeValue<F extends Attribute<any, any>>(
     data: ResourceData<AnyResource>,
     field: F,
     pointer: Array<string>,
   ): Result<AttributeValue, ApiError<any>> {
-    // todo: attributes prop is not always optional, should it throw if its missing
+    // TODO: Attributes prop is not always optional, should it throw if its missing
     // when it should not?
     const attributes = data.attributes || EMPTY_OBJECT
-    const value = field.name in attributes ? (attributes as any)[field.name] : null
-    if (field.validate(value)) {
+    const value = (attributes as any)[field.name]
+    if (field.isValid(value)) {
       return Result.accept(value)
-    } else if (field.isOptionalAttribute() && isNone(value)) {
-      return Result.accept(null)
     }
     return Result.reject(
       new ApiValidationError(
-        `Invalid attribute value at "${field.name}"`,
+        dedent`Invalid attribute value at "${field.name}"`,
         value,
         pointer.concat(field.name),
       ),
     )
   }
 
-  getRelationshipData<F extends RelationshipField<any>>(
+  getRelationshipData<F extends Relationship<any, any>>(
     data: ResourceData<AnyResource>,
     field: F,
     pointer: Array<string>,
-  ): Result<RelationshipValue<AnyResource>, ApiError<any>> {
-    // todo: relationships prop is not always optional, should it throw if its missing
+  ): Result<RelationshipValue, ApiError<any>> {
+    // TODO: Relationships prop is not always optional, should it throw if its missing
     // when it should not?
     const relationships = data.relationships || EMPTY_OBJECT
     const value = (relationships as any)[field.name]
     if (isUndefined(value)) {
       return Result.accept(field.isToOneRelationship() ? null : [])
     }
-    if (field.validate(value.data)) {
+    if (field.isValid(value.data)) {
       return Result.accept(value.data)
     }
+    // TODO: Augment ApiValidationError feedback using RelationshipResourceField meta
     const expectedValue = field.isToOneRelationship()
       ? `a Resource identifier or null`
-      : 'an array of Resource identifiers'
+      : `an array of Resource identifiers`
     return Result.reject(
       new ApiValidationError(
-        `Invalid relationship value, "${field.name}" must be ${expectedValue}`,
+        dedent`Invalid relationship value, "${field.name}" must be ${expectedValue}`,
         value,
         pointer.concat(field.name),
       ),
@@ -125,13 +112,17 @@ export class ApiController<S extends Partial<ApiSetup>> {
     pointer: Array<string>,
   ): Result<ResourceData<any>, ApiError<any>[]> {
     const data = included.find(
-      (resource) => resource.type === identifier.type && resource.id === identifier.id,
+      (resource) =>
+        resource[ResourceDocumentKey.TYPE] === identifier[ResourceDocumentKey.TYPE] &&
+        resource[ResourceDocumentKey.ID] === identifier[ResourceDocumentKey.ID],
     )
     return isSome(data)
       ? Result.accept(data)
       : Result.reject([
           new ApiResponseError(
-            `Expected Resource of type "${identifier.type}" with id "${identifier.id}" to be included`,
+            dedent`Resource of type "${identifier[ResourceDocumentKey.TYPE]}" with id "${
+              identifier[ResourceDocumentKey.ID]
+            }" is not be included`,
             identifier,
             pointer,
           ),
@@ -139,48 +130,58 @@ export class ApiController<S extends Partial<ApiSetup>> {
   }
 
   decodeResource<R extends AnyResource>(
-    type: ResourceType,
+    Resource: ResourceConstructor<R>,
     data: ResourceData<R>,
     included: Array<ResourceData<any>> = [],
     fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
     includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
     pointer: Array<string>,
   ): Result<R, ApiError<any>[]> {
-    // Todo: should the data of a resource be added to the included data because
+    // TODO: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
     included.push(data)
 
-    const Resource = this.getResource(type)
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
-
     const values: Record<string, any> = createEmptyObject()
     const errors: Array<ApiError<any>> = []
 
-    if (type !== data.type) {
+    if (Resource[ResourceDocumentKey.TYPE] !== data[ResourceDocumentKey.TYPE]) {
       errors.push(
-        new ApiError(
-          `Invalid type for Resource of type "${type}"`,
-          data.type,
-          pointer.concat('type'),
+        new ApiResponseError(
+          dedent`Invalid type for Resource of type "${Resource[ResourceDocumentKey.TYPE]}"`,
+          data[ResourceDocumentKey.TYPE],
+          pointer.concat(ResourceDocumentKey.TYPE),
         ),
       )
     } else {
-      values.type = type
+      values[ResourceDocumentKey.TYPE] = data[ResourceDocumentKey.TYPE]
     }
 
     if (!isString(data.id)) {
       errors.push(
-        new ApiError(`Invalid id for Resource of type "${type}"`, data.id, pointer.concat('id')),
+        new ApiResponseError(
+          dedent`Invalid id for Resource of type "${Resource[ResourceDocumentKey.TYPE]}"`,
+          data[ResourceDocumentKey.ID],
+          pointer.concat(ResourceDocumentKey.ID),
+        ),
       )
     } else {
-      values.id = data.id
+      values[ResourceDocumentKey.ID] = data[ResourceDocumentKey.ID]
     }
 
     fieldNames.forEach((name) => {
       const field = Resource.fields[name]
 
       if (isUndefined(field)) {
-        throw new Error(`Resource of type "${type}" has no "${name}" fields`)
+        if (__DEV__) {
+          throw new Error(
+            dedent`[ApiController#decodeResource] Resource of type "${
+              Resource[ResourceDocumentKey.TYPE]
+            }" has no "${name}" field`,
+          )
+        } else {
+          throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any)
+        }
       }
 
       if (field.isAttributeField()) {
@@ -192,6 +193,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
         }
       } else if (field.isRelationshipField()) {
         const relationshipData = this.getRelationshipData(data, field, pointer).map((value) => {
+          const RelationshipResource = field.getResource()
           if (isNone(value)) {
             values[name] = null
           } else if (isNone(includeParam) || isUndefined(includeParam[name])) {
@@ -212,7 +214,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
               )
                 .flatMap((includedRelationshipData) => {
                   return this.decodeResource(
-                    identifier.type,
+                    RelationshipResource,
                     includedRelationshipData,
                     included,
                     fieldsParam,
@@ -231,7 +233,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
             const result = this.getIncludedResourceData(value, included, pointer.concat(field.name))
               .flatMap((includedRelationshipData) =>
                 this.decodeResource(
-                  value.type,
+                  RelationshipResource,
                   includedRelationshipData,
                   included,
                   fieldsParam,
@@ -257,7 +259,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   }
 
   encodeResource<R extends AnyResource>(
-    type: ResourceType,
+    Resource: ResourceConstructor<R>,
     values: R,
     fieldsNames: Array<string>,
     pointer: Array<string>,
@@ -265,58 +267,62 @@ export class ApiController<S extends Partial<ApiSetup>> {
     const errors: Array<ApiError<any>> = []
     const data: Record<string, any> = createEmptyObject()
 
-    const Resource = this.getResource(type)
-
-    if ('type' in values && values.type !== type) {
+    if (
+      ResourceDocumentKey.TYPE in values &&
+      values[ResourceDocumentKey.TYPE] !== Resource[ResourceDocumentKey.TYPE]
+    ) {
       errors.push(
         new ApiError(
-          `Invalid id value for Resource of type ${type}`,
-          values.id,
-          pointer.concat('type'),
+          dedent`Invalid type for Resource of type ${Resource.type}`,
+          values[ResourceDocumentKey.TYPE],
+          pointer.concat(ResourceDocumentKey.TYPE),
         ),
       )
     } else {
-      data.type = type
+      data[ResourceDocumentKey.TYPE] = values[ResourceDocumentKey.TYPE]
     }
 
-    if ('id' in values) {
-      if (isString(values.id)) {
-        data.id = values.id
+    if (ResourceDocumentKey.ID in values) {
+      if (isString(values[ResourceDocumentKey.ID])) {
+        data[ResourceDocumentKey.ID] = values[ResourceDocumentKey.ID]
       } else {
         errors.push(
           new ApiError(
-            `Invalid id value for Resource of type ${type}`,
-            values.id,
-            pointer.concat('id'),
+            dedent`Invalid id value for Resource of type ${Resource.type}`,
+            values[ResourceDocumentKey.ID],
+            pointer.concat(ResourceDocumentKey.ID),
           ),
         )
       }
     }
 
     fieldsNames.forEach((name) => {
-      if (name === 'id' || name === 'type') {
-        return
-      }
       const field = (Resource.fields as any)[name]
       if (isUndefined(field)) {
-        throw new Error(`Field "${name}" does not exists on Resource of type ${type}`)
+        if (__DEV__) {
+          throw new Error(
+            dedent`[ApiController#encodeResource] Resource of type "${Resource.type}" has no "${name}" field`,
+          )
+        } else {
+          throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any)
+        }
       }
 
       const value = (values as any)[name]
       if (field.isAttributeField()) {
-        if (field.validate(value)) {
+        if (field.isValid(value)) {
           ;(data.attributes || (data.attributes = createEmptyObject()))[name] = value
         } else if (field.isRequiredAttribute() || isSome(value)) {
           errors.push(
             new ApiError(
-              `Invalid attribute value at "${name}" for Resource of type ${type}`,
+              `Invalid attribute at "${name}" for Resource of type ${Resource.type}`,
               value,
               pointer.concat(name),
             ),
           )
         }
       } else if (field.isRelationshipField()) {
-        if (field.validate(value)) {
+        if (field.isValid(value)) {
           ;(data.relationships || (data.relationships = createEmptyObject()))[
             name
           ] = createDataValue({
@@ -331,7 +337,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
         } else if (name in values) {
           errors.push(
             new ApiError(
-              `Invalid relationship data at "${name}" for Resource of type ${type}`,
+              `Invalid relationship data at "${name}" for Resource of type ${Resource.type}`,
               value,
               pointer.concat(name),
             ),
