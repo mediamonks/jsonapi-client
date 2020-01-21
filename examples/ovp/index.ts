@@ -1,11 +1,6 @@
 import 'babel-polyfill'
 
-import JSONAPI, {
-  FilteredResource,
-  AnyResource,
-  ResourceIdentifier,
-  ApiQueryResourceParameters,
-} from '../../src'
+import JSONAPI, { FilteredResource, AnyResource, ResourceIdentifier } from '../../src'
 
 import { Country } from './resources/Country'
 import { Asset } from './resources/Asset'
@@ -26,19 +21,36 @@ const client = JSONAPI.client(url, {
 // UTILS
 type Nullable<T> = T | null
 
+type BaseRelationshipResource<R> = R extends AnyResource | null
+  ? Extract<R, AnyResource>
+  : R extends Array<AnyResource>
+  ? R[number]
+  : never
+
 type BaseResourceRelationshipFields<R> = {
   [K in keyof R]: R[K] extends AnyResource | null | AnyResource[] ? K : never
 }[keyof R]
 
 type BaseResourceRelationships<R> = {
-  [K in BaseResourceRelationshipFields<R>]: R[K] extends any[]
-    ? R[K][number]
-    : Extract<R[K], AnyResource>
+  [K in BaseResourceRelationshipFields<R>]: BaseRelationshipResource<R[K]>
 }
 
 // FILTER INFERENCE
 // Fields
-type BaseResourceFields<R, F> = R extends { type: string }
+type SimplifiedBaseResourceFields<R> = R extends { type: string }
+  ? {
+      [K in R['type']]: ReadonlyArray<keyof R>
+    } &
+      {
+        [K in keyof R]: R[K] extends AnyResource | null
+          ? SimplifiedBaseResourceFields<R[K]>
+          : R[K] extends AnyResource[]
+          ? SimplifiedBaseResourceFields<R[K][any]>
+          : never
+      }[keyof R]
+  : never
+
+type BaseResourceFields<R, F = {}> = R extends { type: string }
   ? R['type'] extends keyof F
     ? F
     : {
@@ -51,16 +63,22 @@ type BaseResourceFields<R, F> = R extends { type: string }
             ? BaseResourceFields<R[K][any], F>
             : never
         }[keyof R]
-  : F
+  : never
 
-type ResourceFields<R extends AnyResource> = Intersect<BaseResourceFields<R, {}>>
+type BaseProcessResourceFields<F> = {
+  [K in keyof F]?: F[K]
+}
 
-type CountryFields = Partial<ResourceFields<Country>>
+type ResourceFields<R extends AnyResource> = SimplifiedBaseResourceFields<R>
+type AltResourceFields<R extends AnyResource> = BaseProcessResourceFields<
+  Intersect<SimplifiedBaseResourceFields<R>>
+>
 
-type XF = CountryFields
-type YF = AltResourceFilter<Country>
+type CountryFields = Intersect<ResourceFields<Country>>
+type AltCountryFields = AltResourceFields<Country>
 
-type CountryResourceTypes = keyof CountryFields
+type CountryFieldsTypes = keyof CountryFields
+type AltCountryFieldsTypes = keyof AltCountryFields
 
 // Include
 type BaseExtractResourceIncludes<R> = keyof R extends never
@@ -75,7 +93,7 @@ type BaseResourceIncludes<R> = Nullable<BaseExtractResourceIncludes<BaseResource
 
 type ResourceIncludes<R extends AnyResource> = BaseResourceIncludes<R>
 
-type Xc = ResourceIncludes<Country>
+type CountryResourceIncludes = ResourceIncludes<Country>
 
 // FILTER APPLICATION
 type GatherFieldsFromResource<R, K, F, I> = R extends { type: string }
@@ -116,8 +134,8 @@ type AltFilteredResource<
 > = BaseFilteredResource<R, F['fields'], F['include']>
 
 type AltResourceFilter<R extends AnyResource> = {
-  fields: BaseResourceFields<R, {}>
-  include: BaseResourceIncludes<R>
+  fields?: AltResourceFields<R>
+  include?: BaseResourceIncludes<R>
 }
 
 type AltFilteredCountry = AltFilteredResource<
