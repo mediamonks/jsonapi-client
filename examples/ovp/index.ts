@@ -119,16 +119,10 @@ type GatherFieldsFromResource<R, K, F, I> = R extends { type: string }
 
 type BaseFilteredResourceOfType<R, T, F, I> = T extends keyof F
   ? Intersect<GatherFieldsFromResource<R, F[T][any], F, I>>
-  : R
+  : R | ['TEST'] // TODO: optional explicit fields
 
 type BaseFilteredResource<R, F, I> = R extends { type: string }
-  ? R['type'] extends keyof F
-    ? Intersect<
-        {
-          [T in keyof F]: GatherFieldsFromResource<R, F[T][any], F, I>
-        }[keyof F]
-      >
-    : R
+  ? BaseFilteredResourceOfType<R, R['type'], F, I>
   : never
 
 type AltFilteredResource<
@@ -152,7 +146,7 @@ type AltFilteredCountry = AltFilteredResource<
     }
     include: {
       organisation: null
-      // participants: null
+      participants: null
       flag: {
         renditions: null
       }
@@ -161,8 +155,6 @@ type AltFilteredCountry = AltFilteredResource<
 >
 
 const fc: AltFilteredCountry = {} as any
-
-fc.organisation
 
 type FcK = typeof fc
 
