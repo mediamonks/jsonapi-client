@@ -23,6 +23,19 @@ const client = JSONAPI.client(url, {
   },
 })
 
+// UTILS
+type Nullable<T> = T | null
+
+type BaseResourceRelationshipFields<R> = {
+  [K in keyof R]: R[K] extends AnyResource | null | AnyResource[] ? K : never
+}[keyof R]
+
+type BaseResourceRelationships<R> = {
+  [K in BaseResourceRelationshipFields<R>]: R[K] extends any[]
+    ? R[K][number]
+    : Extract<R[K], AnyResource>
+}
+
 // FILTER INFERENCE
 // Fields
 type BaseResourceFields<R, F> = R extends { type: string }
@@ -42,33 +55,27 @@ type BaseResourceFields<R, F> = R extends { type: string }
 
 type ResourceFields<R extends AnyResource> = Intersect<BaseResourceFields<R, {}>>
 
-type CountryFields = ResourceFields<Country>
+type CountryFields = Partial<ResourceFields<Country>>
 
-type X = CountryFields['Medal']
-type Y = ApiQueryResourceParameters<Country>
+type XF = CountryFields
+type YF = AltResourceFilter<Country>
 
 type CountryResourceTypes = keyof CountryFields
 
 // Include
-type BaseResourceIncludes<R> = Intersect<
-  {
-    [K in keyof R]: R[K] extends AnyResource | null
-      ? {
-          [X in K]: BaseResourceIncludes<Extract<R[K], AnyResource>> | boolean
-        }
-      : R[K] extends AnyResource[]
-      ? {
-          [X in K]: BaseResourceIncludes<R[K][number]> | boolean
-        }
-      : never
-  }[keyof R]
->
+type BaseExtractResourceIncludes<R> = keyof R extends never
+  ? never
+  : {
+      [K in keyof R]?: BaseResourceIncludes<
+        R[K] extends any[] ? R[K][number] : Extract<R[K], AnyResource>
+      >
+    }
 
-type ResourceInclude<R extends AnyResource> = BaseResourceIncludes<R>
+type BaseResourceIncludes<R> = Nullable<BaseExtractResourceIncludes<BaseResourceRelationships<R>>>
 
-type CountryIncludes = BaseResourceIncludes<Country>
+type ResourceIncludes<R extends AnyResource> = BaseResourceIncludes<R>
 
-type Nullable<T> = T | null
+type Xc = ResourceIncludes<Country>
 
 // FILTER APPLICATION
 type GatherFieldsFromResource<R, K, F, I> = R extends { type: string }
@@ -88,8 +95,8 @@ type GatherFieldsFromResource<R, K, F, I> = R extends { type: string }
             >
           : R[K]
       }
-    : Error & 'K must be a union of R (Resource) field names'
-  : Error & 'R must be a Resource'
+    : never
+  : never
 
 type BaseFilteredResource<R, F, I> = R extends { type: string }
   ? I extends false
@@ -101,17 +108,15 @@ type BaseFilteredResource<R, F, I> = R extends { type: string }
             : ResourceIdentifier<R['type']>
         }[keyof F]
       >
-  : Error & 'R must be a Resource'
-
-type ProcessResource<R, K> = K extends keyof R ? Pick<R, K> : never
+  : never
 
 type AltFilteredResource<
   R extends AnyResource,
   F extends AltResourceFilter<R>
 > = BaseFilteredResource<R, F['fields'], F['include']>
 
-type AltResourceFilter<R> = {
-  fields: BaseResourceFields<R, any>
+type AltResourceFilter<R extends AnyResource> = {
+  fields: BaseResourceFields<R, {}>
   include: BaseResourceIncludes<R>
 }
 
@@ -124,10 +129,10 @@ type AltFilteredCountry = AltFilteredResource<
       Rendition: ['source']
     }
     include: {
-      organisation: false
-      participants: false
+      organisation: null
+      participants: null
       flag: {
-        renditions: true
+        renditions: null
       }
     }
   }
