@@ -98,34 +98,37 @@ type CountryResourceIncludes = ResourceIncludes<Country>
 // FILTER APPLICATION
 type GatherFieldsFromResource<R, K, F, I> = R extends { type: string }
   ? K extends keyof R
-    ? {
-        [P in K]: R[K] extends AnyResource | null
-          ? Nullable<
-              K extends keyof I
-                ? BaseFilteredResource<Extract<R[K], AnyResource>, F, I[K]>
-                : ResourceIdentifier<R['type']>
-            >
-          : R[K] extends AnyResource[]
-          ? Array<
-              K extends keyof I
-                ? BaseFilteredResource<R[K][any], F, I[K]>
-                : ResourceIdentifier<R['type']>
-            >
-          : R[K]
-      }
+    ? ResourceIdentifier<R['type']> &
+        {
+          [P in K]: R[K] extends AnyResource | null
+            ? Nullable<
+                K extends keyof I
+                  ? BaseFilteredResource<Extract<R[K], AnyResource>, F, I[K]>
+                  : ResourceIdentifier<R['type']>
+              >
+            : R[K] extends AnyResource[]
+            ? Array<
+                K extends keyof I
+                  ? BaseFilteredResource<R[K][any], F, I[K]>
+                  : ResourceIdentifier<R['type']>
+              >
+            : R[K]
+        }
     : never
   : never
 
+type BaseFilteredResourceOfType<R, T, F, I> = T extends keyof F
+  ? Intersect<GatherFieldsFromResource<R, F[T][any], F, I>>
+  : R
+
 type BaseFilteredResource<R, F, I> = R extends { type: string }
-  ? I extends false
-    ? ResourceIdentifier<R['type']>
-    : Intersect<
+  ? R['type'] extends keyof F
+    ? Intersect<
         {
-          [T in keyof F]: T extends R['type']
-            ? GatherFieldsFromResource<R, F[T][any], F, I>
-            : ResourceIdentifier<R['type']>
+          [T in keyof F]: GatherFieldsFromResource<R, F[T][any], F, I>
         }[keyof F]
       >
+    : R
   : never
 
 type AltFilteredResource<
@@ -145,10 +148,11 @@ type AltFilteredCountry = AltFilteredResource<
       Country: ['localName', 'organisation', 'flag']
       Asset: ['name', 'renditions']
       Rendition: ['source']
+      Organisation: ['name']
     }
     include: {
       organisation: null
-      participants: null
+      // participants: null
       flag: {
         renditions: null
       }
@@ -157,6 +161,9 @@ type AltFilteredCountry = AltFilteredResource<
 >
 
 const fc: AltFilteredCountry = {} as any
+
+fc.organisation
+
 type FcK = typeof fc
 
 type CountryKey = keyof AltFilteredCountry
