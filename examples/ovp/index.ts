@@ -138,6 +138,88 @@ type AltResourceFilter<R extends AnyResource> = {
   include?: BaseResourceIncludes<R>
 }
 
+type FilteredResourceConstructor<T> = T extends AnyResource ? ResourceConstructor<T> : never
+
+const model = <R extends AnyResource, F extends AltResourceFilter<R>>(
+  Resource: ResourceConstructor<R>,
+  filter: F,
+) => {
+  abstract class ResourceModel {
+    static Resource: ResourceConstructor<R>
+    static filter: F
+  }
+  return (ResourceModel as unknown) as FilteredResourceConstructor<AltFilteredResource<R, F>>
+}
+
+class CountryModel extends model(Country, {
+  fields: {
+    Country: ['localName', 'organisation', 'flag'],
+    Asset: ['name', 'renditions'],
+    Rendition: ['source'],
+    Organisation: ['name'],
+  } as const,
+  include: {
+    organisation: null,
+    participants: null,
+    flag: {
+      renditions: null,
+    },
+  },
+}) {
+  hasFlag(): this is CountryModel & { flag: Exclude<CountryModel['flag'], null> } {
+    return isSome(this.flag)
+  }
+}
+
+const cm = new CountryModel({
+  type: 'Country',
+  id: '',
+  localName: '',
+  organisation: null,
+  flag: null,
+})
+
+if (cm.hasFlag()) {
+  console.log(cm.flag.name)
+}
+
+const modifier = <R extends AnyResource, F extends AltResourceFilter<R>>(
+  Resource: ResourceConstructor<R>,
+  modifier: F,
+): {
+  filter: F
+  Resource: FilteredResourceConstructor<AltFilteredResource<R, F>>
+} => {
+  return {
+    modifier,
+    Resource,
+  } as any
+}
+
+const countryModifier = modifier(Country, {
+  fields: {
+    Country: ['localName', 'organisation', 'flag'],
+    Asset: ['name', 'renditions'],
+    Rendition: ['source'],
+    Organisation: ['name'],
+  } as const,
+  include: {
+    organisation: null,
+    participants: null,
+    flag: {
+      renditions: null,
+    },
+  },
+})
+
+type FilteredCountryX = InstanceType<typeof countryModifier['Resource']>
+
+type FilteredCountry = AltFilteredResource<Country, typeof countryModifier['filter']>
+
+const fc: FilteredCountry = {} as any
+
+type FcK = typeof fc
+
 type FilteredMedal = AltFilteredResource<
   Medal,
   {
@@ -181,15 +263,16 @@ type LegacyFilteredCountry = FilteredResource<
     fields: {
       Country: ['localName']
     }
-    include: {}
   }
 >
 
 const countries = client.endpoint('countries', Country)
 
-// countries.getOne('1').then((result) => {
-//   console.log(result.data)
-// })
+const country = countries.getOne('1', {
+  fields: {
+    Country: ['localName'],
+  } as const,
+})
 
 // countries
 //   .getMany({
