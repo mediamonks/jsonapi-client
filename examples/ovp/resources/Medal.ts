@@ -5,6 +5,7 @@ import { Competitor } from './Competitor'
 import { Event } from './Event'
 import { EventUnit } from './EventUnit'
 import { Participant } from './Participant'
+import { Organisation } from './Organisation'
 
 export class Medal extends JSONAPI.resource('Medal')<Medal> {
   @Attribute.required(isString) public medalType!: string
@@ -14,4 +15,5 @@ export class Medal extends JSONAPI.resource('Medal')<Medal> {
   @Relationship.toOne(() => EventUnit) public eventUnit!: EventUnit | null
   @Relationship.toOne(() => Competitor) public competitor!: Competitor | null
   @Relationship.toOne(() => Participant) public participant!: Participant | null
+  @Relationship.toOne(() => Organisation) public organisation!: Organisation | null
 }

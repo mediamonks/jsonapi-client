@@ -10,5 +10,5 @@ export class Phase extends JSONAPI.resource('Phase')<Phase> {
   @Attribute.required(isString) public startDate!: string
   @Relationship.toMany(() => EventUnit) public eventUnits!: EventUnit[]
   @Relationship.toOne(() => Stage) public stage!: Stage | null
-  // @Relationship.toMany(() => Competitor) public competitors!: Competitor[]
+  @Relationship.toMany(() => Competitor) public competitors!: Competitor[]
 }

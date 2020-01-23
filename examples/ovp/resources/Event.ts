@@ -12,5 +12,5 @@ export class Event extends JSONAPI.resource('Event')<Event> {
   @Relationship.toOne(() => Discipline) public discipline!: Discipline | null
   @Relationship.toMany(() => Stage) public stages!: Stage[]
   @Relationship.toMany(() => Medal) public medals!: Medal[]
-  // @Relationship.toMany(() => Competitor) public competitors!: Competitor[]
+  @Relationship.toMany(() => Competitor) public competitors!: Competitor[]
 }

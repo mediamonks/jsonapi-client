@@ -13,7 +13,7 @@ export class EventUnit extends JSONAPI.resource('EventUnit')<EventUnit> {
   @Attribute.optional(isString) public end!: string | null
   @Attribute.optional(isString) public scheduleStatus!: string | null
   @Relationship.toOne(() => Phase) public phase!: Phase | null
-  // @Relationship.toMany(() => Medal) public medals!: Medal[] | null
-  // @Relationship.toOne(() => VideoSession) public videoSession!: VideoSession | null
-  // @Relationship.toMany(() => Competitor) public competitors!: Competitor[]
+  @Relationship.toMany(() => Medal) public medals!: Medal[] | null
+  @Relationship.toOne(() => VideoSession) public videoSession!: VideoSession | null
+  @Relationship.toMany(() => Competitor) public competitors!: Competitor[]
 }
