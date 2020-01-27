@@ -1,6 +1,7 @@
 import { isArray, isString, isObject, isSerializableNumber, or, and, isSome } from 'isntnt'
 
 import { __DEV__, EMPTY_ARRAY } from '../constants/data'
+import { NonEmptyReadonlyArray } from '../types/util'
 import { ApiClient } from '../lib/ApiClient'
 
 type URLParameterName = string
@@ -37,7 +38,7 @@ export type JSONAPIParameterValue =
 export type JSONAPISortParameterValue = ReadonlyArray<string>
 
 export type JSONAPIFieldsParameterValue = {
-  [K in string]: ReadonlyArray<string>
+  [K in string]: NonEmptyReadonlyArray<string> | undefined
 }
 
 export type JSONAPIIncludeParameterValue =

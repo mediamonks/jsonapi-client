@@ -6,7 +6,6 @@ import {
 } from '../constants/setup'
 import { ApiResponseError, SerializableObject } from '../types/data'
 import { Transform } from '../types/util'
-
 import { JSONAPIParameterValue } from '../utils/url'
 
 const reflect = <T>(value: T): T => value
