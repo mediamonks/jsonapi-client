@@ -1,4 +1,4 @@
-import { jsonApiVersions, JsonApiVersion, JsonApiVersions } from '../constants/jsonApi'
+import { JSONAPIVersion } from '../constants/jsonApi'
 import {
   defaultIncludeFieldOptions,
   DefaultIncludeFieldsOption,
@@ -18,7 +18,7 @@ const mergeApiSetup = (defaults: ApiSetup) => (
 })
 
 export type ApiSetup = {
-  version: JsonApiVersion
+  version: JSONAPIVersion
   defaultIncludeFields: DefaultIncludeFieldsOption
   createPageQuery: ApiSetupCreatePageQuery
   transformRelationshipForURL: Transform<string>
@@ -36,7 +36,7 @@ export type ApiSetupCreatePageQuery =
 export type ApiSetupParseRequestError = Transform<ApiResponseError, any>
 
 export type DefaultApiSetup = ApiSetupWithDefaults<{
-  version: JsonApiVersions['1_0']
+  version: '1.0'
   defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
   createPageQuery: ApiSetupCreatePageQuery
   transformRelationshipForURL: Transform<string>
@@ -57,7 +57,7 @@ const windowFetch = (typeof window !== 'undefined' && typeof window.fetch === 'f
   : undefined) as Window['fetch']
 
 export const mergeApiDefaultSetup = mergeApiSetup({
-  version: jsonApiVersions['1_0'],
+  version: '1.0',
   defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
   transformRelationshipForURL: reflect,

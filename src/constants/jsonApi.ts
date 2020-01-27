@@ -1,20 +1,4 @@
-import { ValuesOf } from '../types/util'
-
-export const jsonApiVersions = {
-  ['1_0']: '1.0',
-  ['1_1']: '1.1',
-} as const
-
-export type JsonApiVersions = typeof jsonApiVersions
-
-export type JsonApiVersion = ValuesOf<JsonApiVersions>
-
-export const jsonApiReservedParameterNames = {
-  PAGE: 'page',
-  SORT: 'sort',
-  INCLUDE: 'include',
-  FIELDS: 'fields',
-} as const
+export type JSONAPIVersion = '1.0' | '1.1'
 
 export const jsonApiContentType = 'application/vnd.api+json'
 
