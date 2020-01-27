@@ -7,7 +7,7 @@ import {
 import { ApiResponseError, SerializableObject } from '../types/data'
 import { Transform } from '../types/util'
 
-import { ApiQueryParameter } from './ApiQuery'
+import { JSONAPIParameterValue } from '../utils/url'
 
 const reflect = <T>(value: T): T => value
 
@@ -30,16 +30,16 @@ export type ApiSetup = {
 }
 
 export type ApiSetupCreatePageQuery =
-  | Transform<string, ApiQueryParameter>
-  | Transform<number, ApiQueryParameter>
-  | Transform<ApiQueryParameter, ApiQueryParameter>
+  | Transform<string, JSONAPIParameterValue>
+  | Transform<number, JSONAPIParameterValue>
+  | Transform<JSONAPIParameterValue, JSONAPIParameterValue>
 
 export type ApiSetupParseRequestError = Transform<ApiResponseError, any>
 
 export type DefaultApiSetup = ApiSetupWithDefaults<{
   version: JsonApiVersions['1_0']
   defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
-  createPageQuery: Transform<ApiQueryParameter, ApiQueryParameter>
+  createPageQuery: ApiSetupCreatePageQuery
   transformRelationshipForURL: Transform<string>
   parseRequestError: Transform<ApiResponseError, any>
   beforeRequest: Transform<SerializableObject>

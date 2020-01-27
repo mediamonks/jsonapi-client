@@ -1,14 +1,40 @@
 import { isArray, isString, isObject, isSerializableNumber, or, and, isSome } from 'isntnt'
 
 import { __DEV__, EMPTY_ARRAY } from '../constants/data'
-import { Api } from '../lib/Api'
+import { ApiClient } from '../lib/ApiClient'
 
 type URLParameterName = string
 type URLParameterValue = string
 
 export type URLParametersEntry = [URLParameterName, URLParameterValue]
 
-export type JSONAPISortParameterValue = Array<string>
+export type JSONAPIParameters = JSONAPIQueryParameters & JSONAPIResourceParameters
+
+export type JSONAPIQueryParameters = {
+  [K in string]: JSONAPIParameterValue | undefined
+} & {
+  sort?: JSONAPISortParameterValue
+  page?: JSONAPIParameterValue
+  filter?: JSONAPIParameterValue
+}
+
+export type JSONAPIResourceParameters = {
+  fields?: JSONAPIFieldsParameterValue
+  include?: JSONAPIIncludeParameterValue
+}
+
+export type JSONAPIParameterValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | {
+      [K in string]: JSONAPIParameterValue
+    }
+  | ReadonlyArray<string | number>
+
+export type JSONAPISortParameterValue = ReadonlyArray<string>
 
 export type JSONAPIFieldsParameterValue = {
   [K in string]: ReadonlyArray<string>
@@ -20,41 +46,24 @@ export type JSONAPIIncludeParameterValue =
       [K in string]?: JSONAPIIncludeParameterValue
     }
 
-export type JSONAPISearchParameters = {
-  [key: string]: JSONAPISearchParameterValue
-} & {
-  sort?: JSONAPISortParameterValue
-  include?: JSONAPIIncludeParameterValue
-}
-
-export type JSONAPISearchParameterValue =
-  | string
-  | number
-  | boolean
-  | null
-  | {
-      [K in string]: JSONAPISearchParameterValue
-    }
-  | Array<string | number>
-
 const isPrimitiveParameterValue = or(
   isSerializableNumber,
   and(isString, (value: any): value is string => value.length > 0),
 )
 
-export const appendJSONAPIParameters = (
-  api: Api<any>,
-  url: URL,
-  parameters: JSONAPISearchParameters,
-) => {
-  parseJSONAPIParameters(api, parameters).forEach(([name, value]) =>
-    url.searchParams.append(name, value),
-  )
-}
+// export const appendJSONAPIParameters = (
+//   client: Client<any>,
+//   url: URL,
+//   parameters: JSONAPISearchParameters,
+// ) => {
+//   parseJSONAPIParameters(client, parameters).forEach(([name, value]) =>
+//     url.searchParams.append(name, value),
+//   )
+// }
 
 export const parseJSONAPIParameters = (
-  api: Api<any>,
-  jsonapiParameters: JSONAPISearchParameters,
+  client: ApiClient<any>,
+  jsonapiParameters: JSONAPIParameters,
 ): ReadonlyArray<URLParametersEntry> =>
   Object.keys(jsonapiParameters)
     .reduce((parameterEntries, name) => {
@@ -71,7 +80,7 @@ export const parseJSONAPIParameters = (
           )
         }
         case 'page': {
-          const apiPageQuery = api.setup.createPageQuery(value)
+          const apiPageQuery = client.setup.createPageQuery(value)
           return parameterEntries.concat(parseJSONAPIParameter(name, apiPageQuery))
         }
         default:

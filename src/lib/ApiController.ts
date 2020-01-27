@@ -5,7 +5,7 @@ import { EMPTY_OBJECT, ResourceDocumentKey, __DEV__, DebugErrorCode } from '../c
 import { createEmptyObject, keys, createDataValue, RequestMethod } from '../utils/data'
 import { Result } from '../utils/Result'
 
-import { Api } from './Api'
+import { ApiClient } from './ApiClient'
 import { ApiError, ApiResponseError, ApiValidationError } from './ApiError'
 import { ApiSetup } from './ApiSetup'
 import {
@@ -31,9 +31,9 @@ export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> 
 }
 
 export class ApiController<S extends Partial<ApiSetup>> {
-  api: Api<S>
-  constructor(api: Api<S>) {
-    this.api = api
+  client: ApiClient<S>
+  constructor(client: ApiClient<S>) {
+    this.client = client
   }
 
   async handleRequest(
@@ -41,7 +41,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     method: RequestMethod,
     data?: Serializable,
   ): Promise<Result<any, ApiError<any>[]>> {
-    if (isNone(this.api.setup.fetchAdapter)) {
+    if (isNone(this.client.setup.fetchAdapter)) {
       if (__DEV__) {
         throw new Error(dedent`No fetch adapter provided.
         When not running in a browser that doesn't support fetch, you need to provide polyfill fetch.
@@ -66,8 +66,8 @@ export class ApiController<S extends Partial<ApiSetup>> {
       }
     }
 
-    const request = this.api.setup.beforeRequest!(new Request(url.href, options) as any)
-    const response = await this.api.setup.fetchAdapter!(request as any)
+    const request = this.client.setup.beforeRequest!(new Request(url.href, options) as any)
+    const response = await this.client.setup.fetchAdapter!(request as any)
     if (!response.ok) {
       const errorMessage = response.statusText || `Request Error ${response.status}`
       return Result.reject([new ApiResponseError(errorMessage, response.status)])
@@ -76,7 +76,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
       .json()
       .then((data): any => {
         return ResourceDocumentKey.ERRORS in data
-          ? Result.reject(data.errors.map(this.api.setup.parseRequestError))
+          ? Result.reject(data.errors.map(this.client.setup.parseRequestError))
           : Result.accept(data)
       })
       .catch((error) => Result.reject([new ApiResponseError(dedent`Invalid request`, error)]))
@@ -85,7 +85,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   getAttributeValue<F extends Attribute<any, any>>(
     data: ResourceData<AnyResource>,
     field: F,
-    pointer: Array<string>,
+    pointer: ReadonlyArray<string>,
   ): Result<AttributeValue, ApiError<any>> {
     // TODO: Attributes prop is not always optional, should it throw if its missing
     // when it should not?
@@ -109,7 +109,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   getRelationshipData<F extends Relationship<any, any>>(
     data: ResourceData<AnyResource>,
     field: F,
-    pointer: Array<string>,
+    pointer: ReadonlyArray<string>,
   ): Result<RelationshipValue, ApiError<any>> {
     // TODO: Relationships prop is not always optional, should it throw if its missing
     // when it should not?
@@ -137,7 +137,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
   getIncludedResourceData(
     identifier: ResourceIdentifier<any>,
     included: Array<ResourceData<any>>,
-    pointer: Array<string>,
+    pointer: ReadonlyArray<string>,
   ): Result<ResourceData<any>, ApiError<any>[]> {
     const data = included.find(
       (resource) =>
@@ -160,10 +160,10 @@ export class ApiController<S extends Partial<ApiSetup>> {
   decodeResource<R extends AnyResource>(
     Resource: ResourceConstructor<R>,
     data: ResourceData<R>,
-    included: Array<ResourceData<any>> = [],
-    fieldsParam: JSONAPIFieldsParameterValue = EMPTY_OBJECT,
-    includeParam: JSONAPIIncludeParameterValue = EMPTY_OBJECT,
-    pointer: Array<string>,
+    included: Array<ResourceData<any>>,
+    fieldsParam: JSONAPIFieldsParameterValue,
+    includeParam: JSONAPIIncludeParameterValue,
+    pointer: ReadonlyArray<string>,
   ): Result<R, ApiError<any>[]> {
     // TODO: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
@@ -246,7 +246,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                     includedRelationshipData,
                     included,
                     fieldsParam,
-                    includeParam[field.name],
+                    includeParam[field.name] || EMPTY_OBJECT,
                     pointer.concat(field.name),
                   )
                 })
@@ -265,7 +265,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
                   includedRelationshipData,
                   included,
                   fieldsParam,
-                  includeParam[field.name],
+                  includeParam[field.name] || EMPTY_OBJECT,
                   pointer.concat(field.name),
                 ),
               )
@@ -290,7 +290,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
     Resource: ResourceConstructor<R>,
     values: R,
     fieldsNames: Array<string>,
-    pointer: Array<string>,
+    pointer: ReadonlyArray<string>,
   ): Result<any, ApiError<any>[]> {
     const errors: Array<ApiError<any>> = []
     const data: Record<string, any> = createEmptyObject()

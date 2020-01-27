@@ -3,7 +3,7 @@ import { mergeApiDefaultSetup, ApiSetupWithDefaults, ApiSetup } from './ApiSetup
 import { ApiEndpoint } from './ApiEndpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
 
-export class Api<S extends Partial<ApiSetup>> {
+export class ApiClient<S extends Partial<ApiSetup>> {
   readonly url: URL
   readonly setup: ApiSetupWithDefaults<S>
   readonly controller: ApiController<S>
@@ -22,7 +22,7 @@ export class Api<S extends Partial<ApiSetup>> {
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
-    console.warn(`Api#register is deprecated`)
+    console.warn(`Client#register is deprecated`)
   }
 
   toString(): string {

@@ -1,8 +1,8 @@
 export class ApiError<T> extends Error {
   name: string = this.constructor.name // preserve name
-  pointer: Array<string>
+  pointer: ReadonlyArray<string>
   value: T
-  constructor(message: string, value: T, pointer: Array<string> = []) {
+  constructor(message: string, value: T, pointer: ReadonlyArray<string> = []) {
     super(message)
     this.value = value
     this.pointer = pointer

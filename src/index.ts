@@ -1,11 +1,21 @@
-import { Api } from './lib/Api'
+import { ApiClient } from './lib/ApiClient'
+import { ApiEndpoint } from './lib/ApiEndpoint'
 import { ApiSetup } from './lib/ApiSetup'
-import { resource as resourceOfType } from './lib/Resource'
+import { resource as resourceOfType, AnyResource, ResourceConstructor } from './lib/Resource'
 
 export namespace JSONAPI {
   export const resource = resourceOfType
+
   export const client = <S extends Partial<ApiSetup>>(url: URL, setup: S = {} as S) => {
-    return new Api(url, setup)
+    return new ApiClient(url, setup)
+  }
+
+  export const endpoint = <R extends AnyResource, S extends Partial<ApiSetup>>(
+    client: ApiClient<S>,
+    path: string,
+    Resource: ResourceConstructor<R>,
+  ) => {
+    return new ApiEndpoint(client, path, Resource)
   }
 }
 
@@ -17,6 +27,7 @@ export {
   ApiEndpointSetup,
   FilteredResource,
 } from './lib/ApiEndpoint'
+
 export {
   ApiSetup,
   ApiSetupCreatePageQuery,
@@ -24,8 +35,8 @@ export {
   ApiSetupWithDefaults,
   DefaultApiSetup,
 } from './lib/ApiSetup'
+
 export {
-  resource,
   AnyResource,
   ResourceAttributes,
   ResourceAttributeNames,
@@ -35,7 +46,9 @@ export {
   ResourceRelationshipNames,
   ResourceType,
 } from './lib/Resource'
+
 export { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
+
 export {
   optionalAttribute,
   requiredAttribute,

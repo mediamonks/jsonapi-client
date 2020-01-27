@@ -1,4 +1,4 @@
-import { Api } from './Api'
+import { ApiClient } from './ApiClient'
 import { jsonApiVersions } from '../constants/jsonApi'
 import { defaultIncludeFieldOptions } from '../constants/setup'
 import { Result } from '../utils/Result'
@@ -6,12 +6,12 @@ import { Result } from '../utils/Result'
 import { Post } from '../test-utils/resources'
 import { mockData } from '../test-utils/mock-data'
 
-describe('Api', () => {
-  describe('Api class', () => {
+describe('Client', () => {
+  describe('Client class', () => {
     describe('constructor', () => {
       it('should create a new default instance', () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url)
+        const api = new ApiClient(url)
 
         expect(api.url.href).toEqual(url.href)
         expect(api.setup.createPageQuery).toBeDefined()
@@ -30,7 +30,7 @@ describe('Api', () => {
           defaultIncludeFields: defaultIncludeFieldOptions.PRIMARY,
           parseRequestError: (all: any) => all,
         }
-        const api = new Api(new URL(url), setup)
+        const api = new ApiClient(new URL(url), setup)
 
         expect(api.setup.createPageQuery).toEqual(setup.createPageQuery)
         expect(api.setup.version).toEqual(setup.version)
@@ -40,7 +40,7 @@ describe('Api', () => {
 
       it('should transform the relationship url when configured via setup - toOne', async () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url, {
+        const api = new ApiClient(url, {
           transformRelationshipForURL() {
             return 'foo-bar'
           },
@@ -70,7 +70,7 @@ describe('Api', () => {
 
       it('should transform the relationship url when configured via setup - toMany', async () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url, {
+        const api = new ApiClient(url, {
           transformRelationshipForURL: () => 'foo-bar',
         })
 
@@ -101,11 +101,11 @@ describe('Api', () => {
     describe('endpoint', () => {
       it('should retrieve the endpoint', () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url)
+        const api = new ApiClient(url)
 
         const endpoint = api.endpoint('foo', Post)
 
-        expect(endpoint.api).toEqual(api)
+        expect(endpoint.client).toEqual(api)
       })
 
       // it('should register the Resource', () => {

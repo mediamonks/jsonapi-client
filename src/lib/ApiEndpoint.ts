@@ -1,9 +1,17 @@
 import dedent from 'dedent'
 import { at, isArray, isNone, isUndefined } from 'isntnt'
 
-import { __DEV__, EMPTY_OBJECT, DebugErrorCode, ResourceDocumentKey } from '../constants/data'
+import {
+  __DEV__,
+  EMPTY_OBJECT,
+  DebugErrorCode,
+  ResourceDocumentKey,
+  EMPTY_ARRAY,
+} from '../constants/data'
 import { keys, createEmptyObject, RequestMethod } from '../utils/data'
-import { Api } from './Api'
+
+import { ApiError } from './ApiError'
+import { ApiClient } from './ApiClient'
 import { ApiSetup } from './ApiSetup'
 import {
   AnyResource,
@@ -18,17 +26,21 @@ import { ResourceIdentifierKey, ResourceIdentifier } from './ResourceIdentifier'
 import { ApiEntityResult, ApiCollectionResult } from './ApiResult'
 import { PreventExcessiveRecursionError } from '../types/util'
 import { SerializableObject } from '../types/data'
-import { appendJSONAPIParameters } from '../utils/url'
+import {
+  parseJSONAPIParameters,
+  JSONAPIQueryParameters,
+  JSONAPIResourceParameters,
+} from '../utils/url'
 
 const isToManyResponse = at(ResourceDocumentKey.DATA, isArray)
 
 export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
-  readonly api: Api<S>
+  readonly client: ApiClient<S>
   readonly path: string
   readonly Resource: ResourceConstructor<R>
 
-  constructor(api: Api<S>, path: string, Resource: ResourceConstructor<R>) {
-    this.api = api
+  constructor(client: ApiClient<S>, path: string, Resource: ResourceConstructor<R>) {
+    this.client = client
     this.path = path.replace(/^\/*(.*?)\/*$/, '$1') // ensure leading nor trailing slash
     this.Resource = Resource
   }
@@ -42,7 +54,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       ;(values as any).type = this.Resource.type
     }
     return new Promise((resolve, reject) => {
-      const result = this.api.controller.encodeResource(
+      const result = this.client.controller.encodeResource(
         this.Resource as any,
         values as AnyResource,
         keys(this.Resource.fields),
@@ -54,34 +66,36 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       }
 
       return result.map(async (data: any) => {
-        return this.api.controller.handleRequest(url, RequestMethod.POST, data).then((result) => {
-          if (result.isSuccess()) {
-            const response = result.value
-            // TODO: handle 204 No Content response
-            if (ResourceDocumentKey.DATA in response) {
-              const result = this.api.controller.decodeResource(
-                this.Resource as any,
-                response.data,
-                response.included,
-                {},
-                {},
-                [],
-              )
-              if (result.isSuccess()) {
-                return resolve(new ApiEntityResult(result.value, response.meta) as any)
+        return this.client.controller
+          .handleRequest(url, RequestMethod.POST, data)
+          .then((result) => {
+            if (result.isSuccess()) {
+              const response = result.value
+              // TODO: handle 204 No Content response
+              if (ResourceDocumentKey.DATA in response) {
+                const result = this.client.controller.decodeResource(
+                  this.Resource as any,
+                  response.data,
+                  response.included,
+                  {},
+                  {},
+                  [],
+                )
+                if (result.isSuccess()) {
+                  return resolve(new ApiEntityResult(result.value, response.meta) as any)
+                } else {
+                  return reject(result.value)
+                }
               } else {
-                return reject(result.value)
+                if (__DEV__) {
+                  console.warn(`[ApiEndpoint#create] Unsupported "No Content" response`)
+                }
+                resolve(new ApiEntityResult(data, {} as any))
               }
             } else {
-              if (__DEV__) {
-                console.warn(`[ApiEndpoint#create] Unsupported "No Content" response`)
-              }
-              resolve(new ApiEntityResult(data, {} as any))
+              reject(result.value)
             }
-          } else {
-            reject(result.value)
-          }
-        })
+          })
       })
     })
   }
@@ -93,7 +107,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       ;(values as any)[ResourceDocumentKey.ID] = id
     }
     return new Promise((resolve, reject) => {
-      this.api.controller
+      this.client.controller
         .encodeResource(
           this.Resource,
           values as any,
@@ -101,7 +115,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
           [],
         )
         .map((data) => {
-          this.api.controller.handleRequest(url, RequestMethod.PATCH, data).then((result) => {
+          this.client.controller.handleRequest(url, RequestMethod.PATCH, data).then((result) => {
             if (result.isSuccess()) {
               resolve(result.value)
             } else {
@@ -114,7 +128,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
 
   async delete(id: ResourceId) {
     const url = new URL(`${this}/${id}`)
-    return this.api.controller.handleRequest(url, RequestMethod.DELETE)
+    return this.client.controller.handleRequest(url, RequestMethod.DELETE)
   }
 
   /**
@@ -124,7 +138,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param id
    * @param resourceFilter
    */
-  async getOne<F extends ApiQueryResourceParameters<R>>(
+  async getOne<F extends {}>(
     id: ResourceId,
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<ApiEntityResult<FilteredResource<R, F>, SerializableObject>> {
@@ -161,7 +175,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     const RelationshipResource = field.getResource()
     return this.fetchEntity(RelationshipResource, resourceFilter as any, [
       id,
-      this.api.setup.transformRelationshipForURL!(fieldName),
+      this.client.setup.transformRelationshipForURL!(fieldName),
     ]) as PreventExcessiveRecursionError
   }
 
@@ -198,7 +212,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   >(
     id: ResourceId,
     fieldName: T,
-    query: object | null = EMPTY_OBJECT, // TODO: type query ('object') correctly
+    query: JSONAPIQueryParameters | null = null, // TODO: type query ('object') correctly
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<ApiCollectionResult<FilteredResource<R[T][any], F>, SerializableObject>> {
     const field = this.Resource.fields[fieldName]
@@ -223,29 +237,31 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
       RelationshipResource,
       query || EMPTY_OBJECT,
       resourceFilter as any,
-      [id, this.api.setup.transformRelationshipForURL!(fieldName)],
+      [id, this.client.setup.transformRelationshipForURL!(fieldName)],
     ) as PreventExcessiveRecursionError
   }
 
-  private async fetchEntity<F extends ApiQueryResourceParameters<AnyResource>>(
+  private async fetchEntity(
     Resource: ResourceConstructor<AnyResource>,
-    resourceFilter: F = EMPTY_OBJECT as F,
-    path: Array<string> = [],
-  ): Promise<ApiEntityResult<FilteredResource<AnyResource, F>, any>> {
+    resourceFilter: JSONAPIResourceParameters = EMPTY_OBJECT,
+    path: ReadonlyArray<string> = [],
+  ): Promise<ApiEntityResult<AnyResource, SerializableObject>> {
     // const queryParameters = new ApiQuery(this.api, resourceFilter as any)
     const url = new URL([this, ...path].join('/'))
-    appendJSONAPIParameters(this.api, url, resourceFilter as any)
+    parseJSONAPIParameters(this.client, resourceFilter).forEach(([name, value]) => {
+      url.searchParams.append(name, value)
+    })
 
     return new Promise(async (resolve, reject) => {
-      this.api.controller.handleRequest(url, RequestMethod.GET).then((request) => {
+      this.client.controller.handleRequest(url, RequestMethod.GET).then((request) => {
         const result = request.flatMap((response) =>
-          this.api.controller.decodeResource(
+          this.client.controller.decodeResource(
             Resource,
             response.data,
-            response.included,
-            resourceFilter.fields,
-            resourceFilter.include,
-            [],
+            response.included || [],
+            resourceFilter.fields || EMPTY_OBJECT,
+            resourceFilter.include || EMPTY_OBJECT,
+            EMPTY_ARRAY,
           ),
         )
 
@@ -260,36 +276,37 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     })
   }
 
-  private async fetchCollection<
-    Q extends ApiQueryFiltersParameters<S>,
-    F extends ApiQueryResourceParameters<R>
-  >(
-    Resource: ResourceConstructor<AnyResource>,
-    query: Q = EMPTY_OBJECT as Q,
-    resourceFilter: F = EMPTY_OBJECT as F,
-    path: Array<string> = [],
-  ): Promise<ApiCollectionResult<FilteredResource<AnyResource, F>, any>> {
+  private async fetchCollection(
+    Resource: ResourceConstructor<any>,
+    query: JSONAPIQueryParameters = EMPTY_OBJECT,
+    resourceFilter: JSONAPIResourceParameters = EMPTY_OBJECT,
+    path: ReadonlyArray<string> = [],
+  ): Promise<ApiCollectionResult<AnyResource, SerializableObject>> {
     const url = new URL([this, ...path].join('/'))
-    appendJSONAPIParameters(this.api, url, { ...query, ...resourceFilter } as any)
+    parseJSONAPIParameters(this.client, { ...query, ...resourceFilter }).forEach(
+      ([name, value]) => {
+        url.searchParams.append(name, value)
+      },
+    )
 
     return new Promise((resolve, reject) => {
-      this.api.controller.handleRequest(url, RequestMethod.GET).then((result) => {
+      this.client.controller.handleRequest(url, RequestMethod.GET).then((result) => {
         if (result.isRejected()) {
           return reject(result.value)
         }
 
         result.map((response) => {
-          const errors: Array<Error> = []
-          const values: Array<FilteredResource<R, F>> = []
+          const errors: Array<ApiError<any>> = []
+          const values: Array<AnyResource> = []
 
           if (isToManyResponse(response)) {
             response.data.forEach((resource: any) => {
-              const result = this.api.controller.decodeResource(
+              const result = this.client.controller.decodeResource(
                 Resource,
                 resource,
-                response.included,
-                resourceFilter.fields,
-                resourceFilter.include,
+                response.included || [],
+                resourceFilter.fields || EMPTY_OBJECT,
+                resourceFilter.include || EMPTY_OBJECT,
                 [Resource.type, resource.id],
               )
 
@@ -320,7 +337,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   }
 
   toURL(): URL {
-    const apiUrl = String(this.api).replace(/\/*$/, '/') // ensure trailing slash
+    const apiUrl = String(this.client).replace(/\/*$/, '/') // ensure trailing slash
     return new URL(this.path, apiUrl)
   }
 
