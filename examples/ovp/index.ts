@@ -19,7 +19,7 @@ import { Organisation } from './resources/Organisation'
 import { Event } from './resources/Event'
 import { Widget } from './resources/Widget'
 
-const url = new URL(`https://example.com/api/v1/`)
+const url = new URL(`https://content-yog-slb-production.ovpobs.tv/api/`)
 
 const client = JSONAPI.client(url, {
   version: '1.0',
@@ -185,20 +185,20 @@ if (cm.hasFlag()) {
 
 const modifier = <R extends AnyResource, F extends AltResourceFilter<R>>(
   Resource: ResourceConstructor<R>,
-  modifier: F,
+  filter: F,
 ): {
   filter: F
   Resource: FilteredResourceConstructor<AltFilteredResource<R, F>>
 } => {
   return {
-    modifier,
+    filter,
     Resource,
   } as any
 }
 
 const countryModifier = modifier(Country, {
   fields: {
-    Country: ['localName', 'organisation', 'flag'],
+    Country: ['localName', 'flag', 'participants'],
     Asset: ['name', 'renditions'],
     Rendition: ['source'],
     Organisation: ['name'],
@@ -251,10 +251,6 @@ type FilteredMedal = AltFilteredResource<
   }
 >
 
-const filteredMedal: FilteredMedal = {} as any
-
-console.log(filteredMedal.eventUnit)
-
 // LEGACY
 type FilteredAsset = FilteredResource<Asset, {}>
 type LegacyFilteredCountry = FilteredResource<
@@ -268,11 +264,35 @@ type LegacyFilteredCountry = FilteredResource<
 
 const countries = client.endpoint('countries', Country)
 
-const country = countries.getOne('1', {
-  fields: {
-    Country: ['localName'],
-  } as const,
-})
+countries
+  .getMany(
+    {
+      page: 1,
+    },
+    countryModifier['filter'],
+  )
+  .then((result) => {
+    console.log('res', result)
+  })
+  .catch((err) => {
+    console.error('err', err)
+  })
+
+// country.href
+// country.read()
+// country.sync()
+// country.read()
+// country.patch({
+//   localName: 'Holland'
+// })
+
+// country.delete()
+
+// const country = countries.getOne('1', {
+//   fields: {
+//     Country: ['localName'],
+//   } as const,
+// })
 
 // countries
 //   .getMany({

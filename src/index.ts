@@ -18,26 +18,12 @@ export {
   FilteredResource,
 } from './lib/ApiEndpoint'
 export {
-  ApiQuery,
-  ApiQueryParameter,
-  ApiQueryParameters,
-  ApiQueryParameterValue,
-  ApiQueryFieldsParameter,
-  ApiQueryIncludeParameter,
-  ApiQueryPageParameter,
-  ApiQuerySortParameter,
-  ApiQueryResourceParameters,
-  ApiQueryFiltersParameters,
-  ApiQueryFilterParameter,
-} from './lib/ApiQuery'
-export {
   ApiSetup,
   ApiSetupCreatePageQuery,
   ApiSetupParseRequestError,
   ApiSetupWithDefaults,
   DefaultApiSetup,
 } from './lib/ApiSetup'
-export { ascend, descend, sort, ApiSortRule } from './lib/ApiSortRule'
 export {
   resource,
   AnyResource,

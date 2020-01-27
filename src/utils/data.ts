@@ -79,8 +79,8 @@ type RequestOptionsWithoutBody = RequestOptions & {
 }
 
 type CreateRequestOptionsOverload = {
-  (url: URL, method: RequestMethodWithoutBody): RequestOptionsWithoutBody
-  (url: URL, method: RequestMethodWithBody, data: Serializable): RequestOptionsWithBody
+  (method: RequestMethodWithoutBody): RequestOptionsWithoutBody
+  (method: RequestMethodWithBody, data: Serializable): RequestOptionsWithBody
 }
 
 const isRequestMethodWithBody: Predicate<RequestMethodWithBody> = either(
@@ -89,12 +89,10 @@ const isRequestMethodWithBody: Predicate<RequestMethodWithBody> = either(
 )
 
 export const createRequestOptions: CreateRequestOptionsOverload = (
-  url: URL,
   method: RequestMethod,
   data?: Serializable,
 ) =>
   createDataValue({
-    url: String(url),
     method,
     headers: defaultRequestHeaders,
     // An 'undefined' body will be omitted by createDataValue

@@ -1,14 +1,13 @@
-import { isArray, isUndefined, isNone, isSome, isString } from 'isntnt'
+import { isArray, isUndefined, isNone, isSome, isString, Serializable } from 'isntnt'
 import dedent from 'dedent'
 
 import { EMPTY_OBJECT, ResourceDocumentKey, __DEV__, DebugErrorCode } from '../constants/data'
-import { createEmptyObject, keys, createDataValue } from '../utils/data'
+import { createEmptyObject, keys, createDataValue, RequestMethod } from '../utils/data'
 import { Result } from '../utils/Result'
 
 import { Api } from './Api'
-import { ApiError, ApiResponseError, ApiRequestError, ApiValidationError } from './ApiError'
+import { ApiError, ApiResponseError, ApiValidationError } from './ApiError'
 import { ApiSetup } from './ApiSetup'
-import { ApiQueryIncludeParameter, ApiQueryFieldsParameter } from './ApiQuery'
 import {
   AnyResource,
   ResourceConstructor,
@@ -17,6 +16,14 @@ import {
 } from './Resource'
 import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
+import { defaultRequestHeaders } from '../constants/jsonApi'
+import { JSONAPIFieldsParameterValue, JSONAPIIncludeParameterValue } from '../utils/url'
+
+type RequestOptions = {
+  method: RequestMethod
+  headers: Headers
+  body?: string
+}
 
 export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
   attributes: ResourceAttributes<R>
@@ -29,7 +36,11 @@ export class ApiController<S extends Partial<ApiSetup>> {
     this.api = api
   }
 
-  async handleRequest(options: any): Promise<Result<any, ApiRequestError<any>[]>> {
+  async handleRequest(
+    url: URL,
+    method: RequestMethod,
+    data?: Serializable,
+  ): Promise<Result<any, ApiError<any>[]>> {
     if (isNone(this.api.setup.fetchAdapter)) {
       if (__DEV__) {
         throw new Error(dedent`No fetch adapter provided.
@@ -41,11 +52,25 @@ export class ApiController<S extends Partial<ApiSetup>> {
       throw new Error(DebugErrorCode.MISSING_FETCH_ADAPTER as any)
     }
 
-    const response = await this.api.setup.fetchAdapter((this.api.setup.beforeRequest!(
-      options,
-    ) as unknown) as Request)
+    const headers = new Headers(defaultRequestHeaders)
+    const options: RequestOptions = {
+      method,
+      headers,
+    }
+
+    if (!isUndefined(data)) {
+      try {
+        options.body = JSON.stringify(data)
+      } catch (error) {
+        return Result.reject([new ApiValidationError(`Data is not serializable`, data, [])])
+      }
+    }
+
+    const request = this.api.setup.beforeRequest!(new Request(url.href, options) as any)
+    const response = await this.api.setup.fetchAdapter!(request as any)
     if (!response.ok) {
-      throw new ApiResponseError(response.statusText, response.status)
+      const errorMessage = response.statusText || `Request Error ${response.status}`
+      return Result.reject([new ApiResponseError(errorMessage, response.status)])
     }
     return response
       .json()
@@ -54,7 +79,7 @@ export class ApiController<S extends Partial<ApiSetup>> {
           ? Result.reject(data.errors.map(this.api.setup.parseRequestError))
           : Result.accept(data)
       })
-      .catch((error) => Result.reject(new ApiResponseError(dedent`Invalid request`, error)))
+      .catch((error) => Result.reject([new ApiResponseError(dedent`Invalid request`, error)]))
   }
 
   getAttributeValue<F extends Attribute<any, any>>(
@@ -68,6 +93,9 @@ export class ApiController<S extends Partial<ApiSetup>> {
     const value = (attributes as any)[field.name]
     if (field.isValid(value)) {
       return Result.accept(value)
+    }
+    if (field.isOptionalAttribute() && isNone(value)) {
+      return Result.accept(null as any)
     }
     return Result.reject(
       new ApiValidationError(
@@ -133,8 +161,8 @@ export class ApiController<S extends Partial<ApiSetup>> {
     Resource: ResourceConstructor<R>,
     data: ResourceData<R>,
     included: Array<ResourceData<any>> = [],
-    fieldsParam: ApiQueryFieldsParameter<any> = EMPTY_OBJECT,
-    includeParam: ApiQueryIncludeParameter<any> = EMPTY_OBJECT,
+    fieldsParam: JSONAPIFieldsParameterValue = EMPTY_OBJECT,
+    includeParam: JSONAPIIncludeParameterValue = EMPTY_OBJECT,
     pointer: Array<string>,
   ): Result<R, ApiError<any>[]> {
     // TODO: should the data of a resource be added to the included data because

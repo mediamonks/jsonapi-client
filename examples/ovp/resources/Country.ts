@@ -15,7 +15,7 @@ export class Country extends JSONAPI.resource('Country')<Country> {
   @Attribute.optional(array(isString)) public nameVariations!: string[] | null
   @Attribute.optional(isString) public thumbnailUrl!: string | null
   @Attribute.optional(isBoolean) public isFeatured!: boolean | null
-  @Relationship.toOne(() => Organisation) public organisation!: Organisation | null
   @Relationship.toOne(() => Asset) public flag!: Asset | null
+  @Relationship.toOne(() => Organisation) public organisation!: Organisation | null
   @Relationship.toMany(() => Participant) public participants!: Participant[]
 }
