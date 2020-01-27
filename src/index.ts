@@ -1,10 +1,10 @@
 import { ApiClient } from './lib/ApiClient'
 import { ApiEndpoint } from './lib/ApiEndpoint'
 import { ApiSetup } from './lib/ApiSetup'
-import { resource as resourceOfType, AnyResource, ResourceConstructor } from './lib/Resource'
+import { AnyResource, ResourceConstructor } from './lib/Resource'
 
 export namespace JSONAPI {
-  export const resource = resourceOfType
+  // export const resource = resourceOfType
 
   export const client = <S extends Partial<ApiSetup>>(url: URL, setup: S = {} as S) => {
     return new ApiClient(url, setup)
@@ -32,6 +32,7 @@ export {
 } from './lib/ApiSetup'
 
 export {
+  resource,
   AnyResource,
   ResourceConstructor,
   ResourceFieldNames,

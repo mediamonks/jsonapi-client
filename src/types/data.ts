@@ -19,12 +19,12 @@ export type ApiErrorResponse<D extends AnyApiResponseData, M extends AnyApiRespo
   Omit<ApiResponse<D, M>, 'data' | 'included'>
 >
 
-export type SerializableValue = SerializablePrimitive | SerializableArray | SerializableObject
+export type Serializable = SerializablePrimitive | SerializableArray | SerializableObject
 
 export type SerializablePrimitive = string | number | boolean | null
-export type SerializableArray = Array<SerializableValue>
+export type SerializableArray = Array<Serializable>
 export type SerializableObject = {
-  [key: string]: SerializableValue
+  [key: string]: Serializable
 }
 
 export type ApiResponseData<T extends AnyResource> = T | Array<T>

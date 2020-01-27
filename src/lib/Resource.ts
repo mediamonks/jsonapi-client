@@ -22,7 +22,7 @@ type ResourceFieldsModel<F extends ResourceFields<any>> = {
 }
 
 export const resource = <T extends ResourceType>(type: T) => {
-  return class JSONAPIResource<
+  return class Resource<
     M extends ResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
   > extends ResourceIdentifier<T> {
     static type: T = type

@@ -11,8 +11,8 @@ import { ApiSetup } from './ApiSetup'
 import {
   AnyResource,
   ResourceConstructor,
-  ResourceAttributes,
-  ResourceRelationships,
+  // ResourceAttributes,
+  // ResourceRelationships,
 } from './Resource'
 import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
@@ -26,8 +26,8 @@ type RequestOptions = {
 }
 
 export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
-  attributes: ResourceAttributes<R>
-  relationships: ResourceRelationships<R>
+  attributes: any
+  relationships: any
 }
 
 export class ApiController<S extends Partial<ApiSetup>> {

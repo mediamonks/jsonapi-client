@@ -1,20 +1,18 @@
-import {
-  Serializable,
-  isArray,
-  isObject,
-  isNull,
-  either,
-  Predicate,
-  isSerializablePrimitive,
-} from 'isntnt'
+import { isArray, isObject, isNull, isSerializablePrimitive } from 'isntnt'
 
-import { defaultRequestHeaders } from '../constants/jsonApi'
-import { SerializableObject, SerializablePrimitive } from '../types/data'
+import { SerializablePrimitive } from '../types/data'
 import { WithoutNever } from '../types/util'
 
 export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> => Object.keys(value)
 
 export const createEmptyObject = (): {} => Object.create(null)
+
+export enum RequestMethod {
+  GET = 'GET',
+  POST = 'POST',
+  PATCH = 'PATCH',
+  DELETE = 'DELETE',
+}
 
 type DataValue<T> = T extends Function
   ? never
@@ -53,48 +51,3 @@ export const createDataValue = <T>(
   }
   return null as any
 }
-
-type RequestMethodWithoutBody = RequestMethod.GET | RequestMethod.DELETE
-type RequestMethodWithBody = RequestMethod.POST | RequestMethod.PATCH
-
-export enum RequestMethod {
-  GET = 'GET',
-  POST = 'POST',
-  PATCH = 'PATCH',
-  DELETE = 'DELETE',
-}
-
-type RequestOptions = {
-  href: string
-  headers: SerializableObject
-}
-
-type RequestOptionsWithBody = RequestOptions & {
-  method: RequestMethodWithBody
-  body: Serializable
-}
-
-type RequestOptionsWithoutBody = RequestOptions & {
-  method: RequestMethodWithoutBody
-}
-
-type CreateRequestOptionsOverload = {
-  (method: RequestMethodWithoutBody): RequestOptionsWithoutBody
-  (method: RequestMethodWithBody, data: Serializable): RequestOptionsWithBody
-}
-
-const isRequestMethodWithBody: Predicate<RequestMethodWithBody> = either(
-  RequestMethod.POST,
-  RequestMethod.PATCH,
-)
-
-export const createRequestOptions: CreateRequestOptionsOverload = (
-  method: RequestMethod,
-  data?: Serializable,
-) =>
-  createDataValue({
-    method,
-    headers: defaultRequestHeaders,
-    // An 'undefined' body will be omitted by createDataValue
-    body: isRequestMethodWithBody(method) ? JSON.stringify(data) : (undefined as any),
-  }) as any

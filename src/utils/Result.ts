@@ -1,36 +1,39 @@
-import { literal } from 'isntnt'
-
 type ResultResolver<T, E> = (accept: (value: T) => void, reject: (value: E) => void) => void
 
-type Nothing = typeof nothing
-
-const nothing = Symbol('Nothing')
-const isNothing = literal(nothing)
+enum ResultState {
+  ACCEPTED = 'accepted',
+  REJECTED = 'rejected',
+}
 
 export class Result<T, E> {
-  value: T | E = nothing as any
-  state: 'accepted' | 'rejected' = 'rejected'
+  value!: T | E
+  state!: ResultState
   constructor(resolver: ResultResolver<T, E>) {
     resolver(
       (value: T) => {
-        this.value = value
-        this.state = 'accepted'
+        if (!this.state) {
+          this.value = value
+          this.state = ResultState.ACCEPTED
+        }
       },
       (value: E) => {
-        this.value = value
+        if (!this.state) {
+          this.value = value
+          this.state = ResultState.REJECTED
+        }
       },
     )
-    if (isNothing(this.value)) {
+    if (!this.state) {
       throw new Error(`Result must be resolved`)
     }
   }
 
   isSuccess(): this is Result<T, never> {
-    return this.state === 'accepted'
+    return this.state === ResultState.ACCEPTED
   }
 
   isRejected(): this is Result<never, E> {
-    return this.state === 'rejected'
+    return this.state === ResultState.REJECTED
   }
 
   map<O>(transform: (value: T) => O): Result<O, E> {

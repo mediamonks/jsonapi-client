@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { at, isArray, isNone, isUndefined, min } from 'isntnt'
+import { at, isArray, isNone, isUndefined } from 'isntnt'
 
 import {
   __DEV__,

@@ -2,6 +2,7 @@ import { isArray, isSome, isString, isNone, either, literal, shape, Predicate, N
 
 import { resourceFieldPropertyDescriptor } from '../constants/resourceFieldPropertyDescriptor'
 import { Fabricate } from '../types/util'
+import { SerializablePrimitive, SerializableArray, SerializableObject } from '../types/data'
 import { AnyResource, ResourceType, ResourceConstructor } from './Resource'
 import { ResourceIdentifierKey } from './ResourceIdentifier'
 
@@ -68,15 +69,6 @@ export abstract class ResourceField<
     return this.isRelationshipField() && Boolean(this.flag & RelationshipFlag.TO_MANY)
   }
 }
-
-// ATTRIBUTE
-type SerializablePrimitive = string | number | boolean | null
-type SerializableArray = Array<Serializable>
-type SerializableObject = {
-  [key: string]: Serializable
-}
-
-type Serializable = SerializablePrimitive | SerializableArray | SerializableObject
 
 export enum AttributeFlag {
   OPTIONAL,
