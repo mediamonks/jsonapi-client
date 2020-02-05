@@ -2,6 +2,8 @@ import { ApiController } from './ApiController'
 import { mergeApiDefaultSetup, ApiSetupWithDefaults, ApiSetup } from './ApiSetup'
 import { ApiEndpoint } from './ApiEndpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
+import { JSONAPIQueryParameters, JSONAPIParameterValue } from '../utils/url'
+import { Transform } from '../types/util'
 
 export class ApiClient<S extends Partial<ApiSetup>> {
   readonly url: URL
@@ -28,4 +30,8 @@ export class ApiClient<S extends Partial<ApiSetup>> {
   toString(): string {
     return this.url.href
   }
+}
+
+export type ApiClientParameters<S extends Partial<ApiSetup>> = JSONAPIQueryParameters & {
+  page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }

@@ -21,7 +21,9 @@ export namespace JSONAPI {
 
 export default JSONAPI
 
-export { ApiEndpoint } from './lib/ApiEndpoint'
+export { ApiClient, ApiClientParameters } from './lib/ApiClient'
+
+export { ApiEndpoint, ApiEndpointResource, ApiEndpointSetup } from './lib/ApiEndpoint'
 
 export {
   ApiSetup,
@@ -33,13 +35,16 @@ export {
 
 export {
   AnyResource,
+  FilteredResource,
   ResourceConstructor,
-  ResourceFieldNames,
   ResourceFieldsParameter,
+  ResourceFieldNames,
+  ResourceId,
+  ResourceToOneRelationshipNames,
+  ResourceToManyRelationshipNames,
   ResourceIncludeParameter,
   ResourceParameters,
   ResourceType,
-  FilteredResource,
 } from './lib/Resource'
 
 export { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'

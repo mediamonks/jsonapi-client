@@ -11,15 +11,15 @@ import {
 import { keys, createEmptyObject, RequestMethod } from '../utils/data'
 
 import { ApiError } from './ApiError'
-import { ApiClient } from './ApiClient'
+import { ApiClient, ApiClientParameters } from './ApiClient'
 import { ApiSetup } from './ApiSetup'
 import {
   AnyResource,
   ResourceConstructor,
   ResourceCreateValues,
   ResourceId,
-  ResourceToManyRelationshipName,
-  ResourceToOneRelationshipName,
+  ResourceToManyRelationshipNames,
+  ResourceToOneRelationshipNames,
   ResourcePatchValues,
   ResourceParameters,
   FilteredResource,
@@ -155,7 +155,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param resourceParameters
    */
   async getToOneRelationship<
-    T extends ResourceToOneRelationshipName<R>,
+    T extends ResourceToOneRelationshipNames<R>,
     F extends ResourceParameters<Extract<R[T], AnyResource>>
   >(
     id: ResourceId,
@@ -193,8 +193,8 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param queryParameters
    * @param resourceParameters
    */
-  async getMany<F extends ResourceParameters<R>>(
-    queryParameters: JSONAPIQueryParameters | null = null, // TODO: type query ('object') correctly
+  async getMany<F extends ResourceParameters<R>, Q extends ApiClientParameters<S>>(
+    queryParameters: Q | null = null, // TODO: type query ('object') correctly
     resourceParameters: F | null = null,
   ): Promise<ApiCollectionResult<FilteredResource<R, F>, SerializableObject>> {
     return this.fetchCollection(
@@ -215,12 +215,13 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param resourceParameters
    */
   async getToManyRelationship<
-    T extends ResourceToManyRelationshipName<R>,
-    F extends ResourceParameters<R[T][any]>
+    T extends ResourceToManyRelationshipNames<R>,
+    F extends ResourceParameters<R[T][any]>,
+    Q extends ApiClientParameters<S>
   >(
     id: ResourceId,
     fieldName: T,
-    queryParameters: JSONAPIQueryParameters | null = null, // TODO: type query ('object') correctly
+    queryParameters: Q | null = null, // TODO: type query ('object') correctly
     resourceParameters: F | null = null,
   ): Promise<ApiCollectionResult<FilteredResource<R[T][any], F>, SerializableObject>> {
     const field = this.Resource.fields[fieldName]
@@ -375,3 +376,14 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
     return this.getMany(query, resourceFilter) as PreventExcessiveRecursionError
   }
 }
+
+export type ApiEndpointResource<T extends ApiEndpoint<any, any>> = T extends ApiEndpoint<
+  infer R,
+  any
+>
+  ? R
+  : never
+
+export type ApiEndpointSetup<T extends ApiEndpoint<any, any>> = T extends ApiEndpoint<any, infer R>
+  ? R
+  : never
