@@ -1,37 +1,56 @@
-import { ApiClient } from './lib/ApiClient'
-import { ApiEndpoint } from './lib/ApiEndpoint'
-import { ApiSetup } from './lib/ApiSetup'
-import { resource as resourceFactory, AnyResource, ResourceConstructor } from './lib/Resource'
+import { Client, JSONAPISearchParameters } from './lib/Client'
+import { Endpoint } from './lib/Endpoint'
+import { ClientSetup } from './lib/ClientSetup'
+import { AnyResource, ResourceConstructor, ResourceFieldsModel, ResourceType } from './lib/Resource'
+import { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
+import { ResourceField, ResourceFieldName } from './lib/ResourceField'
+import { JSONAPIVersion } from './constants/jsonApi'
 
-export namespace JSONAPI {
-  export const resource = resourceFactory
+const JSONAPI = {
+  resource<T extends ResourceType>(type: T, path: string = type) {
+    return class Resource<
+      M extends ResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
+    > extends ResourceIdentifier<T> {
+      static type: T = type
+      static path: string = path
+      static fields: Record<ResourceFieldName, ResourceField<any, any>> = Object.create(null)
 
-  export const client = <S extends Partial<ApiSetup>>(url: URL, setup: S = {} as S) => {
-    return new ApiClient(url, setup)
-  }
-
-  export const endpoint = <R extends AnyResource, S extends Partial<ApiSetup>>(
-    client: ApiClient<S>,
+      constructor(data: ResourceIdentifier<T> & M) {
+        super(data.type, data.id)
+        Object.assign(this, data)
+      }
+    }
+  },
+  client<S extends Partial<ClientSetup>>(url: URL, setup: S = {} as S) {
+    return new Client(url, setup)
+  },
+  endpoint<R extends AnyResource, S extends Partial<ClientSetup>>(
+    client: Client<S>,
     path: string,
     Resource: ResourceConstructor<R>,
-  ) => {
-    return new ApiEndpoint(client, path, Resource)
-  }
+  ) {
+    return new Endpoint(client, path, Resource)
+  },
+}
+
+namespace JSONAPI {
+  export type Version = JSONAPIVersion
+  export type SearchParameters<S extends Partial<ClientSetup>> = JSONAPISearchParameters<S>
 }
 
 export default JSONAPI
 
-export { ApiClient, ApiClientParameters } from './lib/ApiClient'
+export { Client, JSONAPISearchParameters } from './lib/Client'
 
-export { ApiEndpoint, ApiEndpointResource, ApiEndpointSetup } from './lib/ApiEndpoint'
+export { Endpoint, ApiEndpointResource, ApiEndpointSetup } from './lib/Endpoint'
 
 export {
-  ApiSetup,
-  ApiSetupCreatePageQuery,
-  ApiSetupParseRequestError,
-  ApiSetupWithDefaults,
-  DefaultApiSetup,
-} from './lib/ApiSetup'
+  ClientSetup,
+  ClientSetupCreatePageQuery,
+  ClientSetupParseRequestError,
+  ClientSetupWithDefaults,
+  DefaultClientSetup,
+} from './lib/ClientSetup'
 
 export {
   AnyResource,

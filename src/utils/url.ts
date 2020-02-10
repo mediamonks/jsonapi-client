@@ -2,7 +2,7 @@ import { isArray, isString, isObject, isSerializableNumber, or, and, isSome } fr
 
 import { __DEV__, EMPTY_ARRAY } from '../constants/data'
 import { NonEmptyReadonlyArray } from '../types/util'
-import { ApiClient } from '../lib/ApiClient'
+import { Client } from '../lib/Client'
 
 type URLParameterName = string
 type URLParameterValue = string
@@ -63,7 +63,7 @@ const isPrimitiveParameterValue = or(
 // }
 
 export const parseJSONAPIParameters = (
-  client: ApiClient<any>,
+  client: Client<any>,
   jsonapiParameters: JSONAPIParameters,
 ): ReadonlyArray<URLParametersEntry> =>
   Object.keys(jsonapiParameters)

@@ -5,15 +5,10 @@ import { EMPTY_OBJECT, ResourceDocumentKey, __DEV__, DebugErrorCode } from '../c
 import { createEmptyObject, keys, createDataValue, RequestMethod } from '../utils/data'
 import { Result } from '../utils/Result'
 
-import { ApiClient } from './ApiClient'
+import { Client } from './Client'
 import { ApiError, ApiResponseError, ApiValidationError } from './ApiError'
-import { ApiSetup } from './ApiSetup'
-import {
-  AnyResource,
-  ResourceConstructor,
-  // ResourceAttributes,
-  // ResourceRelationships,
-} from './Resource'
+import { ClientSetup } from './ClientSetup'
+import { AnyResource, ResourceConstructor } from './Resource'
 import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
 import { defaultRequestHeaders } from '../constants/jsonApi'
@@ -30,9 +25,9 @@ export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> 
   relationships: any
 }
 
-export class ApiController<S extends Partial<ApiSetup>> {
-  client: ApiClient<S>
-  constructor(client: ApiClient<S>) {
+export class ApiController<S extends Partial<ClientSetup>> {
+  client: Client<S>
+  constructor(client: Client<S>) {
     this.client = client
   }
 

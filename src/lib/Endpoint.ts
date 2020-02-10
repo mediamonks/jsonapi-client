@@ -11,8 +11,8 @@ import {
 import { keys, createEmptyObject, RequestMethod } from '../utils/data'
 
 import { ApiError } from './ApiError'
-import { ApiClient, ApiClientParameters } from './ApiClient'
-import { ApiSetup } from './ApiSetup'
+import { Client, JSONAPISearchParameters } from './Client'
+import { ClientSetup } from './ClientSetup'
 import {
   AnyResource,
   ResourceConstructor,
@@ -35,12 +35,12 @@ import {
 
 const isToManyResponse = at(ResourceDocumentKey.DATA, isArray)
 
-export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
-  readonly client: ApiClient<S>
+export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
+  readonly client: Client<S>
   readonly path: string
   readonly Resource: ResourceConstructor<R>
 
-  constructor(client: ApiClient<S>, path: string, Resource: ResourceConstructor<R>) {
+  constructor(client: Client<S>, path: string, Resource: ResourceConstructor<R>) {
     this.client = client
     this.path = path.replace(/^\/*(.*?)\/*$/, '$1') // ensure leading nor trailing slash
     this.Resource = Resource
@@ -193,7 +193,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
    * @param queryParameters
    * @param resourceParameters
    */
-  async getMany<F extends ResourceParameters<R>, Q extends ApiClientParameters<S>>(
+  async getMany<F extends ResourceParameters<R>, Q extends JSONAPISearchParameters<S>>(
     queryParameters: Q | null = null, // TODO: type query ('object') correctly
     resourceParameters: F | null = null,
   ): Promise<ApiCollectionResult<FilteredResource<R, F>, SerializableObject>> {
@@ -217,7 +217,7 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   async getToManyRelationship<
     T extends ResourceToManyRelationshipNames<R>,
     F extends ResourceParameters<R[T][any]>,
-    Q extends ApiClientParameters<S>
+    Q extends JSONAPISearchParameters<S>
   >(
     id: ResourceId,
     fieldName: T,
@@ -377,13 +377,10 @@ export class ApiEndpoint<R extends AnyResource, S extends Partial<ApiSetup>> {
   }
 }
 
-export type ApiEndpointResource<T extends ApiEndpoint<any, any>> = T extends ApiEndpoint<
-  infer R,
-  any
->
+export type ApiEndpointResource<T extends Endpoint<any, any>> = T extends Endpoint<infer R, any>
   ? R
   : never
 
-export type ApiEndpointSetup<T extends ApiEndpoint<any, any>> = T extends ApiEndpoint<any, infer R>
+export type ApiEndpointSetup<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
   ? R
   : never

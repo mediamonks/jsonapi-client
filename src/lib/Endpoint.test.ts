@@ -1,5 +1,5 @@
-import { FilteredResource } from './ApiEndpoint'
-import { Api } from './Api'
+import { FilteredResource } from './Resource'
+import { Client } from './Client'
 import { Result } from '../utils/Result'
 import { ApiCollectionResult, ApiEntityResult } from './ApiResult'
 
@@ -11,7 +11,7 @@ describe('ApiEndpoint', () => {
     describe('constructor', () => {
       it('should create a new default instance', () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('/posts', Post)
 
         expect(endpoint).toBeDefined()
@@ -20,8 +20,8 @@ describe('ApiEndpoint', () => {
 
     describe('create', () => {
       // it('should create a resource item', async () => {
-      //   const api = new Api(new URL('https://www.example.com/api'))
-      //   const endpoint = new ApiEndpoint(api, '/assets', Asset)
+      //   const api = new Client(new URL('https://www.example.com/api'))
+      //   const endpoint = new ClientEndpoint(api, '/assets', Asset)
       //   const data = {
       //     type: 'Asset',
       //     id: '123',
@@ -36,8 +36,8 @@ describe('ApiEndpoint', () => {
 
     describe('patch', () => {
       // it('should patch a resource item', async () => {
-      //   const api = new Api(new URL('https://www.example.com/api'))
-      //   const endpoint = new ApiEndpoint(api, '/assets', Asset)
+      //   const api = new Client(new URL('https://www.example.com/api'))
+      //   const endpoint = new ClientEndpoint(api, '/assets', Asset)
       //   const data = {
       //     type: 'Asset',
       //     id: '123',
@@ -53,7 +53,7 @@ describe('ApiEndpoint', () => {
     describe('getOne', () => {
       it('should get a resource item', async () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts', Post)
 
         const mockHandleRequest = jest.fn().mockResolvedValue(
@@ -64,7 +64,7 @@ describe('ApiEndpoint', () => {
 
         api.controller.handleRequest = mockHandleRequest
 
-        const item = await endpoint.getOne('123')
+        const item = await endpoint.getOne('12', {})
 
         expect(item.data).toMatchObject({
           id: 'p1',
@@ -83,7 +83,7 @@ describe('ApiEndpoint', () => {
     describe('getMany', () => {
       it('should get a list of resources', async () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('/posts', Post)
 
         const mockHandleRequest = jest.fn().mockResolvedValue(
@@ -120,7 +120,7 @@ describe('ApiEndpoint', () => {
     describe('getToOneRelationship', () => {
       it('should fetch a one-to-one relationship', async () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('/posts', Post)
 
         const mockHandleRequest = jest.fn().mockResolvedValue(
@@ -134,7 +134,7 @@ describe('ApiEndpoint', () => {
         let item: ApiEntityResult<FilteredResource<Author, { fields: { Author: ['name'] } }>, any>
         try {
           item = await endpoint.getToOneRelationship('123', 'author', {
-            fields: { Author: ['name'] },
+            fields: { Author: ['name'] } as const,
           })
         } catch (errors) {
           console.log(errors)
@@ -157,7 +157,7 @@ describe('ApiEndpoint', () => {
     describe('getToManyRelationship', () => {
       it('should fetch a one-to-many relationship', async () => {
         const url = new URL('https://www.example.com/api')
-        const api = new Api(url)
+        const api = new Client(url)
 
         const endpoint = api.endpoint('/posts', Post)
 
@@ -173,9 +173,9 @@ describe('ApiEndpoint', () => {
           any
         >
         try {
-          item = await endpoint.getToManyRelationship('123', 'comments', {}, {
+          item = await endpoint.getToManyRelationship('123', 'comments', null, {
             fields: { Comment: ['title'] },
-          } as any)
+          } as const)
         } catch (errors) {
           console.log(errors)
           throw errors
@@ -199,7 +199,7 @@ describe('ApiEndpoint', () => {
     describe('toString', () => {
       it('should return the correct endpoint path with trailing API slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts', Post)
 
         expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
@@ -207,7 +207,7 @@ describe('ApiEndpoint', () => {
 
       it('should return the correct endpoint path without trailing API slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts', Post)
 
         expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
@@ -215,7 +215,7 @@ describe('ApiEndpoint', () => {
 
       it('should return the correct endpoint path with leading endpoint slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('/posts', Post)
 
         expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
@@ -223,7 +223,7 @@ describe('ApiEndpoint', () => {
 
       it('should return the correct endpoint path with trailing endpoint slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts/', Post)
 
         expect(endpoint.toString()).toEqual('https://www.example.com/api/posts')
@@ -233,7 +233,7 @@ describe('ApiEndpoint', () => {
     describe('toURL', () => {
       it('should return the correct endpoint path with trailing API slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts', Post)
 
         expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
@@ -241,7 +241,7 @@ describe('ApiEndpoint', () => {
 
       it('should return the correct endpoint path without trailing API slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts', Post)
 
         expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
@@ -249,7 +249,7 @@ describe('ApiEndpoint', () => {
 
       it('should return the correct endpoint path with leading endpoint slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('/posts', Post)
 
         expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')
@@ -257,7 +257,7 @@ describe('ApiEndpoint', () => {
 
       it('should return the correct endpoint path with trailing endpoint slash', () => {
         const url = new URL('https://www.example.com/api/')
-        const api = new Api(url)
+        const api = new Client(url)
         const endpoint = api.endpoint('posts/', Post)
 
         expect(endpoint.toURL().href).toEqual('https://www.example.com/api/posts')

@@ -11,7 +11,7 @@ export type ResourceId = string
 
 export type AnyResource = ResourceIdentifier<ResourceType>
 
-type ResourceFieldsModel<F extends ResourceFields<any>> = {
+export type ResourceFieldsModel<F extends ResourceFields<any>> = {
   [K in keyof F]: K extends ResourceIdentifierKey
     ? never
     : F[K] extends RelationshipValue

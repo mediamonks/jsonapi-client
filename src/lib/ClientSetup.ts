@@ -10,35 +10,35 @@ import { JSONAPIParameterValue } from '../utils/url'
 
 const reflect = <T>(value: T): T => value
 
-const mergeApiSetup = (defaults: ApiSetup) => (
-  setup: Partial<ApiSetup>,
-): ApiSetupWithDefaults<any> => ({
+const mergeClientSetup = (defaults: ClientSetup) => (
+  setup: Partial<ClientSetup>,
+): ClientSetupWithDefaults<any> => ({
   ...defaults,
   ...setup,
 })
 
-export type ApiSetup = {
+export type ClientSetup = {
   version: JSONAPIVersion
   defaultIncludeFields: DefaultIncludeFieldsOption
-  createPageQuery: ApiSetupCreatePageQuery
+  createPageQuery: ClientSetupCreatePageQuery
   transformRelationshipForURL: Transform<string>
-  parseRequestError: ApiSetupParseRequestError
+  parseRequestError: ClientSetupParseRequestError
   beforeRequest: Transform<SerializableObject>
   fetchAdapter: Window['fetch']
   adapter: Window['fetch']
 }
 
-export type ApiSetupCreatePageQuery =
+export type ClientSetupCreatePageQuery =
   | Transform<string, JSONAPIParameterValue>
   | Transform<number, JSONAPIParameterValue>
   | Transform<JSONAPIParameterValue, JSONAPIParameterValue>
 
-export type ApiSetupParseRequestError = Transform<ApiResponseError, any>
+export type ClientSetupParseRequestError = Transform<ApiResponseError, any>
 
-export type DefaultApiSetup = ApiSetupWithDefaults<{
+export type DefaultClientSetup = ClientSetupWithDefaults<{
   version: '1.0'
   defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
-  createPageQuery: ApiSetupCreatePageQuery
+  createPageQuery: ClientSetupCreatePageQuery
   transformRelationshipForURL: Transform<string>
   parseRequestError: Transform<ApiResponseError, any>
   beforeRequest: Transform<SerializableObject>
@@ -46,9 +46,9 @@ export type DefaultApiSetup = ApiSetupWithDefaults<{
   adapter: Window['fetch']
 }>
 
-export type ApiSetupWithDefaults<T extends Partial<ApiSetup>> = Required<
+export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = Required<
   {
-    [K in keyof ApiSetup]: K extends keyof T ? T[K] : DefaultApiSetup[K]
+    [K in keyof ClientSetup]: K extends keyof T ? T[K] : DefaultClientSetup[K]
   }
 >
 
@@ -56,7 +56,7 @@ const windowFetch = (typeof window !== 'undefined' && typeof window.fetch === 'f
   ? fetch.bind(window)
   : undefined) as Window['fetch']
 
-export const mergeApiDefaultSetup = mergeApiSetup({
+export const mergeDefaultClientSetup = mergeClientSetup({
   version: '1.0',
   defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,

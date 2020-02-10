@@ -1,26 +1,23 @@
 import { ApiController } from './ApiController'
-import { mergeApiDefaultSetup, ApiSetupWithDefaults, ApiSetup } from './ApiSetup'
-import { ApiEndpoint } from './ApiEndpoint'
+import { mergeDefaultClientSetup, ClientSetupWithDefaults, ClientSetup } from './ClientSetup'
+import { Endpoint } from './Endpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { JSONAPIQueryParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
 
-export class ApiClient<S extends Partial<ApiSetup>> {
+export class Client<S extends Partial<ClientSetup>> {
   readonly url: URL
-  readonly setup: ApiSetupWithDefaults<S>
+  readonly setup: ClientSetupWithDefaults<S>
   readonly controller: ApiController<S>
 
   constructor(url: URL, setup: S = {} as S) {
     this.url = url
-    this.setup = mergeApiDefaultSetup(setup)
+    this.setup = mergeDefaultClientSetup(setup)
     this.controller = new ApiController(this)
   }
 
-  endpoint<R extends AnyResource>(
-    path: string,
-    Resource: ResourceConstructor<R>,
-  ): ApiEndpoint<R, S> {
-    return new ApiEndpoint(this, path, Resource)
+  endpoint<R extends AnyResource>(path: string, Resource: ResourceConstructor<R>): Endpoint<R, S> {
+    return new Endpoint(this, path, Resource)
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
@@ -28,10 +25,10 @@ export class ApiClient<S extends Partial<ApiSetup>> {
   }
 
   toString(): string {
-    return this.url.href
+    return String(this.url)
   }
 }
 
-export type ApiClientParameters<S extends Partial<ApiSetup>> = JSONAPIQueryParameters & {
+export type JSONAPISearchParameters<S extends Partial<ClientSetup>> = JSONAPIQueryParameters & {
   page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }
