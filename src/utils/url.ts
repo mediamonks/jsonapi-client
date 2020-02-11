@@ -9,9 +9,9 @@ type URLParameterValue = string
 
 export type URLParametersEntry = [URLParameterName, URLParameterValue]
 
-export type JSONAPIParameters = JSONAPIQueryParameters & JSONAPIResourceParameters
+export type JSONAPIParameters = JSONAPISearchParameters & JSONAPIResourceParameters
 
-export type JSONAPIQueryParameters = {
+export type JSONAPISearchParameters = {
   [K in string]: JSONAPIParameterValue | undefined
 } & {
   sort?: JSONAPISortParameterValue

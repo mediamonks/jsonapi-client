@@ -1,9 +1,19 @@
 import { ApiController } from './ApiController'
-import { mergeDefaultClientSetup, ClientSetupWithDefaults, ClientSetup } from './ClientSetup'
 import { Endpoint } from './Endpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
-import { JSONAPIQueryParameters, JSONAPIParameterValue } from '../utils/url'
+import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
+import { SerializableObject } from 'isntnt'
+import { JSONAPIResponseError } from '../types/data'
+
+const reflect = <T>(value: T): T => value
+
+const mergeClientSetup = (defaults: ClientSetup) => (
+  setup: Partial<ClientSetup>,
+): ClientSetupWithDefaults<any> => ({
+  ...defaults,
+  ...setup,
+})
 
 export class Client<S extends Partial<ClientSetup>> {
   readonly url: URL
@@ -16,8 +26,8 @@ export class Client<S extends Partial<ClientSetup>> {
     this.controller = new ApiController(this)
   }
 
-  endpoint<R extends AnyResource>(path: string, Resource: ResourceConstructor<R>): Endpoint<R, S> {
-    return new Endpoint(this, path, Resource)
+  endpoint<R extends AnyResource>(Resource: ResourceConstructor<R>): Endpoint<R, S> {
+    return new Endpoint(this, Resource)
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
@@ -29,6 +39,56 @@ export class Client<S extends Partial<ClientSetup>> {
   }
 }
 
-export type JSONAPISearchParameters<S extends Partial<ClientSetup>> = JSONAPIQueryParameters & {
+export type ClientSearchParameters<S extends Partial<ClientSetup>> = JSONAPISearchParameters & {
   page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }
+
+export type ClientSetup = {
+  // version: JSONAPIVersion
+  // defaultIncludeFields: DefaultIncludeFieldsOption
+  createPageQuery: CreatePageQuery
+  transformRelationshipForURL: Transform<string>
+  parseRequestError: ParseRequestError
+  beforeRequest: Transform<SerializableObject>
+  fetchAdapter: Window['fetch']
+  adapter: Window['fetch']
+}
+
+export type DefaultClientSetup = ClientSetupWithDefaults<{
+  // version: '1.0'
+  // defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
+  createPageQuery: CreatePageQuery
+  transformRelationshipURLPath: Transform<string>
+  parseRequestError: Transform<JSONAPIResponseError, any>
+  beforeRequest: Transform<SerializableObject>
+  fetchAdapter: Window['fetch']
+  adapter: Window['fetch']
+}>
+
+export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = Required<
+  {
+    [K in keyof ClientSetup]: K extends keyof T ? T[K] : DefaultClientSetup[K]
+  }
+>
+
+const windowFetch = (typeof window !== 'undefined' && typeof window.fetch === 'function'
+  ? fetch.bind(window)
+  : undefined) as Window['fetch']
+
+export const mergeDefaultClientSetup = mergeClientSetup({
+  // version: '1.0',
+  // defaultIncludeFields: defaultIncludeFieldOptions.NONE,
+  createPageQuery: reflect,
+  transformRelationshipForURL: reflect,
+  parseRequestError: reflect,
+  beforeRequest: reflect,
+  fetchAdapter: windowFetch,
+  adapter: windowFetch,
+})
+
+type CreatePageQuery =
+  | Transform<string, JSONAPIParameterValue>
+  | Transform<number, JSONAPIParameterValue>
+  | Transform<JSONAPIParameterValue, JSONAPIParameterValue>
+
+type ParseRequestError = Transform<JSONAPIResponseError, any>

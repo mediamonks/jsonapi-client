@@ -21,19 +21,6 @@ export type ResourceFieldsModel<F extends ResourceFields<any>> = {
     : never
 }
 
-export const resource = <T extends ResourceType>(type: T) => {
-  return class Resource<
-    M extends ResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
-  > extends ResourceIdentifier<T> {
-    static type: T = type
-    static fields: Record<ResourceType, ResourceField<any, any>> = Object.create(null)
-    constructor(data: ResourceIdentifier<T> & M) {
-      super(data.type, data.id)
-      Object.assign(this, data)
-    }
-  }
-}
-
 export type ResourceFieldNames<R extends AnyResource> = ExtendsOrNever<
   Exclude<keyof R, ResourceIdentifierKey>,
   string
@@ -53,6 +40,7 @@ export type ResourceToManyRelationshipNames<R extends AnyResource> = ValuesOf<
 
 export type ResourceConstructor<R extends AnyResource> = {
   type: R['type']
+  path: string
   fields: Record<ResourceType, ResourceField<any, any>>
   new (data: R): R
 }

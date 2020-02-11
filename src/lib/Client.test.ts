@@ -28,7 +28,7 @@ describe('Client', () => {
           version: '1.1',
           defaultIncludeFields: defaultIncludeFieldOptions.PRIMARY,
           parseRequestError: (all: any) => all,
-        }
+        } as const
         const api = new Client(new URL(url), setup)
 
         expect(api.setup.createPageQuery).toEqual(setup.createPageQuery)
@@ -56,7 +56,7 @@ describe('Client', () => {
 
           await endpoint.getToOneRelationship('123', 'author', {
             fields: { Author: ['name'] },
-          })
+          } as const)
 
           expect(mockHandleRequest.mock.calls[0][0].url).toEqual(
             'https://www.example.com/api/posts/123/foo-bar?fields[Author]=name',
@@ -85,7 +85,7 @@ describe('Client', () => {
         try {
           await endpoint.getToManyRelationship('123', 'comments', {}, {
             fields: { Comment: ['title'] },
-          } as any)
+          } as const)
         } catch (errors) {
           console.log(errors)
           throw errors

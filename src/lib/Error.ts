@@ -1,4 +1,4 @@
-export class ApiError<T> extends Error {
+export class JSONAPIError<T> extends Error {
   name: string = this.constructor.name // preserve name
   pointer: ReadonlyArray<string>
   value: T
@@ -9,8 +9,8 @@ export class ApiError<T> extends Error {
   }
 }
 
-export class ApiRequestError<T> extends ApiError<T> {}
+export class JSONAPIRequestError<T> extends JSONAPIError<T> {}
 
-export class ApiResponseError<T> extends ApiError<T> {}
+export class JSONAPIResponseError<T> extends JSONAPIError<T> {}
 
-export class ApiValidationError<T> extends ApiError<T> {}
+export class JSONAPIValidationError<T> extends JSONAPIError<T> {}

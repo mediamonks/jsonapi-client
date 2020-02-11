@@ -1,4 +1,4 @@
-export class ApiEntityResult<T, M> {
+export class EntityResult<T, M> {
   data: T
   meta: M
 
@@ -12,7 +12,7 @@ export class ApiEntityResult<T, M> {
   }
 }
 
-export class ApiCollectionResult<T, M> {
+export class CollectionResult<T, M> {
   data: T[]
   meta: M
 

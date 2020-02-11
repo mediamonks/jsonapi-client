@@ -1,8 +1,20 @@
-import { isArray, isSome, isString, isNone, either, literal, shape, Predicate, None } from 'isntnt'
+import {
+  isArray,
+  isSome,
+  isString,
+  isNone,
+  either,
+  literal,
+  shape,
+  Predicate,
+  None,
+  SerializablePrimitive,
+  SerializableArray,
+  SerializableObject,
+} from 'isntnt'
 
 import { resourceFieldPropertyDescriptor } from '../constants/resourceFieldPropertyDescriptor'
 import { Fabricate } from '../types/util'
-import { SerializablePrimitive, SerializableArray, SerializableObject } from '../types/data'
 import { AnyResource, ResourceType, ResourceConstructor } from './Resource'
 import { ResourceIdentifierKey } from './ResourceIdentifier'
 

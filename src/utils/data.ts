@@ -1,13 +1,14 @@
-import { isArray, isObject, isNull, isSerializablePrimitive } from 'isntnt'
+import { isArray, isObject, isNull, isSerializablePrimitive, SerializablePrimitive } from 'isntnt'
 
-import { SerializablePrimitive } from '../types/data'
 import { WithoutNever } from '../types/util'
 
-export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> => Object.keys(value)
+type ObjectKeys = <T extends Record<string, any>>(value: T) => Array<keyof T>
+
+export const keys = Object.keys as ObjectKeys
 
 export const createEmptyObject = (): {} => Object.create(null)
 
-export enum RequestMethod {
+export enum HTTPRequestMethod {
   GET = 'GET',
   POST = 'POST',
   PATCH = 'PATCH',

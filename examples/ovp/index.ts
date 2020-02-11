@@ -159,7 +159,7 @@ type LegacyFilteredCountry = FilteredResource<
   }
 >
 
-const countries = client.endpoint('countries', Country)
+const countries = client.endpoint(Country)
 
 countries
   .getMany(

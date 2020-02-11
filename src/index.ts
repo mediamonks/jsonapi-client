@@ -1,10 +1,10 @@
-import { Client, JSONAPISearchParameters } from './lib/Client'
+import { Client } from './lib/Client'
 import { Endpoint } from './lib/Endpoint'
-import { ClientSetup } from './lib/ClientSetup'
+import { ClientSetup } from './lib/Client'
 import { AnyResource, ResourceConstructor, ResourceFieldsModel, ResourceType } from './lib/Resource'
 import { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
 import { ResourceField, ResourceFieldName } from './lib/ResourceField'
-import { JSONAPIVersion } from './constants/jsonApi'
+import { JSONAPISearchParameters } from './utils/url'
 
 const JSONAPI = {
   resource<T extends ResourceType>(type: T, path: string = type) {
@@ -12,7 +12,7 @@ const JSONAPI = {
       M extends ResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
     > extends ResourceIdentifier<T> {
       static type: T = type
-      static path: string = path
+      static path: string = path.replace(/^\/*(.*?)\/*$/, '$1') // remove leading/trailing slash
       static fields: Record<ResourceFieldName, ResourceField<any, any>> = Object.create(null)
 
       constructor(data: ResourceIdentifier<T> & M) {
@@ -26,31 +26,28 @@ const JSONAPI = {
   },
   endpoint<R extends AnyResource, S extends Partial<ClientSetup>>(
     client: Client<S>,
-    path: string,
     Resource: ResourceConstructor<R>,
   ) {
-    return new Endpoint(client, path, Resource)
+    return new Endpoint(client, Resource)
   },
 }
 
 namespace JSONAPI {
-  export type Version = JSONAPIVersion
-  export type SearchParameters<S extends Partial<ClientSetup>> = JSONAPISearchParameters<S>
+  // export type Version = JSONAPIVersion
+  export type SearchParameters = JSONAPISearchParameters
 }
 
 export default JSONAPI
 
-export { Client, JSONAPISearchParameters } from './lib/Client'
-
-export { Endpoint, ApiEndpointResource, ApiEndpointSetup } from './lib/Endpoint'
-
 export {
+  Client,
   ClientSetup,
-  ClientSetupCreatePageQuery,
-  ClientSetupParseRequestError,
   ClientSetupWithDefaults,
+  ClientSearchParameters,
   DefaultClientSetup,
-} from './lib/ClientSetup'
+} from './lib/Client'
+
+export { Endpoint, EndpointResource, EndpointSetup } from './lib/Endpoint'
 
 export {
   AnyResource,
@@ -82,3 +79,5 @@ export {
   toManyRelationship,
   toOneRelationship,
 } from './lib/ResourceField'
+
+export { EntityResult, CollectionResult } from './lib/Result'

@@ -2,12 +2,11 @@ import { isArray, isUndefined, isNone, isSome, isString, Serializable } from 'is
 import dedent from 'dedent'
 
 import { EMPTY_OBJECT, ResourceDocumentKey, __DEV__, DebugErrorCode } from '../constants/data'
-import { createEmptyObject, keys, createDataValue, RequestMethod } from '../utils/data'
+import { createEmptyObject, keys, createDataValue, HTTPRequestMethod } from '../utils/data'
 import { Result } from '../utils/Result'
 
-import { Client } from './Client'
-import { ApiError, ApiResponseError, ApiValidationError } from './ApiError'
-import { ClientSetup } from './ClientSetup'
+import { Client, ClientSetup } from './Client'
+import { JSONAPIError, JSONAPIResponseError, JSONAPIValidationError } from './Error'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
@@ -15,7 +14,7 @@ import { defaultRequestHeaders } from '../constants/jsonApi'
 import { JSONAPIFieldsParameterValue, JSONAPIIncludeParameterValue } from '../utils/url'
 
 type RequestOptions = {
-  method: RequestMethod
+  method: HTTPRequestMethod
   headers: Headers
   body?: string
 }
@@ -33,9 +32,9 @@ export class ApiController<S extends Partial<ClientSetup>> {
 
   async handleRequest(
     url: URL,
-    method: RequestMethod,
+    method: HTTPRequestMethod,
     data?: Serializable,
-  ): Promise<Result<any, ApiError<any>[]>> {
+  ): Promise<Result<any, JSONAPIError<any>[]>> {
     if (isNone(this.client.setup.fetchAdapter)) {
       if (__DEV__) {
         throw new Error(dedent`No fetch adapter provided.
@@ -57,7 +56,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       try {
         options.body = JSON.stringify(data)
       } catch (error) {
-        return Result.reject([new ApiValidationError(`Data is not serializable`, data, [])])
+        return Result.reject([new JSONAPIValidationError(`Data is not serializable`, data, [])])
       }
     }
 
@@ -65,7 +64,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
     const response = await this.client.setup.fetchAdapter!(request as any)
     if (!response.ok) {
       const errorMessage = response.statusText || `Request Error ${response.status}`
-      return Result.reject([new ApiResponseError(errorMessage, response.status)])
+      return Result.reject([new JSONAPIResponseError(errorMessage, response.status)])
     }
     return response
       .json()
@@ -74,14 +73,14 @@ export class ApiController<S extends Partial<ClientSetup>> {
           ? Result.reject(data.errors.map(this.client.setup.parseRequestError))
           : Result.accept(data)
       })
-      .catch((error) => Result.reject([new ApiResponseError(dedent`Invalid request`, error)]))
+      .catch((error) => Result.reject([new JSONAPIResponseError(dedent`Invalid request`, error)]))
   }
 
   getAttributeValue<F extends Attribute<any, any>>(
     data: ResourceData<AnyResource>,
     field: F,
     pointer: ReadonlyArray<string>,
-  ): Result<AttributeValue, ApiError<any>> {
+  ): Result<AttributeValue, JSONAPIError<any>> {
     // TODO: Attributes prop is not always optional, should it throw if its missing
     // when it should not?
     const attributes = data.attributes || EMPTY_OBJECT
@@ -93,7 +92,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       return Result.accept(null as any)
     }
     return Result.reject(
-      new ApiValidationError(
+      new JSONAPIValidationError(
         dedent`Invalid attribute value at "${field.name}"`,
         value,
         pointer.concat(field.name),
@@ -105,7 +104,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
     data: ResourceData<AnyResource>,
     field: F,
     pointer: ReadonlyArray<string>,
-  ): Result<RelationshipValue, ApiError<any>> {
+  ): Result<RelationshipValue, JSONAPIError<any>> {
     // TODO: Relationships prop is not always optional, should it throw if its missing
     // when it should not?
     const relationships = data.relationships || EMPTY_OBJECT
@@ -121,7 +120,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       ? `a Resource identifier or null`
       : `an array of Resource identifiers`
     return Result.reject(
-      new ApiValidationError(
+      new JSONAPIValidationError(
         dedent`Invalid relationship value, "${field.name}" must be ${expectedValue}`,
         value,
         pointer.concat(field.name),
@@ -133,7 +132,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
     identifier: ResourceIdentifier<any>,
     included: Array<ResourceData<any>>,
     pointer: ReadonlyArray<string>,
-  ): Result<ResourceData<any>, ApiError<any>[]> {
+  ): Result<ResourceData<any>, JSONAPIError<any>[]> {
     const data = included.find(
       (resource) =>
         resource[ResourceDocumentKey.TYPE] === identifier[ResourceDocumentKey.TYPE] &&
@@ -142,7 +141,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
     return isSome(data)
       ? Result.accept(data)
       : Result.reject([
-          new ApiResponseError(
+          new JSONAPIResponseError(
             dedent`Resource of type "${identifier[ResourceDocumentKey.TYPE]}" with id "${
               identifier[ResourceDocumentKey.ID]
             }" is not be included`,
@@ -159,18 +158,18 @@ export class ApiController<S extends Partial<ClientSetup>> {
     fieldsParam: JSONAPIFieldsParameterValue,
     includeParam: JSONAPIIncludeParameterValue,
     pointer: ReadonlyArray<string>,
-  ): Result<R, ApiError<any>[]> {
+  ): Result<R, JSONAPIError<any>[]> {
     // TODO: should the data of a resource be added to the included data because
     // a relationship MAY depend on it?
     included.push(data)
 
     const fieldNames = fieldsParam[Resource.type] || keys(Resource.fields)
     const values: Record<string, any> = createEmptyObject()
-    const errors: Array<ApiError<any>> = []
+    const errors: Array<JSONAPIError<any>> = []
 
     if (Resource[ResourceDocumentKey.TYPE] !== data[ResourceDocumentKey.TYPE]) {
       errors.push(
-        new ApiResponseError(
+        new JSONAPIResponseError(
           dedent`Invalid type for Resource of type "${Resource[ResourceDocumentKey.TYPE]}"`,
           data[ResourceDocumentKey.TYPE],
           pointer.concat(ResourceDocumentKey.TYPE),
@@ -182,7 +181,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
 
     if (!isString(data.id)) {
       errors.push(
-        new ApiResponseError(
+        new JSONAPIResponseError(
           dedent`Invalid id for Resource of type "${Resource[ResourceDocumentKey.TYPE]}"`,
           data[ResourceDocumentKey.ID],
           pointer.concat(ResourceDocumentKey.ID),
@@ -286,8 +285,8 @@ export class ApiController<S extends Partial<ClientSetup>> {
     values: R,
     fieldsNames: Array<string>,
     pointer: ReadonlyArray<string>,
-  ): Result<any, ApiError<any>[]> {
-    const errors: Array<ApiError<any>> = []
+  ): Result<any, JSONAPIError<any>[]> {
+    const errors: Array<JSONAPIError<any>> = []
     const data: Record<string, any> = createEmptyObject()
 
     if (
@@ -295,7 +294,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       values[ResourceDocumentKey.TYPE] !== Resource[ResourceDocumentKey.TYPE]
     ) {
       errors.push(
-        new ApiError(
+        new JSONAPIError(
           dedent`Invalid type for Resource of type ${Resource.type}`,
           values[ResourceDocumentKey.TYPE],
           pointer.concat(ResourceDocumentKey.TYPE),
@@ -310,7 +309,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
         data[ResourceDocumentKey.ID] = values[ResourceDocumentKey.ID]
       } else {
         errors.push(
-          new ApiError(
+          new JSONAPIError(
             dedent`Invalid id value for Resource of type ${Resource.type}`,
             values[ResourceDocumentKey.ID],
             pointer.concat(ResourceDocumentKey.ID),
@@ -337,7 +336,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
           ;(data.attributes || (data.attributes = createEmptyObject()))[name] = value
         } else if (field.isRequiredAttribute() || isSome(value)) {
           errors.push(
-            new ApiError(
+            new JSONAPIError(
               `Invalid attribute at "${name}" for Resource of type ${Resource.type}`,
               value,
               pointer.concat(name),
@@ -359,7 +358,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
           })
         } else if (name in values) {
           errors.push(
-            new ApiError(
+            new JSONAPIError(
               `Invalid relationship data at "${name}" for Resource of type ${Resource.type}`,
               value,
               pointer.concat(name),
