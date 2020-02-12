@@ -299,7 +299,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       values[ResourceDocumentKey.TYPE] !== Resource[ResourceDocumentKey.TYPE]
     ) {
       errors.push(
-        new JSONAPIError(
+        new JSONAPIValidationError(
           dedent`Invalid type for Resource of type ${Resource.type}`,
           values[ResourceDocumentKey.TYPE],
           pointer.concat(ResourceDocumentKey.TYPE),
@@ -314,7 +314,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
         data[ResourceDocumentKey.ID] = values[ResourceDocumentKey.ID]
       } else {
         errors.push(
-          new JSONAPIError(
+          new JSONAPIValidationError(
             dedent`Invalid id value for Resource of type ${Resource.type}`,
             values[ResourceDocumentKey.ID],
             pointer.concat(ResourceDocumentKey.ID),
@@ -341,7 +341,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
           ;(data.attributes || (data.attributes = createEmptyObject()))[name] = value
         } else if (field.isRequiredAttribute() || isSome(value)) {
           errors.push(
-            new JSONAPIError(
+            new JSONAPIValidationError(
               `Invalid attribute at "${name}" for Resource of type ${Resource.type}`,
               value,
               pointer.concat(name),
@@ -363,7 +363,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
           })
         } else if (name in values) {
           errors.push(
-            new JSONAPIError(
+            new JSONAPIValidationError(
               `Invalid relationship data at "${name}" for Resource of type ${Resource.type}`,
               value,
               pointer.concat(name),
