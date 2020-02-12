@@ -8,7 +8,7 @@ const isCommentary = array(
   }),
 )
 
-export class Stream extends JSONAPI.resource('Stream')<Stream> {
+export default class Stream extends JSONAPI.resource('Stream', 'streams')<Stream> {
   @Attribute.required(isString) public url!: string
   @Attribute.optional(isCommentary) public commentary!: Static<typeof isCommentary> | null
 }

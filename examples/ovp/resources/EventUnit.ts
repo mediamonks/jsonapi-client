@@ -1,12 +1,12 @@
 import { isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 
-import { Competitor } from './Competitor'
-import { Medal } from './Medal'
-import { Phase } from './Phase'
-import { VideoSession } from './VideoSession'
+import Competitor from './Competitor'
+import Medal from './Medal'
+import Phase from './Phase'
+import VideoSession from './VideoSession'
 
-export class EventUnit extends JSONAPI.resource('EventUnit')<EventUnit> {
+export default class EventUnit extends JSONAPI.resource('EventUnit', 'event-units')<EventUnit> {
   @Attribute.optional(isString) public externalId!: string | null
   @Attribute.required(isString) public title!: string
   @Attribute.optional(isString) public start!: string | null

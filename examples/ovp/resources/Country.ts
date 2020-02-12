@@ -1,11 +1,11 @@
 import { array, isBoolean, isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 
-import { Asset } from './Asset'
-import { Organisation } from './Organisation'
-import { Participant } from './Participant'
+import Asset from './Asset'
+import Organisation from './Organisation'
+import Participant from './Participant'
 
-export class Country extends JSONAPI.resource('Country')<Country> {
+export default class Country extends JSONAPI.resource('Country', 'countries')<Country> {
   @Attribute.optional(isString) public iso2Code!: string | null
   @Attribute.required(isString) public iso3Code!: string
   @Attribute.required(isString) public iocCode!: string

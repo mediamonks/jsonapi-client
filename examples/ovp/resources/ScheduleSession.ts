@@ -1,11 +1,14 @@
 import { isBoolean, isNumber, isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 
-import { Discipline } from './Discipline'
-import { ScheduleItem } from './ScheduleItem'
-import { VideoSession } from './VideoSession'
+import Discipline from './Discipline'
+import ScheduleItem from './ScheduleItem'
+import VideoSession from './VideoSession'
 
-export class ScheduleSession extends JSONAPI.resource('ScheduleSession')<ScheduleSession> {
+export default class ScheduleSession extends JSONAPI.resource(
+  'ScheduleSession',
+  'schedule-sessions',
+)<ScheduleSession> {
   @Attribute.required(isString) public externalId!: string
   @Attribute.required(isString) public title!: string
   @Attribute.required(isString) public code!: string

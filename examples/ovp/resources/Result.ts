@@ -1,13 +1,15 @@
 import { array, isBoolean, isNumber, isString, shape, Static } from 'isntnt'
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 
-import { Competitor } from './Competitor'
+import Competitor from './Competitor'
+
+type ExtendedInfoMap = Static<typeof isExtendedInfoMap>
 
 const isExtendedInfoMap = shape({
   value: isString,
 })
 
-export class Result extends JSONAPI.resource('Result')<Result> {
+export default class Result extends JSONAPI.resource('Result', 'results')<Result> {
   @Attribute.optional(isString) public irm!: string | null
   @Attribute.required(isString) public status!: string
   @Attribute.required(isString) public externalId!: string
@@ -35,9 +37,8 @@ export class Result extends JSONAPI.resource('Result')<Result> {
   @Attribute.optional(isBoolean) public tied!: boolean | null
   @Attribute.optional(isBoolean) public lost!: boolean | null
   @Attribute.required(isString) public resultType!: string
-  @Attribute.optional(isExtendedInfoMap) public extendedInfoMap!: Static<
-    typeof isExtendedInfoMap
-  > | null
+  @Attribute.optional(isExtendedInfoMap)
+  public extendedInfoMap!: ExtendedInfoMap | null
   @Relationship.toMany(() => Result) public children!: Result[]
   @Relationship.toOne(() => Result) public parent!: Result | null
   @Relationship.toOne(() => Competitor) public competitor!: Competitor | null

@@ -61,7 +61,9 @@ export type ThemeConfiguration = SpecificConfiguration<'Theme', typeof isTheme>
 export type RHBConfiguration = SpecificConfiguration<'RHBConfiguration', typeof isRHBConfiguration>
 export type OutlinksConfiguration = SpecificConfiguration<'Outlinks', typeof isOutlinks>
 
-export class Configuration extends JSONAPI.resource('Configuration')<Configuration> {
+export default class Configuration extends JSONAPI.resource('Configuration', 'configurations')<
+  Configuration
+> {
   @Attribute.required(isString) public key!: string
   @Attribute.required(isAny) public value!: any
 

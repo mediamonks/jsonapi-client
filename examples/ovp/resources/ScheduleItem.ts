@@ -1,11 +1,13 @@
 import { isNumber, isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 
-import { EventUnit } from './EventUnit'
-import { Phase } from './Phase'
-import { ScheduleSession } from './ScheduleSession'
+import EventUnit from './EventUnit'
+import Phase from './Phase'
+import ScheduleSession from './ScheduleSession'
 
-export class ScheduleItem extends JSONAPI.resource('ScheduleItem')<ScheduleItem> {
+export default class ScheduleItem extends JSONAPI.resource('ScheduleItem', 'schedule-items')<
+  ScheduleItem
+> {
   @Attribute.required(isString) public title!: string
   @Attribute.optional(isString) public start!: string | null
   @Attribute.optional(isString) public end!: string | null

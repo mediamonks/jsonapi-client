@@ -1,7 +1,7 @@
 import { isNumber, isString } from 'isntnt'
 import JSONAPI, { Attribute } from '../../../src'
 
-export class Individual extends JSONAPI.resource('Individual')<Individual> {
+export default class Individual extends JSONAPI.resource('Individual', 'individuals')<Individual> {
   @Attribute.required(isString) public ambition!: string
   @Attribute.optional(isString) public clubName!: string | null
   @Attribute.required(isString) public coach!: string

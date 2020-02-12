@@ -1,11 +1,13 @@
 import { isNumber, isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 
-import { EventUnit } from './EventUnit'
-import { Phase } from './Phase'
-import { VideoSession } from './VideoSession'
+import EventUnit from './EventUnit'
+import Phase from './Phase'
+import VideoSession from './VideoSession'
 
-export class TimelineMarker extends JSONAPI.resource('TimelineMarker')<TimelineMarker> {
+export default class TimelineMarker extends JSONAPI.resource('TimelineMarker', 'timeline-markers')<
+  TimelineMarker
+> {
   @Attribute.required(isString) public timelineMarkerType!: string
   @Attribute.optional(isString) public title!: string | null
   @Attribute.optional(isString) public description!: string | null

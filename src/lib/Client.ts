@@ -3,7 +3,6 @@ import { Endpoint } from './Endpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
-import { SerializableObject } from 'isntnt'
 import { JSONAPIResponseError } from '../types/data'
 
 const reflect = <T>(value: T): T => value
@@ -43,15 +42,17 @@ export type ClientSearchParameters<S extends Partial<ClientSetup>> = JSONAPISear
   page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }
 
+type DeprecatedClientSetupKeys = 'adapter'
+
 export type ClientSetup = {
   // version: JSONAPIVersion
   // defaultIncludeFields: DefaultIncludeFieldsOption
   createPageQuery: CreatePageQuery
   transformRelationshipForURL: Transform<string>
   parseRequestError: ParseRequestError
-  beforeRequest: Transform<SerializableObject>
+  beforeRequest: Transform<Request>
   fetchAdapter: Window['fetch']
-  adapter: Window['fetch']
+  adapter?: Error & 'Deprecated; use fetchAdapter instead' // TEMP deprecation type
 }
 
 export type DefaultClientSetup = ClientSetupWithDefaults<{
@@ -60,14 +61,15 @@ export type DefaultClientSetup = ClientSetupWithDefaults<{
   createPageQuery: CreatePageQuery
   transformRelationshipURLPath: Transform<string>
   parseRequestError: Transform<JSONAPIResponseError, any>
-  beforeRequest: Transform<SerializableObject>
+  beforeRequest: Transform<Request>
   fetchAdapter: Window['fetch']
-  adapter: Window['fetch']
 }>
 
 export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = Required<
   {
-    [K in keyof ClientSetup]: K extends keyof T ? T[K] : DefaultClientSetup[K]
+    [K in keyof Omit<ClientSetup, DeprecatedClientSetupKeys>]: K extends keyof T
+      ? T[K]
+      : DefaultClientSetup[K]
   }
 >
 
@@ -83,7 +85,6 @@ export const mergeDefaultClientSetup = mergeClientSetup({
   parseRequestError: reflect,
   beforeRequest: reflect,
   fetchAdapter: windowFetch,
-  adapter: windowFetch,
 })
 
 type CreatePageQuery =
