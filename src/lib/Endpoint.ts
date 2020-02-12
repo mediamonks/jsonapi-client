@@ -355,9 +355,7 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<EntityResult<FilteredResource<R, F>, SerializableObject>> {
     if (__DEV__) {
-      console.warn(
-        dedent`Endpoint#get is deprecated in favor of ApiEndpoint#getOne, use that instead`,
-      )
+      console.warn(dedent`Endpoint#get is deprecated, use Endpoint#getOne instead`)
     }
     return this.getOne(id, resourceFilter) as PreventExcessiveRecursionError
   }
@@ -367,9 +365,7 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     resourceFilter: F = EMPTY_OBJECT as F,
   ): Promise<CollectionResult<FilteredResource<R, F>, SerializableObject>> {
     if (__DEV__) {
-      console.warn(
-        dedent`Endpoint#fetch is deprecated in favor of ApiEndpoint#getMany, use that instead`,
-      )
+      console.warn(dedent`Endpoint#fetch is deprecated, use Endpoint#getMany instead`)
     }
     return this.getMany(query, resourceFilter) as PreventExcessiveRecursionError
   }

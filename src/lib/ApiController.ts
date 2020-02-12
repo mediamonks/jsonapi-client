@@ -11,7 +11,7 @@ import { AnyResource, ResourceConstructor } from './Resource'
 import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
 import { defaultRequestHeaders } from '../constants/jsonApi'
-import { JSONAPIFieldsParameterValue, JSONAPIIncludeParameterValue } from '../utils/url'
+import { JSONAPIFieldsParameterValue, IncludeParameterValue } from '../utils/url'
 
 type RequestOptions = {
   method: HTTPRequestMethod
@@ -156,7 +156,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
     data: ResourceData<R>,
     included: Array<ResourceData<any>>,
     fieldsParam: JSONAPIFieldsParameterValue,
-    includeParam: JSONAPIIncludeParameterValue,
+    includeParam: IncludeParameterValue,
     pointer: ReadonlyArray<string>,
   ): Result<R, JSONAPIError<any>[]> {
     // TODO: should the data of a resource be added to the included data because

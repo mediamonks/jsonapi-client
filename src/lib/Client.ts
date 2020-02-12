@@ -4,6 +4,7 @@ import { AnyResource, ResourceConstructor } from './Resource'
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
 import { JSONAPIResponseError } from '../types/data'
+import { __DEV__ } from '../constants/data'
 
 const reflect = <T>(value: T): T => value
 
@@ -30,7 +31,9 @@ export class Client<S extends Partial<ClientSetup>> {
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
-    console.warn(`Client#register is deprecated`)
+    if (__DEV__) {
+      console.warn(`Client#register is deprecated`)
+    }
   }
 
   toString(): string {
@@ -42,22 +45,15 @@ export type ClientSearchParameters<S extends Partial<ClientSetup>> = JSONAPISear
   page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }
 
-type DeprecatedClientSetupKeys = 'adapter'
-
 export type ClientSetup = {
-  // version: JSONAPIVersion
-  // defaultIncludeFields: DefaultIncludeFieldsOption
   createPageQuery: CreatePageQuery
   transformRelationshipForURL: Transform<string>
   parseRequestError: ParseRequestError
   beforeRequest: Transform<Request>
   fetchAdapter: Window['fetch']
-  adapter?: Error & 'Deprecated; use fetchAdapter instead' // TEMP deprecation type
 }
 
 export type DefaultClientSetup = ClientSetupWithDefaults<{
-  // version: '1.0'
-  // defaultIncludeFields: DefaultIncludeFieldsOptions['NONE']
   createPageQuery: CreatePageQuery
   transformRelationshipURLPath: Transform<string>
   parseRequestError: Transform<JSONAPIResponseError, any>
@@ -67,9 +63,7 @@ export type DefaultClientSetup = ClientSetupWithDefaults<{
 
 export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = Required<
   {
-    [K in keyof Omit<ClientSetup, DeprecatedClientSetupKeys>]: K extends keyof T
-      ? T[K]
-      : DefaultClientSetup[K]
+    [K in keyof ClientSetup]: K extends keyof T ? T[K] : DefaultClientSetup[K]
   }
 >
 
@@ -78,8 +72,6 @@ const windowFetch = (typeof window !== 'undefined' && typeof window.fetch === 'f
   : undefined) as Window['fetch']
 
 export const mergeDefaultClientSetup = mergeClientSetup({
-  // version: '1.0',
-  // defaultIncludeFields: defaultIncludeFieldOptions.NONE,
   createPageQuery: reflect,
   transformRelationshipForURL: reflect,
   parseRequestError: reflect,

@@ -31,14 +31,6 @@ export type JSONAPIErrorResponse<
   M extends AnyJSONAPIResponseMeta
 > = Required<Omit<JSONAPIResponse<D, M>, 'data' | 'included'>>
 
-// export type Serializable = SerializablePrimitive | SerializableArray | SerializableObject
-
-// export type SerializablePrimitive = string | number | boolean | null
-// export type SerializableArray = Array<Serializable>
-// export type SerializableObject = {
-//   [key: string]: Serializable
-// }
-
 export type JSONAPIResponseData<T extends AnyResource> = T | Array<T>
 
 export type JSONAPIResponseMeta<T extends SerializableObject> = T

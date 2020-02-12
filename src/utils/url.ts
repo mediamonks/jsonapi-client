@@ -21,7 +21,7 @@ export type JSONAPISearchParameters = {
 
 export type JSONAPIResourceParameters = {
   fields?: JSONAPIFieldsParameterValue
-  include?: JSONAPIIncludeParameterValue
+  include?: IncludeParameterValue
 }
 
 export type JSONAPIParameterValue =
@@ -41,26 +41,16 @@ export type JSONAPIFieldsParameterValue = {
   [K in string]: NonEmptyReadonlyArray<string> | undefined
 }
 
-export type JSONAPIIncludeParameterValue =
+export type IncludeParameterValue =
   | null
   | {
-      [K in string]?: JSONAPIIncludeParameterValue
+      [K in string]?: IncludeParameterValue
     }
 
 const isPrimitiveParameterValue = or(
   isSerializableNumber,
   and(isString, (value: any): value is string => value.length > 0),
 )
-
-// export const appendJSONAPIParameters = (
-//   client: Client<any>,
-//   url: URL,
-//   parameters: JSONAPISearchParameters,
-// ) => {
-//   parseJSONAPIParameters(client, parameters).forEach(([name, value]) =>
-//     url.searchParams.append(name, value),
-//   )
-// }
 
 export const parseJSONAPIParameters = (
   client: Client<any>,
@@ -72,7 +62,7 @@ export const parseJSONAPIParameters = (
       switch (name) {
         case 'include': {
           return parameterEntries.concat(
-            parseJSONAPIIncludeParameter(value as JSONAPIIncludeParameterValue),
+            parseJSONAPIIncludeParameter(value as IncludeParameterValue),
           )
         }
         case 'sort': {
@@ -112,7 +102,7 @@ export const parseJSONAPIParameter = (
 }
 
 export const parseJSONAPIIncludeParameter = (
-  value: JSONAPIIncludeParameterValue,
+  value: IncludeParameterValue,
 ): ReadonlyArray<URLParametersEntry> =>
   isSome(value)
     ? parseArrayParameter('include', parseJSONAPIIncludeParameterValue(EMPTY_ARRAY, value))
@@ -152,7 +142,7 @@ export const parseArrayParameter = (
 
 export const parseJSONAPIIncludeParameterValue = (
   path: ReadonlyArray<string>,
-  value: JSONAPIIncludeParameterValue,
+  value: IncludeParameterValue,
 ): ReadonlyArray<string> =>
   isSome(value)
     ? Object.keys(value)
