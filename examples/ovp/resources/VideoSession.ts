@@ -17,7 +17,7 @@ export const isFieldOfPlay = shape({
 
 export type EventStage = Static<typeof isEventStage>
 
-const isEventStage = shape({
+export const isEventStage = shape({
   name: isString,
   phase: isString,
   startTime: isString,
