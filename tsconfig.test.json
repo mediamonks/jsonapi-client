@@ -1,0 +1,11 @@
+{
+  "exclude": ["node_modules", "/examples"],
+  "include": ["test", "**/*.test.ts"],
+  "compilerOptions": {
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "classic",
+    "experimentalDecorators": true
+  }
+}
