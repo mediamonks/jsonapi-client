@@ -24,7 +24,6 @@ import {
   FilteredResource,
 } from './Resource'
 import { EntityResult, CollectionResult } from './Result'
-import { PreventExcessiveRecursionError } from '../types/util'
 import {
   parseJSONAPIParameters,
   JSONAPISearchParameters,
@@ -352,22 +351,22 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
   // LEGACY
   async get<F extends ResourceParameters<R>>(
     id: ResourceId,
-    resourceFilter: F = EMPTY_OBJECT as F,
+    resourceParameters: F | null = null,
   ): Promise<EntityResult<FilteredResource<R, F>, SerializableObject>> {
     if (__DEV__) {
       console.warn(dedent`Endpoint#get is deprecated, use Endpoint#getOne instead`)
     }
-    return this.getOne(id, resourceFilter) as PreventExcessiveRecursionError
+    return this.getOne<F>(id, resourceParameters)
   }
 
-  async fetch<F extends ResourceParameters<R>>(
-    query: JSONAPISearchParameters | null = null,
-    resourceFilter: F = EMPTY_OBJECT as F,
+  async fetch<F extends ResourceParameters<R>, Q extends ClientSearchParameters<S>>(
+    queryParameters: Q | null = null,
+    resourceParameters: F | null = null,
   ): Promise<CollectionResult<FilteredResource<R, F>, SerializableObject>> {
     if (__DEV__) {
       console.warn(dedent`Endpoint#fetch is deprecated, use Endpoint#getMany instead`)
     }
-    return this.getMany(query, resourceFilter) as PreventExcessiveRecursionError
+    return this.getMany<F, Q>(queryParameters, resourceParameters)
   }
 }
 

@@ -1,9 +1,15 @@
 import { SerializableObject, SerializablePrimitive, Serializable } from 'isntnt'
 
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
-import { Transform } from '../types/util'
+import { Transform, XOR } from '../types/util'
 import { ClientSetup } from '../lib/Client'
-import { AnyResource, ResourceAttributeNames, ResourceRelationshipNames } from '../lib/Resource'
+import {
+  AnyResource,
+  ResourceAttributeNames,
+  ResourceRelationshipNames,
+  ResourceType,
+  ResourceId,
+} from '../lib/Resource'
 import { ResourceIdentifier } from '../lib/ResourceIdentifier'
 
 export type JSONAPIClientSearchParameters<
@@ -17,12 +23,12 @@ export type JSONAPIVersion = '1.0' | '1.1'
 export type JSONAPIErrorObject = {
   id?: string
   links?: JSONAPILinksObject
-  meta?: JSONAPIMeta
+  meta?: JSONAPIMetaObject
   status?: string
   code?: string
   title?: string
   detail?: string
-  source?: {
+  source?: SerializableObject & {
     pointer?: string
     parameter?: string
   }
@@ -34,30 +40,42 @@ export type JSONAPILink =
   | string
   | {
       href: string
-      meta: JSONAPIMeta
+      meta: JSONAPIMetaObject
     }
 
 export type JSONAPILinksObject = { [key: string]: JSONAPILink }
 
-//
-export type JSONAPIMeta = SerializableObject
+export type JSONAPITopLevelLinksObject = {
+  self?: JSONAPILink
+  related?: JSONAPILink
+  first?: JSONAPILink | null
+  last?: JSONAPILink | null
+  prev?: JSONAPILink | null
+  next?: JSONAPILink | null
+}
 
-export type JSONAPIDocument<R extends AnyResource> = (
-  | {
-      data: JSONAPIResourceObject<R> | Array<JSONAPIResourceObject<R>>
-      included?: JSONAPIDocumentIncluded<AnyResource>
-    }
-  | {
-      errors: Array<JSONAPIErrorObject>
-    }
-) & {
-  meta: JSONAPIMeta
-  links?: JSONAPILinksObject
+export type JSONAPIMetaObject = SerializableObject
+
+type BaseJSONAPIDocument = {
+  meta: JSONAPIMetaObject
+  links?: JSONAPITopLevelLinksObject
   jsonapi?: {
     version?: JSONAPIVersion
     meta?: SerializableObject
   }
 }
+
+type BaseSuccessJSONAPIDocument<R extends AnyResource> = {
+  data?: JSONAPIResourceObject<R>
+  included?: JSONAPIDocumentIncluded<AnyResource>
+}
+
+type BaseFailedJSONAPIDocument = {
+  errors?: Array<JSONAPIErrorObject>
+}
+
+export type JSONAPIDocument<R extends AnyResource> = BaseJSONAPIDocument &
+  XOR<BaseSuccessJSONAPIDocument<R>, BaseFailedJSONAPIDocument>
 
 export type JSONAPIAttribute =
   | SerializablePrimitive
@@ -69,6 +87,12 @@ export type JSONAPIAttribute =
 
 export type JSONAPIAttributesObject = {
   [K in string]: JSONAPIAttribute
+}
+
+export type ResourceIdentifierObject = {
+  type: ResourceType
+  id: ResourceId
+  meta?: JSONAPIMetaObject
 }
 
 export type JSONAPIResourceObject<R extends AnyResource> = {
@@ -83,9 +107,9 @@ export type JSONAPIResourceObject<R extends AnyResource> = {
         ? Array<ResourceIdentifier<R[K][number]['type']>>
         : ResourceIdentifier<Extract<R[K], AnyResource>['type']> | null
       links?: JSONAPILinksObject
-      meta?: JSONAPIMeta
+      meta?: JSONAPIMetaObject
     }
   }
-  meta?: JSONAPIMeta
+  meta?: JSONAPIMetaObject
   links?: JSONAPILinksObject
 }

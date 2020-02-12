@@ -115,10 +115,9 @@ type Fx = FilteredResource<
   }
 >
 
-type X = JSONAPI.ResourceObject<Country>
+type X = JSONAPI.Document<Country>
 
 const x: X = {} as any
-x.relationships
 
 1 &&
   countries

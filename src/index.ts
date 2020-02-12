@@ -8,7 +8,7 @@ import { JSONAPISearchParameters } from './utils/url'
 import {
   JSONAPIVersion,
   JSONAPIResourceObject,
-  JSONAPIMeta,
+  JSONAPIMetaObject,
   JSONAPILinksObject,
   JSONAPILink,
   JSONAPIClientSearchParameters,
@@ -51,7 +51,7 @@ namespace JSONAPI {
   export type AttributesObject = JSONAPIAttributesObject
   export type Link = JSONAPILink
   export type LinksObject = JSONAPILinksObject
-  export type Meta = JSONAPIMeta
+  export type MetaObject = JSONAPIMetaObject
   export type SearchParameters<S extends ClientSetup = never> = S extends never
     ? JSONAPISearchParameters
     : JSONAPIClientSearchParameters<S>
