@@ -1,7 +1,8 @@
-export class JSONAPIError<T> extends Error {
-  name: string = this.constructor.name // preserve name
+export abstract class JSONAPIError<T> extends Error {
+  abstract name: string
   pointer: ReadonlyArray<string>
   value: T
+
   constructor(message: string, value: T, pointer: ReadonlyArray<string> = []) {
     super(message)
     this.value = value
@@ -9,8 +10,14 @@ export class JSONAPIError<T> extends Error {
   }
 }
 
-export class JSONAPIRequestError<T> extends JSONAPIError<T> {}
+export class JSONAPIRequestError<T> extends JSONAPIError<T> {
+  name = 'JSONAPIRequestError'
+}
 
-export class JSONAPIResponseError<T> extends JSONAPIError<T> {}
+export class JSONAPIResponseError<T> extends JSONAPIError<T> {
+  name = 'JSONAPIResponseError'
+}
 
-export class JSONAPIValidationError<T> extends JSONAPIError<T> {}
+export class JSONAPIValidationError<T> extends JSONAPIError<T> {
+  name = 'JSONAPIValidationError'
+}

@@ -3,14 +3,7 @@ import { SerializableObject, SerializablePrimitive, Serializable } from 'isntnt'
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
 import { ClientSetup } from '../lib/Client'
-import {
-  AnyResource,
-  ResourceAttributeNames,
-  ResourceToManyRelationshipNames,
-  ResourceToOneRelationshipNames,
-  ResourceRelationshipNames,
-} from '../lib/Resource'
-import { JSONAPIVersion } from '../constants/jsonApi'
+import { AnyResource, ResourceAttributeNames, ResourceRelationshipNames } from '../lib/Resource'
 import { ResourceIdentifier } from '../lib/ResourceIdentifier'
 
 export type JSONAPIClientSearchParameters<
@@ -18,6 +11,8 @@ export type JSONAPIClientSearchParameters<
 > = JSONAPISearchParameters & {
   page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }
+
+export type JSONAPIVersion = '1.0' | '1.1'
 
 export type JSONAPIErrorObject = {
   id?: string

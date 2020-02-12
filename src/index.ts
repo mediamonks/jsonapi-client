@@ -5,8 +5,8 @@ import { AnyResource, ResourceConstructor, ResourceFieldsModel, ResourceType } f
 import { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
 import { ResourceField, ResourceFieldName } from './lib/ResourceField'
 import { JSONAPISearchParameters } from './utils/url'
-import { JSONAPIVersion } from './constants/jsonApi'
 import {
+  JSONAPIVersion,
   JSONAPIResourceObject,
   JSONAPIMeta,
   JSONAPILinksObject,

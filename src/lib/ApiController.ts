@@ -10,13 +10,19 @@ import { JSONAPIError, JSONAPIResponseError, JSONAPIValidationError } from './Er
 import { AnyResource, ResourceConstructor } from './Resource'
 import { Attribute, AttributeValue, Relationship, RelationshipValue } from './ResourceField'
 import { ResourceIdentifier } from './ResourceIdentifier'
-import { defaultRequestHeaders } from '../constants/jsonApi'
 import { JSONAPIFieldsParameterValue, IncludeParameterValue } from '../utils/url'
 
 type RequestOptions = {
   method: HTTPRequestMethod
   headers: Headers
   body?: string
+}
+
+export const jsonApiContentType = 'application/vnd.api+json'
+
+export const defaultRequestHeaders = {
+  ['Accept']: jsonApiContentType,
+  ['Content-Type']: jsonApiContentType,
 }
 
 export type ResourceData<R extends AnyResource> = ResourceIdentifier<R['type']> & {
@@ -46,10 +52,9 @@ export class ApiController<S extends Partial<ClientSetup>> {
       throw new Error(DebugErrorCode.MISSING_FETCH_ADAPTER as any)
     }
 
-    const headers = new Headers(defaultRequestHeaders)
     const options: RequestOptions = {
       method,
-      headers,
+      headers: new Headers(defaultRequestHeaders),
     }
 
     if (!isUndefined(data)) {
