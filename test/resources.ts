@@ -1,6 +1,6 @@
 import { isString } from 'isntnt'
 
-import JSONAPI, { Attribute, Relationship } from '../dist'
+import JSONAPI, { Attribute, Relationship } from '../src/index'
 
 export class Post extends JSONAPI.resource('Post', 'posts')<Post> {
   @Attribute.required(isString) public title!: string
