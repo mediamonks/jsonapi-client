@@ -1,4 +1,4 @@
-import { isUint, isString } from 'isntnt'
+import { isString, isUint } from 'isntnt'
 
 import JSONAPI, { Attribute, Relationship } from '../../../src'
 import VOD from './VOD'

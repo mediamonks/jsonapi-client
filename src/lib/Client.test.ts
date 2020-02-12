@@ -1,5 +1,4 @@
 import { Client } from './Client'
-import { defaultIncludeFieldOptions } from '../constants/setup'
 import { Result } from '../utils/Result'
 
 import { Post } from '../test-utils/resources'
@@ -14,8 +13,6 @@ describe('Client', () => {
 
         expect(api.url.href).toEqual(url.href)
         expect(api.setup.createPageQuery).toBeDefined()
-        expect(api.setup.version).toBeDefined()
-        expect(api.setup.defaultIncludeFields).toBeDefined()
         expect(api.setup.parseRequestError).toBeDefined()
       })
 
@@ -25,15 +22,11 @@ describe('Client', () => {
           createPageQuery: (page: number) => ({
             foo: 'bar',
           }),
-          version: '1.1',
-          defaultIncludeFields: defaultIncludeFieldOptions.PRIMARY,
           parseRequestError: (all: any) => all,
         } as const
         const api = new Client(new URL(url), setup)
 
         expect(api.setup.createPageQuery).toEqual(setup.createPageQuery)
-        expect(api.setup.version).toEqual(setup.version)
-        expect(api.setup.defaultIncludeFields).toEqual(setup.defaultIncludeFields)
         expect(api.setup.parseRequestError).toEqual(setup.parseRequestError)
       })
 
@@ -44,8 +37,8 @@ describe('Client', () => {
             return 'foo-bar'
           },
         })
+        const endpoint = api.endpoint(Post)
 
-        const endpoint = api.endpoint('posts', Post)
         try {
           const mockHandleRequest = jest.fn().mockResolvedValue(
             Result.accept({
@@ -55,11 +48,13 @@ describe('Client', () => {
           api.controller.handleRequest = mockHandleRequest
 
           await endpoint.getToOneRelationship('123', 'author', {
-            fields: { Author: ['name'] },
+            fields: {
+              Author: ['name'],
+            },
           } as const)
 
-          expect(mockHandleRequest.mock.calls[0][0].url).toEqual(
-            'https://www.example.com/api/posts/123/foo-bar?fields[Author]=name',
+          expect(mockHandleRequest.mock.calls[0][0].href).toEqual(
+            'https://www.example.com/api/posts/123/foo-bar?fields%5BAuthor%5D=name',
           )
         } catch (errors) {
           console.log(errors)
@@ -73,7 +68,7 @@ describe('Client', () => {
           transformRelationshipForURL: () => 'foo-bar',
         })
 
-        const endpoint = api.endpoint('posts', Post)
+        const endpoint = api.endpoint(Post)
 
         const mockHandleRequest = jest.fn().mockResolvedValue(
           Result.accept({
@@ -91,8 +86,8 @@ describe('Client', () => {
           throw errors
         }
 
-        expect(mockHandleRequest.mock.calls[0][0].url).toEqual(
-          'https://www.example.com/api/posts/123/foo-bar?fields[Comment]=title',
+        expect(mockHandleRequest.mock.calls[0][0].href).toEqual(
+          'https://www.example.com/api/posts/123/foo-bar?fields%5BComment%5D=title',
         )
       })
     })
@@ -102,7 +97,7 @@ describe('Client', () => {
         const url = new URL('https://www.example.com/api')
         const api = new Client(url)
 
-        const endpoint = api.endpoint('foo', Post)
+        const endpoint = api.endpoint(Post)
 
         expect(endpoint.client).toEqual(api)
       })
