@@ -10,11 +10,12 @@ export class Person extends JSONAPI.resource('person')<Person> {
   @Relationship.toOne(() => City) city!: City | null
 }
 
+type LatLong = Static<typeof isLatLong>
 const isLatLong = tuple(isNumber, isNumber)
 
 export class City extends JSONAPI.resource('city')<City> {
   @Attribute.required(isString) name!: string
-  @Attribute.required(isLatLong) latLong!: Static<typeof isLatLong>
+  @Attribute.required(isLatLong) latLong!: LatLong
   @Relationship.toOne(() => Country) country!: Country | null
 }
 
@@ -27,7 +28,6 @@ export class Country extends JSONAPI.resource('country')<Country> {
 const url = new URL('https://example.com/api/')
 
 const api = JSONAPI.client(url, {
-  version: '1.0',
   createPageQuery(page: number) {
     return {
       number: page,
@@ -76,15 +76,15 @@ const api = JSONAPI.client(url, {
       },
     }) as any
   },
-  parseRequestError() {
+  parseErrorObject() {
     return {
       test: 'aha',
     }
   },
 })
 
-const people = api.endpoint('people', Person)
-const countries = api.endpoint('countries', Country)
+const people = api.endpoint(Person)
+const countries = api.endpoint(Country)
 
 1 &&
   people
@@ -114,6 +114,11 @@ type Fx = FilteredResource<
     }
   }
 >
+
+type X = JSONAPI.ResourceObject<Country>
+
+const x: X = {} as any
+x.relationships
 
 1 &&
   countries

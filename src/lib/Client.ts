@@ -3,7 +3,7 @@ import { Endpoint } from './Endpoint'
 import { AnyResource, ResourceConstructor } from './Resource'
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
-import { JSONAPIResponseError } from '../types/data'
+import { JSONAPIErrorObject } from '../types/data'
 import { __DEV__ } from '../constants/data'
 
 const reflect = <T>(value: T): T => value
@@ -48,7 +48,7 @@ export type ClientSearchParameters<S extends Partial<ClientSetup>> = JSONAPISear
 export type ClientSetup = {
   createPageQuery: CreatePageQuery
   transformRelationshipForURL: Transform<string>
-  parseRequestError: ParseRequestError
+  parseErrorObject: ParseJSONAPIErrorObject
   beforeRequest: Transform<Request>
   fetchAdapter: Window['fetch']
 }
@@ -56,7 +56,7 @@ export type ClientSetup = {
 export type DefaultClientSetup = ClientSetupWithDefaults<{
   createPageQuery: CreatePageQuery
   transformRelationshipURLPath: Transform<string>
-  parseRequestError: Transform<JSONAPIResponseError, any>
+  parseErrorObject: Transform<JSONAPIErrorObject, any>
   beforeRequest: Transform<Request>
   fetchAdapter: Window['fetch']
 }>
@@ -74,7 +74,7 @@ const windowFetch = (typeof window !== 'undefined' && typeof window.fetch === 'f
 export const mergeDefaultClientSetup = mergeClientSetup({
   createPageQuery: reflect,
   transformRelationshipForURL: reflect,
-  parseRequestError: reflect,
+  parseErrorObject: reflect,
   beforeRequest: reflect,
   fetchAdapter: windowFetch,
 })
@@ -84,4 +84,4 @@ type CreatePageQuery =
   | Transform<number, JSONAPIParameterValue>
   | Transform<JSONAPIParameterValue, JSONAPIParameterValue>
 
-type ParseRequestError = Transform<JSONAPIResponseError, any>
+type ParseJSONAPIErrorObject = Transform<JSONAPIErrorObject, any>

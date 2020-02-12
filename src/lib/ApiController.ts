@@ -70,7 +70,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       .json()
       .then((data): any => {
         return ResourceDocumentKey.ERRORS in data
-          ? Result.reject(data.errors.map(this.client.setup.parseRequestError))
+          ? Result.reject(data.errors.map(this.client.setup.parseErrorObject))
           : Result.accept(data)
       })
       .catch((error) => Result.reject([new JSONAPIResponseError(dedent`Invalid request`, error)]))

@@ -26,6 +26,18 @@ export type ResourceFieldNames<R extends AnyResource> = ExtendsOrNever<
   string
 >
 
+export type ResourceAttributeNames<R extends AnyResource> = ValuesOf<
+  {
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null | Array<AnyResource> ? never : K
+  }
+>
+
+export type ResourceRelationshipNames<R extends AnyResource> = ValuesOf<
+  {
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null | Array<AnyResource> ? K : never
+  }
+>
+
 export type ResourceToOneRelationshipNames<R extends AnyResource> = ValuesOf<
   {
     [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null ? K : never
@@ -34,7 +46,7 @@ export type ResourceToOneRelationshipNames<R extends AnyResource> = ValuesOf<
 
 export type ResourceToManyRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: R[K] extends AnyResource[] ? K : never
+    [K in ResourceFieldNames<R>]: R[K] extends Array<AnyResource> ? K : never
   }
 >
 

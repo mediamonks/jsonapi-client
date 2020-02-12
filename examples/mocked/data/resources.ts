@@ -1,12 +1,4 @@
-import {
-  and,
-  shape,
-  literal,
-  isString,
-  isArray,
-  Predicate,
-  isObject,
-} from 'isntnt'
+import { and, shape, literal, isString, isArray, Predicate, isObject } from 'isntnt'
 
 const reflect = <T>(value: T): T => value
 
@@ -39,10 +31,7 @@ type AttributeValue =
       [key: string]: AttributeValue
     }
 
-type RelationshipValue =
-  | Array<ResourceIdentifier<any>>
-  | ResourceIdentifier<any>
-  | null
+type RelationshipValue = Array<ResourceIdentifier<any>> | ResourceIdentifier<any> | null
 
 type ResourceIdentifier<T extends string> = {
   type: T
@@ -63,21 +52,15 @@ type ResourceResponse<T extends string> = {
 
 const data = (value: any) => ({ data: value })
 
-const getRandomIndex = (array: Array<any>): number =>
-  Math.floor(Math.random() * array.length)
+const getRandomIndex = (array: Array<any>): number => Math.floor(Math.random() * array.length)
 
-const getRandomElement = <T>(array: Array<T>): T | undefined =>
-  array[getRandomIndex(array)]
+const getRandomElement = <T>(array: Array<T>): T | undefined => array[getRandomIndex(array)]
 
 const resources: Record<string, any> = {}
 
 const defineResource = <T extends string>(
   type: T,
-  createAttributes: (
-    value: any,
-    id: string,
-    type: T,
-  ) => Record<string, AttributeValue>,
+  createAttributes: (value: any, id: string, type: T) => Record<string, AttributeValue>,
   createRelationships: (
     value: any,
     id: string,
@@ -89,10 +72,7 @@ const defineResource = <T extends string>(
   const isIdentifier = createIsResourceIdentifier(type)
   return (resources[type] = {
     store,
-    create(
-      value: any,
-      postProcess: (resource: ResourceData<T>) => any = reflect,
-    ): void {
+    create(value: any, postProcess: (resource: ResourceData<T>) => any = reflect): void {
       const id = getId()
       const resource = {
         type,
@@ -116,12 +96,8 @@ const defineResource = <T extends string>(
       return store.find((resource) => resource.id === id) || null
     },
     getResponseCollection(a?: number, b?: number): any {
-      const included = Object.values(resources).flatMap(
-        (resource) => resource.store,
-      )
-      const data = store
-        .map((resource) => this.getResource(resource.id))
-        .slice(a, b)
+      const included = Object.values(resources).flatMap((resource) => resource.store)
+      const data = store.map((resource) => this.getResource(resource.id)).slice(a, b)
 
       // console.log('raw data', included)
       return {
@@ -132,9 +108,7 @@ const defineResource = <T extends string>(
     getResponse(id: string): ResourceResponse<T> | null {
       const data = this.getResource(id)
       if (isAnyResource(data)) {
-        const included = Object.values(resources).flatMap(
-          (resource) => resource.store,
-        )
+        const included = Object.values(resources).flatMap((resource) => resource.store)
         return {
           data,
           included,
@@ -169,8 +143,7 @@ const people = defineResource(
   }),
   () => {
     const country = countries.getResource(countries.getRandomId())!
-    const cityIdentifier = getRandomElement(country.relationships.cities
-      .data as Array<any>)
+    const cityIdentifier = getRandomElement(country.relationships.cities.data as Array<any>)
     return {
       country: data(countries.getIdentifier(country.id)),
       city: data(cityIdentifier),

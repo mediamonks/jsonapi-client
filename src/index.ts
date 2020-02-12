@@ -5,6 +5,17 @@ import { AnyResource, ResourceConstructor, ResourceFieldsModel, ResourceType } f
 import { ResourceIdentifier, ResourceIdentifierKey } from './lib/ResourceIdentifier'
 import { ResourceField, ResourceFieldName } from './lib/ResourceField'
 import { JSONAPISearchParameters } from './utils/url'
+import { JSONAPIVersion } from './constants/jsonApi'
+import {
+  JSONAPIResourceObject,
+  JSONAPIMeta,
+  JSONAPILinksObject,
+  JSONAPILink,
+  JSONAPIClientSearchParameters,
+  JSONAPIDocument,
+  JSONAPIAttribute,
+  JSONAPIAttributesObject,
+} from './types/data'
 
 const JSONAPI = {
   resource<T extends ResourceType>(type: T, path: string = type) {
@@ -33,8 +44,17 @@ const JSONAPI = {
 }
 
 namespace JSONAPI {
-  // export type Version = JSONAPIVersion
-  export type SearchParameters = JSONAPISearchParameters
+  export type Version = JSONAPIVersion
+  export type Document<R extends AnyResource> = JSONAPIDocument<R>
+  export type ResourceObject<R extends AnyResource> = JSONAPIResourceObject<R>
+  export type Attribute = JSONAPIAttribute
+  export type AttributesObject = JSONAPIAttributesObject
+  export type Link = JSONAPILink
+  export type LinksObject = JSONAPILinksObject
+  export type Meta = JSONAPIMeta
+  export type SearchParameters<S extends ClientSetup = never> = S extends never
+    ? JSONAPISearchParameters
+    : JSONAPIClientSearchParameters<S>
 }
 
 export default JSONAPI

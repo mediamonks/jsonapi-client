@@ -1,9 +1,17 @@
-import { SerializableObject } from 'isntnt'
+import { SerializableObject, SerializablePrimitive, Serializable } from 'isntnt'
 
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
 import { ClientSetup } from '../lib/Client'
-import { AnyResource } from '../lib/Resource'
+import {
+  AnyResource,
+  ResourceAttributeNames,
+  ResourceToManyRelationshipNames,
+  ResourceToOneRelationshipNames,
+  ResourceRelationshipNames,
+} from '../lib/Resource'
+import { JSONAPIVersion } from '../constants/jsonApi'
+import { ResourceIdentifier } from '../lib/ResourceIdentifier'
 
 export type JSONAPIClientSearchParameters<
   S extends Partial<ClientSetup>
@@ -11,34 +19,10 @@ export type JSONAPIClientSearchParameters<
   page?: S['createPageQuery'] extends Transform<infer R, any> ? R : JSONAPIParameterValue
 }
 
-export type AnyJSONAPIResponseData = JSONAPIResponseData<AnyResource>
-export type AnyJSONAPIResponseMeta = JSONAPIResponseMeta<SerializableObject>
-
-export type JSONAPIResponse<D extends AnyJSONAPIResponseData, M extends AnyJSONAPIResponseMeta> = {
-  data?: D
-  meta: M
-  errors?: Array<JSONAPIResponseError>
-  included?: JSONAPIResponseIncludedData
-}
-
-export type ApiSuccessResponse<
-  D extends AnyJSONAPIResponseData,
-  M extends AnyJSONAPIResponseMeta
-> = Required<Omit<JSONAPIResponse<D, M>, 'errors'>>
-
-export type JSONAPIErrorResponse<
-  D extends AnyJSONAPIResponseData,
-  M extends AnyJSONAPIResponseMeta
-> = Required<Omit<JSONAPIResponse<D, M>, 'data' | 'included'>>
-
-export type JSONAPIResponseData<T extends AnyResource> = T | Array<T>
-
-export type JSONAPIResponseMeta<T extends SerializableObject> = T
-
-export type JSONAPIResponseError = {
+export type JSONAPIErrorObject = {
   id?: string
   links?: JSONAPILinksObject
-  meta?: JSONAPIMetaData<SerializableObject>
+  meta?: JSONAPIMeta
   status?: string
   code?: string
   title?: string
@@ -49,15 +33,64 @@ export type JSONAPIResponseError = {
   }
 }
 
-export type JSONAPIResponseIncludedData = Array<{}>
-
-export type JSONAPIMetaData<T extends SerializableObject> = T
+export type JSONAPIDocumentIncluded<R extends AnyResource> = Array<JSONAPIResourceObject<R>>
 
 export type JSONAPILink =
   | string
   | {
       href: string
-      meta: JSONAPIMetaData<SerializableObject>
+      meta: JSONAPIMeta
     }
 
-export type JSONAPILinksObject = { [key: string]: JSONAPILink | null }
+export type JSONAPILinksObject = { [key: string]: JSONAPILink }
+
+//
+export type JSONAPIMeta = SerializableObject
+
+export type JSONAPIDocument<R extends AnyResource> = (
+  | {
+      data: JSONAPIResourceObject<R> | Array<JSONAPIResourceObject<R>>
+      included?: JSONAPIDocumentIncluded<AnyResource>
+    }
+  | {
+      errors: Array<JSONAPIErrorObject>
+    }
+) & {
+  meta: JSONAPIMeta
+  links?: JSONAPILinksObject
+  jsonapi?: {
+    version?: JSONAPIVersion
+    meta?: SerializableObject
+  }
+}
+
+export type JSONAPIAttribute =
+  | SerializablePrimitive
+  | Array<Serializable>
+  | (SerializableObject & {
+      relationships?: never
+      links?: never
+    })
+
+export type JSONAPIAttributesObject = {
+  [K in string]: JSONAPIAttribute
+}
+
+export type JSONAPIResourceObject<R extends AnyResource> = {
+  type: R['type']
+  id: R['id']
+  attributes?: {
+    [K in ResourceAttributeNames<R>]: R[K]
+  }
+  relationships?: {
+    [K in ResourceRelationshipNames<R>]: {
+      data?: R[K] extends Array<AnyResource>
+        ? Array<ResourceIdentifier<R[K][number]['type']>>
+        : ResourceIdentifier<Extract<R[K], AnyResource>['type']> | null
+      links?: JSONAPILinksObject
+      meta?: JSONAPIMeta
+    }
+  }
+  meta?: JSONAPIMeta
+  links?: JSONAPILinksObject
+}

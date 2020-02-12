@@ -10,7 +10,7 @@ describe('Client', () => {
       const client = new Client(url)
       expect(client.url.href).toEqual(url.href)
       expect(client.setup.createPageQuery).toBeDefined()
-      expect(client.setup.parseRequestError).toBeDefined()
+      expect(client.setup.parseErrorObject).toBeDefined()
     })
 
     it('should merge default client setup properly', () => {
@@ -18,12 +18,12 @@ describe('Client', () => {
         createPageQuery: (page: number) => ({
           foo: 'bar',
         }),
-        parseRequestError: (all: any) => all,
+        parseErrorObject: (all: any) => all,
       } as const
       const client = new Client(url, setup)
 
       expect(client.setup.createPageQuery).toEqual(setup.createPageQuery)
-      expect(client.setup.parseRequestError).toEqual(setup.parseRequestError)
+      expect(client.setup.parseErrorObject).toEqual(setup.parseErrorObject)
     })
 
     it('should transform the relationship url when configured via setup - toOne', async () => {
