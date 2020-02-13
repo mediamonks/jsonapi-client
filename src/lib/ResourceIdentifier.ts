@@ -10,8 +10,4 @@ export class ResourceIdentifier<T extends ResourceType> {
     this.type = type
     this.id = id
   }
-
-  static isResource(value: unknown): value is ResourceIdentifier<any> {
-    return value instanceof ResourceIdentifier
-  }
 }

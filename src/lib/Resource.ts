@@ -1,81 +1,59 @@
-import { ValuesOf, ExtendsOrNever } from '../types/util'
+import { Intersect } from 'isntnt'
+
+import { ValuesOf, ExtendsOrNever, NonEmptyReadonlyArray, Nullable } from '../types/util'
+
 import { ResourceFields, ResourceField } from './ResourceField'
 import { ResourceIdentifier, ResourceIdentifierKey } from './ResourceIdentifier'
-import { RelationshipValue, ToManyRelationship, ToOneRelationship } from './ResourceRelationship'
-import { AttributeValue } from './ResourceAttribute'
-import { BaseRelationshipResource } from './ApiQuery'
+import { RelationshipValue, AttributeValue } from './ResourceField'
 
 export type ResourceType = string
 export type ResourceId = string
 
 export type AnyResource = ResourceIdentifier<ResourceType>
 
+export type ResourceFieldsModel<F extends ResourceFields<any>> = {
+  [K in keyof F]: K extends ResourceIdentifierKey
+    ? never
+    : F[K] extends RelationshipValue
+    ? F[K]
+    : F[K] extends AttributeValue | null
+    ? F[K]
+    : never
+}
+
 export type ResourceFieldNames<R extends AnyResource> = ExtendsOrNever<
   Exclude<keyof R, ResourceIdentifierKey>,
   string
 >
 
+export type ResourceAttributeNames<R extends AnyResource> = ValuesOf<
+  {
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null | Array<AnyResource> ? never : K
+  }
+>
+
 export type ResourceRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: BaseRelationshipResource<R[K]> extends never ? never : K
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null | Array<AnyResource> ? K : never
   }
 >
 
 export type ResourceToOneRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: R[K] extends ToOneRelationship<AnyResource> ? K : never
+    [K in ResourceFieldNames<R>]: R[K] extends AnyResource | null ? K : never
   }
 >
 
 export type ResourceToManyRelationshipNames<R extends AnyResource> = ValuesOf<
   {
-    [K in ResourceFieldNames<R>]: R[K] extends ToManyRelationship<AnyResource> ? K : never
+    [K in ResourceFieldNames<R>]: R[K] extends Array<AnyResource> ? K : never
   }
 >
-
-export type ResourceRelationships<R extends AnyResource> = Pick<R, ResourceRelationshipNames<R>>
-
-export type ResourceAttributeNames<R extends AnyResource> = ExtendsOrNever<
-  Exclude<keyof R, ResourceRelationshipNames<R> | ResourceIdentifierKey>,
-  string
->
-
-export type ResourceAttributes<R extends AnyResource> = Pick<R, ResourceAttributeNames<R>>
-
-type ResourceFieldsModel<F extends ResourceFields<any>> = {
-  [K in keyof F]: K extends ResourceIdentifierKey
-    ? never
-    : F[K] extends RelationshipValue<AnyResource>
-    ? F[K]
-    : F[K] extends AttributeValue
-    ? F[K]
-    : never
-}
-
-// export type BaseRelationshipResource<T> = null extends T
-//   ? T extends AnyResource
-//     ? Extract<T, AnyResource>
-//     : never
-//   : T extends Array<AnyResource>
-//   ? T[number]
-//   : never
-
-export const resource = <T extends ResourceType>(type: T) => {
-  return class Resource<
-    M extends ResourceFieldsModel<Omit<M, ResourceIdentifierKey>>
-  > extends ResourceIdentifier<T> {
-    static type: T = type
-    static fields: Record<ResourceType, ResourceField<any>> = Object.create(null)
-    constructor(data: ResourceIdentifier<T> & M) {
-      super(data.type, data.id)
-      Object.assign(this, data)
-    }
-  }
-}
 
 export type ResourceConstructor<R extends AnyResource> = {
   type: R['type']
-  fields: Record<ResourceType, ResourceField<any>>
+  path: string
+  fields: Record<ResourceType, ResourceField<any, any>>
   new (data: R): R
 }
 
@@ -89,3 +67,103 @@ export type ResourceCreateValues<R extends AnyResource> = Partial<ResourceIdenti
   }
 
 export type ResourcePatchValues<R extends AnyResource> = Partial<ResourceCreateValues<R>>
+
+// NEW!
+// Extract the Resource from a relationship field value
+type BaseRelationshipResource<R> = R extends AnyResource | null
+  ? Extract<R, AnyResource>
+  : R extends Array<AnyResource>
+  ? Extract<R[number], AnyResource>
+  : never
+
+// Extract the relationship field names from a Resource
+type BaseResourceRelationshipFields<R> = {
+  [K in keyof R]: R[K] extends AnyResource | null | AnyResource[] ? K : never
+}[keyof R]
+
+// Pick the Resources from the relationship fields of a resource
+type BaseResourceRelationships<R> = {
+  [K in BaseResourceRelationshipFields<R>]: BaseRelationshipResource<R[K]>
+}
+
+// RESOURCE FIELDS PARAMETER
+type BaseResourceFields<R> = R extends AnyResource
+  ? {
+      [T in R['type']]?: NonEmptyReadonlyArray<keyof R>
+    } &
+      {
+        [K in keyof R]: BaseResourceFields<BaseRelationshipResource<R[K]>>
+      }[keyof R]
+  : {}
+
+type ProcessResourceFields<F> = Partial<
+  Intersect<
+    {
+      [K in keyof F]: Extract<string, K> extends never ? F[K] : NonEmptyReadonlyArray<string>
+    }
+  >
+>
+
+export type ResourceFieldsParameter<R extends AnyResource> = ProcessResourceFields<
+  BaseResourceFields<R>
+>
+
+// RESOURCE INCLUDE PARAMETER
+type BaseExtractResourceIncludes<R> = keyof R extends never
+  ? never
+  : {
+      [K in keyof R]?: BaseResourceIncludes<
+        R[K] extends AnyResource[] ? R[K][number] : Extract<R[K], AnyResource>
+      >
+    }
+
+type BaseResourceIncludes<R> = Nullable<BaseExtractResourceIncludes<BaseResourceRelationships<R>>>
+
+export type ResourceIncludeParameter<R extends AnyResource> = BaseResourceIncludes<R>
+
+// FILTERED RESOURCE
+type BaseGatherFieldsFromResource<R, K, F, I> = R extends { type: string }
+  ? K extends keyof R
+    ? {
+        [P in K]: R[K] extends AnyResource | null
+          ? Nullable<
+              K extends keyof I
+                ? BaseFilteredResource<Extract<R[K], AnyResource>, F, I[K]>
+                : ResourceIdentifier<R['type']>
+            >
+          : R[K] extends AnyResource[]
+          ? Array<
+              K extends keyof I
+                ? BaseFilteredResource<R[K][any], F, I[K]>
+                : ResourceIdentifier<R['type']>
+            >
+          : R[K]
+      }
+    : never
+  : never
+
+type BaseFilteredResourceOfType<R, T, F, I> = T extends keyof F
+  ? ProcessFilteredResource<
+      BaseGatherFieldsFromResource<R, F[T][any] | ResourceIdentifierKey, F, I>
+    >
+  : ProcessFilteredResource<BaseGatherFieldsFromResource<R, keyof R, F, I>>
+
+type BaseFilteredResource<R, F, I> = R extends { type: string }
+  ? ProcessFilteredResource<BaseFilteredResourceOfType<R, R['type'], F, I>>
+  : never
+
+type ProcessFilteredResource<T> = Intersect<
+  {
+    [K in keyof T]: T[K]
+  }
+>
+
+export type FilteredResource<
+  R extends AnyResource,
+  F extends ResourceParameters<R>
+> = BaseFilteredResource<R, F['fields'], F['include']>
+
+export type ResourceParameters<R extends AnyResource> = {
+  fields?: ResourceFieldsParameter<R>
+  include?: BaseResourceIncludes<R>
+}

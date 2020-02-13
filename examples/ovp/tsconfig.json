@@ -1,6 +1,4 @@
 {
-  "exclude": ["node_modules", "/examples", "/test", "**/*.test.ts"],
-  "include": ["src"],
   "compilerOptions": {
     "target": "esnext",
     "strict": true,
@@ -8,10 +6,6 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": false,
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "module": "es6",
-    "outDir": "dist"
+    "emitDecoratorMetadata": false
   }
 }

@@ -1,48 +1,54 @@
-import { Serializable, isArray, isObject, isString } from 'isntnt'
+import { isArray, isObject, isNull, isSerializablePrimitive, SerializablePrimitive } from 'isntnt'
 
-import { defaultGetRequestHeaders, defaultPostRequestHeaders } from '../constants/jsonApi'
+import { WithoutNever } from '../types/util'
 
-export const keys = <T extends Record<string, any>>(value: T): Array<keyof T> => Object.keys(value)
+type ObjectKeys = <T extends Record<string, any>>(value: T) => Array<keyof T>
+
+export const keys = Object.keys as ObjectKeys
 
 export const createEmptyObject = (): {} => Object.create(null)
 
-export const createDataValue = <T extends Serializable>(data: T): T => {
+export enum HTTPRequestMethod {
+  GET = 'GET',
+  POST = 'POST',
+  PATCH = 'PATCH',
+  DELETE = 'DELETE',
+}
+
+type DataValue<T> = T extends Function
+  ? never
+  : T extends Array<any>
+  ? Array<DataValue<T[number]>>
+  : T extends { [K in string]: any }
+  ? WithoutNever<
+      {
+        [K in keyof T]: DataValue<T[K]>
+      }
+    >
+  : T extends SerializablePrimitive
+  ? T
+  : never
+
+export const createDataValue = <T>(
+  data: T,
+): T extends Function | undefined ? null : DataValue<T> => {
   if (isArray(data)) {
-    return data.map(createDataValue) as T
+    return data.map(createDataValue) as any
   } else if (isObject(data)) {
     const target = createEmptyObject()
     for (const key in data) {
       if (Object.hasOwnProperty.call(data, key)) {
-        ;(target as any)[key] = createDataValue(data[key])
+        const value = createDataValue(data[key])
+        // Omit values that are not data values
+        if (isNull(data[key]) || !isNull(value)) {
+          ;(target as any)[key] = createDataValue(data[key])
+        }
       }
     }
-    return target as T
+    return target as any
   }
-  return data
+  if (isSerializablePrimitive(data)) {
+    return data as any
+  }
+  return null as any
 }
-
-export const createGetRequestOptions = () =>
-  createDataValue({
-    method: 'GET',
-    headers: defaultPostRequestHeaders,
-  })
-
-export const createPostRequestOptions = (data: Serializable) =>
-  createDataValue({
-    method: 'POST',
-    body: JSON.stringify(data),
-    headers: defaultPostRequestHeaders,
-  })
-
-export const createPatchRequestOptions = (data: Serializable) =>
-  createDataValue({
-    method: 'PATCH',
-    body: JSON.stringify(data),
-    headers: defaultPostRequestHeaders,
-  })
-
-export const createDeleteRequestOptions = () =>
-  createDataValue({
-    method: 'DELETE',
-    headers: defaultPostRequestHeaders,
-  })
