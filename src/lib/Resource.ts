@@ -128,14 +128,14 @@ type BaseGatherFieldsFromResource<R, K, F, I> = R extends { type: string }
         [P in K]: R[K] extends AnyResource | null
           ? Nullable<
               K extends keyof I
-                ? BaseFilteredResource<Extract<R[K], AnyResource>, F, I[K]>
-                : ResourceIdentifier<R['type']>
+                ? BaseFilteredResource<BaseRelationshipResource<R[K]>, F, I[K]>
+                : ResourceIdentifier<BaseRelationshipResource<R[K]>['type']>
             >
           : R[K] extends AnyResource[]
           ? Array<
               K extends keyof I
-                ? BaseFilteredResource<R[K][any], F, I[K]>
-                : ResourceIdentifier<R['type']>
+                ? BaseFilteredResource<BaseRelationshipResource<R[K]>, F, I[K]>
+                : ResourceIdentifier<BaseRelationshipResource<R[K]>['type']>
             >
           : R[K]
       }

@@ -110,8 +110,6 @@ export class ApiController<S extends Partial<ClientSetup>> {
     field: F,
     pointer: ReadonlyArray<string>,
   ): Result<RelationshipValue, JSONAPIError<any>> {
-    // TODO: Relationships prop is not always optional, should it throw if its missing
-    // when it should not?
     const relationships = data.relationships || EMPTY_OBJECT
     const value = (relationships as any)[field.name]
     if (isUndefined(value)) {
@@ -337,7 +335,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
 
       const value = (values as any)[name]
       if (isUndefined(value)) {
-        return;
+        return
       }
       if (field.isAttributeField()) {
         if (field.isValid(value)) {
