@@ -72,7 +72,7 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
                 const result = this.client.controller.decodeResource(
                   this.Resource as any,
                   response.data,
-                  response.included,
+                  response.included || [],
                   {},
                   {},
                   [],
