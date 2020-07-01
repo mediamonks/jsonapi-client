@@ -1,6 +1,6 @@
 import { ApiController } from './ApiController'
 import { Endpoint } from './Endpoint'
-import { AnyResource, ResourceConstructor } from './Resource'
+import { AnyResource, cloneResourceWithPath, ResourceConstructor } from './Resource'
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
 import { Transform } from '../types/util'
 import { JSONAPIErrorObject } from '../types/data'
@@ -26,8 +26,20 @@ export class Client<S extends Partial<ClientSetup>> {
     this.controller = new ApiController(this)
   }
 
-  endpoint<R extends AnyResource>(Resource: ResourceConstructor<R>): Endpoint<R, S> {
-    return new Endpoint(this, Resource)
+  /**
+   * Creates an endpoint tied to the passed Resource.
+   * By default, the endpoint will use the path defined in the Resource.
+   * Alternatively, it's possible to provide an alternative path if the Resource is used for
+   * different endpoints.
+   */
+  endpoint<R extends AnyResource>(
+    Resource: ResourceConstructor<R>,
+    alternativePath?: string,
+  ): Endpoint<R, S> {
+    return new Endpoint(
+      this,
+      alternativePath ? cloneResourceWithPath(Resource, alternativePath) : Resource,
+    )
   }
 
   register(...resources: Array<ResourceConstructor<any>>): void {
