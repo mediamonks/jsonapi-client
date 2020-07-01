@@ -303,9 +303,9 @@ export class ApiController<S extends Partial<ClientSetup>> {
           pointer.concat(ResourceDocumentKey.TYPE),
         ),
       )
-    } else {
-      data[ResourceDocumentKey.TYPE] = values[ResourceDocumentKey.TYPE]
     }
+
+    data[ResourceDocumentKey.TYPE] = Resource[ResourceDocumentKey.TYPE]
 
     if (ResourceDocumentKey.ID in values) {
       if (isString(values[ResourceDocumentKey.ID])) {
