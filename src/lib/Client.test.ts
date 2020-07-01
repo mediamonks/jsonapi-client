@@ -94,5 +94,13 @@ describe('Client', () => {
 
       expect(endpoint.client).toEqual(client)
     })
+
+    it('should be used with an alternate path', () => {
+      const client = new Client(url)
+
+      const endpoint = client.endpoint(Post, 'foo')
+
+      expect(endpoint.Resource.path).toEqual('foo')
+    })
   })
 })

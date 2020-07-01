@@ -6,6 +6,16 @@ import { ResourceFields, ResourceField } from './ResourceField'
 import { ResourceIdentifier, ResourceIdentifierKey } from './ResourceIdentifier'
 import { RelationshipValue, AttributeValue } from './ResourceField'
 
+// Updates the resource path in a cloned Resource to be used in a different endpoint
+export const cloneResourceWithPath = <T extends ResourceConstructor<any>>(
+  Resource: T,
+  alternativePath: string,
+): T => {
+  return Object.assign(Object.create(Object.getPrototypeOf(Resource)), Resource, {
+    path: alternativePath,
+  })
+}
+
 export type ResourceType = string
 export type ResourceId = string
 
