@@ -1,4 +1,5 @@
 export type Transform<I, O = I> = (value: I, ...rest: Array<unknown>) => O
+export type AsyncTransform<I, O = I> = (value: I, ...rest: Array<unknown>) => Promise<O>
 export type Effect = Transform<void>
 export type Affect<T> = Transform<T, void>
 export type Fabricate<T> = Transform<void, T>

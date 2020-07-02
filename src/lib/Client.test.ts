@@ -2,7 +2,7 @@ import { Client } from './Client'
 import { Result } from '../utils/Result'
 
 import { Post } from '../../test/resources'
-import { url, data } from '../../test/mocks'
+import {url, data, rawPostResource} from '../../test/mocks'
 
 describe('Client', () => {
   describe('constructor', () => {
@@ -12,7 +12,9 @@ describe('Client', () => {
       expect(client.setup.createPageQuery).toBeDefined()
       expect(client.setup.parseErrorObject).toBeDefined()
     })
+  })
 
+  describe('createPageQuery', () => {
     it('should merge default client setup properly', () => {
       const setup = {
         createPageQuery: (page: number) => ({
@@ -25,7 +27,74 @@ describe('Client', () => {
       expect(client.setup.createPageQuery).toEqual(setup.createPageQuery)
       expect(client.setup.parseErrorObject).toEqual(setup.parseErrorObject)
     })
+  })
 
+  describe('beforeRequest', () => {
+    it('should be called', async () => {
+      const spy = jest.fn();
+      const fetchSpy = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json() {
+          return Promise.resolve(rawPostResource)
+        },
+      } as any)
+
+      const client = new Client(url, {
+        beforeRequest(request) {
+          spy(request);
+          return request;
+        },
+        fetchAdapter(request) {
+          return fetchSpy(request);
+        }
+      })
+
+      const endpoint = client.endpoint(Post)
+      await endpoint.getOne('1');
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy.mock.calls[0][0].url).toEqual('https://www.example.com/api/posts/1');
+    })
+
+    it('should change the url async', async () => {
+      const spy = jest.fn();
+      const fetchSpy = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json() {
+          return Promise.resolve(rawPostResource)
+        },
+      } as any)
+
+      const client = new Client(url, {
+        beforeRequest(request) {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              spy(request);
+              // TODO: using MockRequest in unit tests, need to improve this here
+              // @ts-ignore
+              request.url = 'changed'
+              resolve(request);
+            }, 10);
+          })
+        },
+        fetchAdapter(request) {
+          return fetchSpy(request);
+        }
+      })
+
+      const endpoint = client.endpoint(Post)
+      await endpoint.getOne('1');
+
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(fetchSpy.mock.calls[0][0].url).toEqual('changed');
+    })
+  })
+
+  describe('transformRelationshipForURL', () => {
     it('should transform the relationship url when configured via setup - toOne', async () => {
       const client = new Client(url, {
         transformRelationshipForURL() {

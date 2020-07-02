@@ -2,7 +2,7 @@ import { ApiController } from './ApiController'
 import { Endpoint } from './Endpoint'
 import { AnyResource, cloneResourceWithPath, ResourceConstructor } from './Resource'
 import { JSONAPISearchParameters, JSONAPIParameterValue } from '../utils/url'
-import { Transform } from '../types/util'
+import { AsyncTransform, Transform } from '../types/util'
 import { JSONAPIErrorObject } from '../types/data'
 import { __DEV__ } from '../constants/data'
 
@@ -61,7 +61,7 @@ export type ClientSetup = {
   createPageQuery: CreatePageQuery
   transformRelationshipForURL: Transform<string>
   parseErrorObject: ParseJSONAPIErrorObject
-  beforeRequest: Transform<Request>
+  beforeRequest: Transform<Request> | AsyncTransform<Request>
   fetchAdapter: Window['fetch']
 }
 

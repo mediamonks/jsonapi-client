@@ -3,7 +3,9 @@ Object.assign(global, {
   Headers: class MockHeaders {
     append() {}
   },
-  Request: class MockRequest {},
+  Request: class MockRequest {
+    constructor(public url: string, public options: any) {}
+  },
 })
 
 export const url = new URL('https://www.example.com/api')

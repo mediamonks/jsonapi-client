@@ -65,7 +65,7 @@ export class ApiController<S extends Partial<ClientSetup>> {
       }
     }
 
-    const request = this.client.setup.beforeRequest!(new Request(url.href, options) as any)
+    const request = await this.client.setup.beforeRequest!(new Request(url.href, options) as any)
     const response = await this.client.setup.fetchAdapter!(request as any)
     if (!response.ok) {
       const errorMessage = response.statusText || `Request Error ${response.status}`
