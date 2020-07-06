@@ -161,7 +161,7 @@ Create a ResourceIdentifier from the Resource static `type` and `id` parameter
 (ResourcePostData) -> JSONAPIResourceObject
 ```
 
-### Resource.createResourcePostObject
+### Resource.createResourcePatchObject
 
 ```
 (ResourceId, ResourcePatchData) -> JSONAPIResourceObject
