@@ -1,6 +1,6 @@
 {
-  "name": "@mediamonks/jsonapi-client",
-  "version": "2.1.0",
+  "name": "jsonapi-client",
+  "version": "3.0.0-alpha",
   "main": "dist/index.js",
   "author": "Nathan Uphoff",
   "license": "MIT",
@@ -12,28 +12,14 @@
     "test:ci": "NODE_ENV=development jest",
     "prepublishOnly": "yarn build"
   },
-  "publishConfig": {
-    "access": "public"
-  },
-  "private": false,
-  "bugs": {
-    "url": "https://github.com/mediamonks/jsonapi-client/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/mediamonks/jsonapi-client.git"
-  },
   "dependencies": {
-    "@types/dedent": "^0.7.0",
-    "dedent": "^0.7.0",
-    "isntnt": "^1.0.2"
+    "isntnt": "^1.3.0"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.15",
-    "@types/node": "^12.6.9",
-    "jest": "^24.8.0",
-    "prettier": "^1.18.2",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.7.2"
+    "@types/jest": "^26.0.3",
+    "jest": "^26.1.0",
+    "prettier": "^2.0.5",
+    "ts-jest": "^26.1.1",
+    "typescript": "^3.9.6"
   }
 }
