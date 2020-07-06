@@ -1,17 +1,14 @@
 {
-  "exclude": ["node_modules", "/examples", "/test", "**/*.test.ts"],
-  "include": ["src"],
+  "exclude": ["node_modules"],
   "compilerOptions": {
-    "target": "esnext",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": false,
-    "sourceMap": true,
-    "esModuleInterop": true,
+    "lib": ["ES2019", "DOM"],
+    "target": "ES2019",
     "module": "es6",
+    "esModuleInterop": true,
     "outDir": "dist"
   }
 }
