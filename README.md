@@ -19,7 +19,7 @@
 
 # Getting Started
 
-## Define a JSON:API Resource Formatter
+## Define a JSON:API Resource
 
 ```typescript
 type UserType = 'User'
