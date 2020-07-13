@@ -64,7 +64,7 @@ const client = new JSONAPIClient(url, {
 })
 ```
 
-## Create a JSON:API Resource
+## Create a Resource
 
 ```typescript
 const myFirstUser = {
@@ -78,7 +78,7 @@ client.create(User, myFirstUser).then((user) => {
 })
 ```
 
-## Update a JSON:API Resource
+## Update a Resource
 
 ```typescript
 const myFirstUserUpdate = {
