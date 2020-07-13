@@ -4,6 +4,7 @@ import {
   SerializableObject,
   Intersect,
   Predicate,
+  Serializable,
 } from 'isntnt'
 
 import ResourceField, {
@@ -13,6 +14,9 @@ import ResourceField, {
   ResourceFieldFlag,
   ResourceFieldRule,
 } from './resource/field'
+
+// Util
+type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
 
 // Resource
 export type ResourceType = string
@@ -42,12 +46,12 @@ type BaseRelationshipFieldValueWrapper<T, U, V> = V extends ResourceFieldFlag.Al
 
 type FilteredResourceFieldName<
   T extends ResourceConstructor<any, any>,
-  U extends ResourceQuery<T>
+  U extends ResourceQueryParams<T>
 > = T['type'] extends keyof U['fields'] ? U['fields'][T['type']][number] : keyof T['fields']
 
 export type FilteredResource<
   T extends ResourceConstructor<any, any>,
-  U extends ResourceQuery<T> = {}
+  U extends ResourceQueryParams<T> = {}
 > = ResourceIdentifier<T['type']> &
   {
     [P in FilteredResourceFieldName<T, U>]: T['fields'][P] extends RelationshipField<
@@ -96,13 +100,11 @@ export type ResourceCreateData<T extends ResourceConstructor<any, any>> = Partia
     >]?: ResourceFieldCreateValue<T['fields'][P]>
   } &
   {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.NeverPost
-    >]?: JSONAPIClient.IllegalField<
-      'Field with NeverPost flag must be omitted from ResourceCreateData',
-      T['fields'][P]
-    >
+    [P in ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.NeverPost>]?: never
+    // JSONAPIClient.IllegalField<
+    //   'Field with NeverPost flag must be omitted from ResourceCreateData',
+    //   T['fields'][P]
+    // >
   }
 
 export type ResourcePatchData<T extends ResourceConstructor<any, any>> = {
@@ -118,31 +120,30 @@ export type ResourcePatchData<T extends ResourceConstructor<any, any>> = {
     >]?: ResourceFieldPatchValue<T['fields'][P]>
   } &
   {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.NeverPatch
-    >]?: JSONAPIClient.IllegalField<
-      'Field with NeverPatch flag must be omitted from ResourcePatchData',
-      T['fields'][P]
-    >
+    [P in ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.NeverPatch>]?: never
+    // JSONAPIClient.IllegalField<
+    //   'Field with NeverPatch flag must be omitted from ResourcePatchData',
+    //   T['fields'][P]
+    // >
   }
 
 // Constructor
 export type ResourceConstructor<T extends ResourceType, U extends ResourceFields> = {
   new (data: ResourceConstructorData<T, U>): Resource<ResourceConstructor<T, U>>
   type: T
+  path: ResourcePath
   fields: U
   identifier(id: ResourceId): ResourceIdentifier<T>
   parseResourceDocument(
     resourceDocument: JSONAPIDocument<ResourceConstructor<T, U>>,
   ): Resource<ResourceConstructor<T, U>>
   encode(resource: Resource<ResourceConstructor<T, U>>): JSONAPIDocument<ResourceConstructor<T, U>>
-  parseResourceQuery<
+  createFilter<
     V extends ResourceFieldsQuery<ResourceConstructor<T, U>>,
     W extends ResourceIncludeQuery<ResourceConstructor<T, U>, V>
   >(
-    fields: V,
-    include: W,
+    fields?: V,
+    include?: W,
   ): { fields: V; include: W }
   createResourcePostObject<V extends ResourceCreateData<ResourceConstructor<T, U>>>(
     data: V,
@@ -199,7 +200,7 @@ export type ResourceRelatedResources<
 > = BaseResourceFieldsRelatedResources<T['fields'], never>
 
 // Query
-export type ResourceQuery<T extends ResourceConstructor<any, any>> = {
+export type ResourceQueryParams<T extends ResourceConstructor<any, any>> = {
   [P in 'fields']?: ResourceFieldsQuery<T>
 } &
   {
@@ -208,7 +209,7 @@ export type ResourceQuery<T extends ResourceConstructor<any, any>> = {
 
 type BaseResourcesFieldsQuery<T> = T extends ResourceConstructor<any, any>
   ? {
-      [P in T['type']]?: ReadonlyArray<
+      [P in T['type']]?: NonEmptyReadonlyArray<
         ResourceFieldNameWithFlag<
           Extract<T, { type: P }>['fields'],
           ResourceFieldFlag.AlwaysGet | ResourceFieldFlag.MaybeGet
@@ -230,20 +231,14 @@ export type ResourceIncludeQuery<
     any,
     ResourceFieldFlag.NeverGet
   >
-    ? JSONAPIClient.IllegalField<
-        'Field with NeverGet flag must be omitted from ResourceIncludeQuery',
-        T[P]
-      >
+    ? never // JSONAPIClient.IllegalField< //     'Field with NeverGet flag must be omitted from ResourceIncludeQuery', //     T[P] //   >
     : T['fields'][P] extends RelationshipField<infer R, any, any>
     ? T['type'] extends keyof U
       ? P extends U[T['type']][number]
         ? ResourceIncludeQuery<R, U> | null
-        : JSONAPIClient.IllegalField<
-            'Field must be present in ResourceIncludeQuery',
-            { [P in T['type']]: U[T['type']] }
-          >
+        : never // JSONAPIClient.IllegalField< //     'Field must be present in ResourceIncludeQuery', //     { [P in T['type']]: U[T['type']] } //   >
       : ResourceIncludeQuery<R, U> | null
-    : JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
+    : never //JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
 }
 
 // Fields
@@ -656,9 +651,21 @@ export type JSONAPIResourceLinks = {
 /**
  * {@link https://jsonapi.org/format/#error-objects|JSON:API Reference}
  */
+export type JSONAPIErrorLinks = {
+  [P in 'about']?:
+    | string
+    | {
+        href?: string
+        meta?: JSONAPIMetaObject
+      }
+}
+
+/**
+ * {@link https://jsonapi.org/format/#error-objects|JSON:API Reference}
+ */
 export type JSONAPIErrorObject = {
   id?: string
-  links?: JSONAPILinksObject
+  links?: JSONAPIErrorLinks
   status?: string
   code?: string
   title?: string
@@ -669,6 +676,24 @@ export type JSONAPIErrorObject = {
     parameter?: string
   }
 }
+
+export type JSONAPISearchParams = {
+  page?: JSONAPIPageParams
+  sort?: JSONAPISortParams
+  filter?: JSONAPIFilterParams
+}
+
+export type JSONAPIPageParams = {
+  [name: string]: string | number | JSONAPIPageParams
+}
+
+export type JSONAPISortParams = NonEmptyReadonlyArray<string>
+
+export type JSONAPIFilterParams = {
+  [name: string]: Serializable
+}
+
+export type JSONAPIRequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 // JSONAPIClient
 namespace JSONAPIClient {

@@ -1,9 +1,6 @@
 import { isString, test } from 'isntnt'
 
-import Attribute from '../../src/resource/attribute'
-import Relationship from '../../src/resource/relationship'
-import { ResourceConstructor } from '../../src/types'
-import resource from '../../src/resource'
+import { resource, Attribute, Relationship, ResourceConstructor } from '../../src'
 
 // User
 type UserType = 'User'
@@ -20,7 +17,7 @@ type UserFields = {
 
 type UserResource = ResourceConstructor<UserType, UserFields>
 
-const isDateString = test(
+const isISODateString = test(
   /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(.[0-9]+)?(Z)?$/,
 )
 
@@ -29,12 +26,12 @@ const dateStringFormatter = {
   deserialize: (value: string) => new Date(value),
 }
 
-export const User: UserResource = resource('User', {
+export const User: UserResource = resource('User', 'users', {
   password: Attribute.requiredWriteOnly(isString),
   emailAddress: Attribute.required(isString),
   givenName: Attribute.requiredReadonly(isString),
   familyName: Attribute.requiredGenerated(isString),
-  dateOfBirth: Attribute.optional(isDateString, dateStringFormatter),
+  dateOfBirth: Attribute.optional(isISODateString, dateStringFormatter),
   birthCountry: Relationship.toOne(() => [Country]),
   friends: Relationship.toMany(() => [User]),
 })
@@ -50,7 +47,7 @@ type CountryFields = {
 
 type CountryResource = ResourceConstructor<CountryType, CountryFields>
 
-const Country: CountryResource = resource('Country', {
+const Country: CountryResource = resource('Country', 'countries', {
   name: Attribute.requiredReadonly(isString),
   locales: Relationship.toMany(() => [Locale]),
   a: Relationship.toOne(() => [{} as AResource]),
@@ -67,7 +64,7 @@ type LocaleFields = {
 
 type LocaleResource = ResourceConstructor<LocaleType, LocaleFields>
 
-const Locale: LocaleResource = resource('Locale', {
+const Locale: LocaleResource = resource('Locale', 'locales', {
   name: Attribute.required(isString),
   code: Attribute.requiredReadonly(isString),
   country: Relationship.toMany(() => [Country]),

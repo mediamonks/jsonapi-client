@@ -1,9 +1,9 @@
 import { None } from 'isntnt'
 
-import { createAttributeFieldFactory, ResourceFieldRule } from './field'
+import { createAttributeFieldFactory, ResourceFieldRule } from '../resource/field'
 import { AttributeFieldFromFactory, AttributeValue } from '../types'
 
-namespace Attribute {
+export namespace Attribute {
   export const optional = createAttributeFieldFactory(
     ResourceFieldRule.Maybe,
     ResourceFieldRule.Maybe,

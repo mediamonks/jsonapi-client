@@ -6,7 +6,7 @@ import {
   ResourceConstructor,
   ResourceFieldFactoryRules,
   ResourceFieldMaybeMask,
-} from '../types'
+} from '../../types'
 
 export enum ResourceFieldRoot {
   Attributes = 'attributes',
@@ -46,6 +46,9 @@ const resourceFieldMaskIndex = [
 ] as const
 
 // ResourceField
+/*
+ * @private
+ */
 export default class ResourceField<T extends ResourceFieldRoot, U extends ResourceFieldFlag> {
   readonly root: T
   readonly flag: U

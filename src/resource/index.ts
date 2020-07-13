@@ -6,6 +6,7 @@ import {
   ResourceFields,
   ResourceId,
   ResourceIdentifier,
+  ResourcePath,
   ResourceType,
   ResourcePatchData,
   JSONAPIDocument,
@@ -14,9 +15,14 @@ import {
   JSONAPIResourceObject,
 } from '../types'
 
-const resource = <T extends ResourceType, U extends ResourceFields>(type: T, fields: U) => {
+export const resource = <T extends ResourceType, U extends ResourceFields>(
+  type: T,
+  path: ResourcePath,
+  fields: U,
+) => {
   return class Resource {
     static type = type
+    static path = path
     static fields = fields
 
     constructor(data: ResourceConstructorData<T, U>) {
@@ -27,7 +33,7 @@ const resource = <T extends ResourceType, U extends ResourceFields>(type: T, fie
       return { type, id }
     }
 
-    static parseResourceQuery<
+    static createFilter<
       V extends ResourceFieldsQuery<ResourceConstructor<T, U>>,
       W extends ResourceIncludeQuery<ResourceConstructor<T, U>, V>
     >(fields: V, include: W): { fields: V; include: W } {

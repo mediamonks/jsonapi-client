@@ -43,7 +43,7 @@ const dateStringFormatter = {
 
 const isUserRole = either('admin', 'editor', 'subscriber')
 
-const User = resource('User', {
+const User = resource('User', 'users', {
   emailAddress: Attribute.required(isString),
   password: Attribute.requiredWriteOnly(isString),
   userName: Attribute.requiredStatic(isString),
@@ -64,12 +64,6 @@ const client = new JSONAPIClient(url, {
 })
 ```
 
-## Create an Endpoint
-
-```typescript
-const userEndpoint = client.endpoint('users', User)
-```
-
 ## Create a JSON:API Resource
 
 ```typescript
@@ -79,7 +73,7 @@ const myFirstUser = {
   userName: 'example_jane',
 }
 
-userEndpoint.create(myFirstUser).then((user) => {
+client.create(User, myFirstUser).then((user) => {
   console.log(user.data.messages)
 })
 ```
@@ -91,19 +85,17 @@ const myFirstUserUpdate = {
   emailAddress: 'jane.smith@example.com',
 }
 
-userEndpoint.update(myFirstUserUpdate).then((user) => {
-  console.log(user.data.messages)
-})
+client.update(User, myFirstUserUpdate)
 ```
 
-## Get a Single Resource Using a ResourceQuery
+## Get a Single Resource Using a Filter
 
 ```typescript
-const userEmailQuery = User.parseResourceQuery({
+const userEmailFilter = User.createFilter({
   User: ['emailAddress', 'dateOfBirth'],
 })
 
-userEndpoint.getOne('<user-id>', userEmailQuery).then((userResource) => {
+client.getOne(User, '12', userEmailFilter).then((userResource) => {
   console.log(userResource.data)
   /* Resource { 
     type: 'User', 
@@ -215,102 +207,88 @@ Extends ResourceField
 (URL, ClientSetup) -> JSONAPIClient
 ```
 
-### Client#endpoint
+### Client#create
 
 ```
-(ResourcePath, ResourceConstructor) -> JSONAPIEndpoint
+async (ResourceConstructor, ResourceCreateData) -> OneResource
 ```
 
-## Endpoint
-
-### Endpoint#constructor
+### Client#update
 
 ```
-(JSONAPIClient, ResourcePath, ResourceConstructor) -> JSONAPIEndpoint
+async (ResourceConstructor, ResourceId, ResourcePatchData) -> void
 ```
 
-### Endpoint#create
+### Client#delete
 
 ```
-async (ResourceCreateData) -> OneResource
+async (ResourceConstructor, ResourceId) -> void
 ```
 
-### Endpoint#update
+### Client#updateRelationship
 
 ```
-async (Resource, ResourcePatchData) -> OneResource
+async (ResourceConstructor, ResourceId, ToManyRelationshipNameWithFlag, RelationshipPatchData) -> void
 ```
 
-### Endpoint#delete
+### Client#addRelationships
 
 ```
-async (ResourceId) -> void
+async (ResourceConstructor, ResourceId, ToManyRelationshipNameWithFlag, ToManyRelationshipPatchData) -> void
 ```
 
-### Endpoint#updateRelationship
+### Client#deleteRelationships
 
 ```
-async (Resource, ToManyRelationshipNameWithFlag, RelationshipPatchData) -> OneResource
+async (ResourceConstructor, ResourceId, ToManyRelationshipNameWithFlag, ToManyRelationshipPatchData) -> void
 ```
 
-### Endpoint#addRelationships
+### Client#getOne
 
 ```
-async (Resource, ToManyRelationshipNameWithFlag, ToManyRelationshipPatchData) -> OneResource
+async (ResourceConstructor, ResourceId, ResourceQuery) -> OneResource
 ```
 
-### Endpoint#deleteRelationships
+### Client#getMany
 
 ```
-async (Resource, ToManyRelationshipNameWithFlag, ToManyRelationshipPatchData) -> OneResource
+async (ResourceConstructor, ClientQuery, ResourceQuery) -> ManyResource
 ```
 
-### Endpoint#getOne
+### Client#getOneRelationship
 
 ```
-async (ResourceId, ResourceQuery) -> OneResource
+async (ResourceConstructor, ResourceId, ToManyRelationshipName, ResourceQuery) -> OneResource
 ```
 
-### Endpoint#getMany
+### Client#getManyRelationship
 
 ```
-async (ClientQuery, ResourceQuery) -> ManyResource
+async (ResourceConstructor, ResourceId, ToManyRelationshipName, ResourceQuery) -> ManyResource
 ```
 
-### Endpoint#getOneRelationship
+### Client#one
 
 ```
-async (ResourceId, ToManyRelationshipName, ResourceQuery) -> OneResource
+(ResourceConstructor, ResourceQuery) -> (ResourceId) -> OneResource
 ```
 
-### Endpoint#getManyRelationship
+### Client#many
 
 ```
-async (ResourceId, ToManyRelationshipName, ResourceQuery) -> ManyResource
+(ResourceConstructor, ResourceQuery) -> (ClientQuery) -> ManyResource
 ```
 
-### Endpoint#one
+### Client#toOne
 
 ```
-(ResourceQuery) -> (ResourceId) -> OneResource
+(ResourceConstructor, ToOneRelationshipFieldNameWithFlag, ResourceQuery) -> (ResourceId) -> OneResource
 ```
 
-### Endpoint#many
+### Client#toMany
 
 ```
-(ResourceQuery) -> (ClientQuery) -> ManyResource
-```
-
-### Endpoint#toOne
-
-```
-(ToOneRelationshipFieldNameWithFlag, ResourceQuery) -> (ResourceId) -> OneResource
-```
-
-### Endpoint#many
-
-```
-(ToManyRelationshipFieldNameWithFlag, ResourceQuery) -> (ResourceId) -> ManyResource
+(ResourceConstructor, ToManyRelationshipFieldNameWithFlag, ResourceQuery) -> (ResourceId) -> ManyResource
 ```
 
 ## OneResource
@@ -318,7 +296,7 @@ async (ResourceId, ToManyRelationshipName, ResourceQuery) -> ManyResource
 ### OneResource#constructor
 
 ```
-(Resource, JSONAPIMetaObject, JSONAPIResourceLinks) -> OneResource
+(FilteredResource, JSONAPIMetaObject, JSONAPIResourceLinks) -> OneResource
 ```
 
 ## ManyResource
@@ -326,41 +304,5 @@ async (ResourceId, ToManyRelationshipName, ResourceQuery) -> ManyResource
 ### ManyResource#constructor
 
 ```
-(Resource[], JSONAPIMetaObject, JSONAPIResourceLinks & JSONAPIPaginationLinks) -> ManyResourceOneResource
-```
-
-### ManyResource#hasPrevPage
-
-```
-() -> boolean
-```
-
-### ManyResource#hasNextPage
-
-```
-() -> boolean
-```
-
-### ManyResource#firstPage
-
-```
-async () -> ManyResource
-```
-
-### ManyResource#prevPage
-
-```
-async () -> ManyResource
-```
-
-### ManyResource#nextPage
-
-```
-async () -> ManyResource
-```
-
-### ManyResource#lastPage
-
-```
-async () -> ManyResource
+(FilteredResource[], JSONAPIMetaObject, JSONAPIResourceLinks & JSONAPIPaginationLinks) -> ManyResource
 ```

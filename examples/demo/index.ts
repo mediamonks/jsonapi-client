@@ -1,85 +1,63 @@
-import Client from '../../src'
+import { Client } from '../../src'
+
 import { User } from './resources'
 
-const individualResourceQuery = User.parseResourceQuery(
-  {
-    User: ['givenName', 'birthCountry'],
-    Country: ['locales', 'a'],
-    A: ['x'],
-  },
-  {
-    birthCountry: {
-      a: null,
-    },
-    // friends: null, // Uncomment to see IllegalField error
-  },
-)
-
-const url = new URL('https://example.com')
+const url = new URL('https://example.com/api/v1/')
 
 const client = new Client(url, {
-  defaultRelationshipData: 'resource-identifiers',
-  parsePageQuery(query: { offset?: number; limit: number }) {
-    return query
-  },
+  initialRelationshipData: 'resource-identifiers',
 })
 
-const users = client.endpoint('users', User)
-
-users.create({
+client.create(User, {
   emailAddress: 'user@example.com',
   password: 'password1',
   dateOfBirth: new Date(1970, 0, 1),
 })
 
-const getUserEmailAddress = users.one({
-  fields: {
-    User: ['emailAddress'],
+const userDetailsFilter = User.createFilter(
+  {
+    User: ['givenName', 'birthCountry'],
   },
-})
+  {
+    birthCountry: null,
+  },
+)
 
-getUserEmailAddress('42').then((resource) => {
+const getUserDetails = client.one(User, userDetailsFilter)
+
+getUserDetails('1').then((user) => user.data.givenName)
+
+getUserDetails('42').then((resource) => {
   console.log(Object.keys(resource.data)) // > ['type', 'id', 'emailAddress']
 })
 
-users.getOne('42', individualResourceQuery).then((resource) => {
+client.getOne(User, '42', userDetailsFilter).then((resource) => {
   if (resource.data.birthCountry?.type === 'Country') {
     console.log(resource.data.birthCountry.locales)
 
     resource.data.givenName
   }
 
-  users.update(resource.data, {
+  client.update(User, '12', {
     // givenName: 'Hans', // Uncomment to see IllegalField error
     birthCountry: null,
     friends: [{ type: 'User', id: '16' }],
   })
 
-  users.updateRelationship({ type: 'User', id: '96' }, 'birthCountry', {
+  client.updateRelationship(User, '96', 'birthCountry', {
     type: 'Country',
     id: '<id>',
   })
 
-  users.addRelationships({ type: 'User', id: '8' }, 'partners', [])
+  client.addRelationships(User, '8', 'partners', [])
 
-  users.delete(resource.data)
+  client.delete(User, '13')
 })
 
-users.getOneRelationship('128', 'birthCountry', {}).then((resource) => {
-  console.log(resource.data.type)
-})
+// client.getOneRelationship(User, '128', 'birthCountry').then((resource) => {
+//   console.log(resource.data.type)
+// })
 
-users.getManyRelationship('64', 'friends', {}).then((manyResources) => {
-  manyResources.data[0].familyName
-  return manyResources.nextPage()
-})
-
-const resourcePostObject = User.createResourcePostObject({
-  password: 'password1',
-  emailAddress: 'user@example.com',
-})
-
-const resourcePatchObject = User.createResourcePatchObject('12', {
-  password: 'password1',
-  emailAddress: 'user@example.com',
-})
+// client.getManyRelationship(User, '64', 'friends').then((manyResource) => {
+//   manyResource.data[0].familyName
+// })

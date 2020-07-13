@@ -1,6 +1,7 @@
-import Attribute from './attribute'
 import { isString } from 'isntnt'
-import { ResourceFieldFlag, ResourceFieldMethod } from './field'
+
+import { ResourceFieldFlag, ResourceFieldMethod } from '../resource/field'
+import Attribute from './attribute'
 
 describe('Attribute', () => {
   describe('optional', () => {
