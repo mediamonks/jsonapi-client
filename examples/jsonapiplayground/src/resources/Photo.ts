@@ -1,5 +1,5 @@
 import { isString } from 'isntnt'
-import { resource, Attribute, ResourceConstructor } from '../../../../src'
+import { resource, Attribute, ResourceFormatter } from '../../../../src'
 
 import { isImageUrl, urlFormatter } from './attribute-types'
 
@@ -10,7 +10,7 @@ type PhotoFields = {
   uri: Attribute.Required<string, URL>
 }
 
-type PhotoResource = ResourceConstructor<PhotoType, PhotoFields>
+type PhotoResource = ResourceFormatter<PhotoType, PhotoFields>
 
 const Photo: PhotoResource = resource('photos', 'photos', {
   title: Attribute.required(isString),

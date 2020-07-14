@@ -1,6 +1,6 @@
 import { isString, test } from 'isntnt'
 
-import { resource, Attribute, Relationship, ResourceConstructor } from '../../src'
+import { resource, Attribute, Relationship, ResourceFormatter } from '../../src'
 
 // User
 type UserType = 'User'
@@ -15,7 +15,7 @@ type UserFields = {
   friends: Relationship.ToMany<UserResource>
 }
 
-type UserResource = ResourceConstructor<UserType, UserFields>
+type UserResource = ResourceFormatter<UserType, UserFields>
 
 const isISODateString = test(
   /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(.[0-9]+)?(Z)?$/,
@@ -45,7 +45,7 @@ type CountryFields = {
   a: Relationship.ToOne<AResource>
 }
 
-type CountryResource = ResourceConstructor<CountryType, CountryFields>
+type CountryResource = ResourceFormatter<CountryType, CountryFields>
 
 const Country: CountryResource = resource('Country', 'countries', {
   name: Attribute.requiredReadonly(isString),
@@ -62,7 +62,7 @@ type LocaleFields = {
   country: Relationship.ToMany<CountryResource>
 }
 
-type LocaleResource = ResourceConstructor<LocaleType, LocaleFields>
+type LocaleResource = ResourceFormatter<LocaleType, LocaleFields>
 
 const Locale: LocaleResource = resource('Locale', 'locales', {
   name: Attribute.required(isString),
@@ -71,7 +71,7 @@ const Locale: LocaleResource = resource('Locale', 'locales', {
 })
 
 // Virtual Nested Resources
-type AResource = ResourceConstructor<
+type AResource = ResourceFormatter<
   'A',
   {
     country: Relationship.ToMany<CountryResource>
@@ -79,70 +79,70 @@ type AResource = ResourceConstructor<
   }
 >
 
-type BResource = ResourceConstructor<
+type BResource = ResourceFormatter<
   'B',
   {
     x: Relationship.ToMany<CResource>
   }
 >
 
-type CResource = ResourceConstructor<
+type CResource = ResourceFormatter<
   'C',
   {
     x: Relationship.ToMany<AResource | DResource>
   }
 >
 
-type DResource = ResourceConstructor<
+type DResource = ResourceFormatter<
   'D',
   {
     x: Relationship.ToMany<EResource>
   }
 >
 
-type EResource = ResourceConstructor<
+type EResource = ResourceFormatter<
   'E',
   {
     x: Relationship.ToMany<FResource>
   }
 >
 
-type FResource = ResourceConstructor<
+type FResource = ResourceFormatter<
   'F',
   {
     x: Relationship.ToMany<GResource>
   }
 >
 
-type GResource = ResourceConstructor<
+type GResource = ResourceFormatter<
   'G',
   {
     x: Relationship.ToMany<HResource>
   }
 >
 
-type HResource = ResourceConstructor<
+type HResource = ResourceFormatter<
   'H',
   {
     x: Relationship.ToMany<IResource>
   }
 >
 
-type IResource = ResourceConstructor<
+type IResource = ResourceFormatter<
   'I',
   {
     x: Relationship.ToMany<JResource>
   }
 >
 
-type JResource = ResourceConstructor<
+type JResource = ResourceFormatter<
   'J',
   {
     x: Relationship.ToMany<KResource>
   }
 >
 
-type KResource = ResourceConstructor<
+type KResource = ResourceFormatter<
   'K',
   {
     x: Relationship.ToMany<AResource>

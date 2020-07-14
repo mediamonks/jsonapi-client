@@ -1,4 +1,4 @@
-# JSONAPIClient
+# JSON:API-Client
 
 ## Design Goals
 

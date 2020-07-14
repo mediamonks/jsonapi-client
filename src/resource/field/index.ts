@@ -3,7 +3,7 @@ import { Predicate } from 'isntnt'
 import {
   AttributeValue,
   AttributeValueFormatter,
-  ResourceConstructor,
+  ResourceFormatter,
   ResourceFieldFactoryRules,
   ResourceFieldMaybeMask,
 } from '../../types'
@@ -128,7 +128,7 @@ export enum RelationshipFieldType {
 }
 
 export class RelationshipField<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends RelationshipFieldType,
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Relationships, V> {
@@ -144,7 +144,7 @@ export class RelationshipField<
 
 export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
-) => <U extends ResourceConstructor<any, any>>(
+) => <U extends ResourceFormatter<any, any>>(
   getResources: () => Array<U>,
 ): RelationshipField<
   U,
@@ -159,7 +159,7 @@ export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFacto
 
 export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
-) => <U extends ResourceConstructor<any, any>>(
+) => <U extends ResourceFormatter<any, any>>(
   getResources: () => Array<U>,
 ): RelationshipField<
   U,

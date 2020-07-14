@@ -138,5 +138,3 @@ export namespace Attribute {
     U = T
   > = AttributeFieldFromFactory<T, U, typeof requiredWriteOnly>
 }
-
-export default Attribute

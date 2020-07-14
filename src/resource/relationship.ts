@@ -6,7 +6,7 @@ import {
 import {
   ToOneRelationshipFieldFromFactory,
   ToManyRelationshipFieldFromFactory,
-  ResourceConstructor,
+  ResourceFormatter,
 } from '../types'
 
 export namespace Relationship {
@@ -16,7 +16,7 @@ export namespace Relationship {
     ResourceFieldRule.Maybe,
   )
 
-  export type ToOne<T extends ResourceConstructor<any, any>> = ToOneRelationshipFieldFromFactory<
+  export type ToOne<T extends ResourceFormatter<any, any>> = ToOneRelationshipFieldFromFactory<
     T,
     typeof toOne
   >
@@ -28,7 +28,7 @@ export namespace Relationship {
   )
 
   export type ToOneRequired<
-    T extends ResourceConstructor<any, any>
+    T extends ResourceFormatter<any, any>
   > = ToOneRelationshipFieldFromFactory<T, typeof toOneRequired>
 
   export const toOneReadOnly = createToOneRelationshipFieldFactory(
@@ -38,7 +38,7 @@ export namespace Relationship {
   )
 
   export type ToOneReadOnly<
-    T extends ResourceConstructor<any, any>
+    T extends ResourceFormatter<any, any>
   > = ToOneRelationshipFieldFromFactory<T, typeof toOneReadOnly>
 
   export const toMany = createToManyRelationshipFieldFactory(
@@ -47,7 +47,7 @@ export namespace Relationship {
     ResourceFieldRule.Maybe,
   )
 
-  export type ToMany<T extends ResourceConstructor<any, any>> = ToManyRelationshipFieldFromFactory<
+  export type ToMany<T extends ResourceFormatter<any, any>> = ToManyRelationshipFieldFromFactory<
     T,
     typeof toMany
   >
@@ -59,7 +59,7 @@ export namespace Relationship {
   )
 
   export type ToManyRequired<
-    T extends ResourceConstructor<any, any>
+    T extends ResourceFormatter<any, any>
   > = ToManyRelationshipFieldFromFactory<T, typeof toManyRequired>
 
   export const toManyReadOnly = createToManyRelationshipFieldFactory(
@@ -69,8 +69,6 @@ export namespace Relationship {
   )
 
   export type ToManyReadOnly<
-    T extends ResourceConstructor<any, any>
+    T extends ResourceFormatter<any, any>
   > = ToManyRelationshipFieldFromFactory<T, typeof toManyReadOnly>
 }
-
-export default Relationship

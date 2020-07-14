@@ -1,5 +1,5 @@
 import { isString, isUint } from 'isntnt'
-import { resource, Attribute, Relationship, ResourceConstructor } from '../../../../src'
+import { resource, Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
 import Photo from './Photo'
 import Book from './Book'
@@ -12,7 +12,7 @@ type SeriesFields = {
   books: Relationship.ToMany<typeof Book>
 }
 
-type SeriesResource = ResourceConstructor<SeriesType, SeriesFields>
+type SeriesResource = ResourceFormatter<SeriesType, SeriesFields>
 
 const Series: SeriesResource = resource('series', 'series', {
   title: Attribute.required(isString),

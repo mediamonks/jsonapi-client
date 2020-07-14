@@ -31,7 +31,7 @@ export type ResourceIdentifier<T extends ResourceType> = {
 
 export type ResourceIdentifierKey = keyof ResourceIdentifier<any>
 
-export type Resource<T extends ResourceConstructor<any, any>> = ResourceIdentifier<T['type']> &
+export type Resource<T extends ResourceFormatter<any, any>> = ResourceIdentifier<T['type']> &
   ResourceFieldValues<T['fields']>
 
 type BaseRelationshipFieldValueWrapper<T, U, V> = V extends ResourceFieldFlag.AlwaysGet
@@ -45,12 +45,12 @@ type BaseRelationshipFieldValueWrapper<T, U, V> = V extends ResourceFieldFlag.Al
   : never
 
 type FilteredResourceFieldName<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceQueryParams<T>
 > = T['type'] extends keyof U['fields'] ? U['fields'][T['type']][number] : keyof T['fields']
 
 export type FilteredResource<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceQueryParams<T> = {}
 > = ResourceIdentifier<T['type']> &
   {
@@ -81,10 +81,10 @@ export type FilteredResource<
   }
 
 export type ResourceConstructorData<T extends ResourceType, U extends ResourceFields> = Resource<
-  ResourceConstructor<T, U>
+  ResourceFormatter<T, U>
 >
 
-export type ResourceCreateData<T extends ResourceConstructor<any, any>> = Partial<
+export type ResourceCreateData<T extends ResourceFormatter<any, any>> = Partial<
   ResourceIdentifier<T['type']>
 > &
   {
@@ -100,14 +100,16 @@ export type ResourceCreateData<T extends ResourceConstructor<any, any>> = Partia
     >]?: ResourceFieldCreateValue<T['fields'][P]>
   } &
   {
-    [P in ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.NeverPost>]?: never
-    // JSONAPIClient.IllegalField<
-    //   'Field with NeverPost flag must be omitted from ResourceCreateData',
-    //   T['fields'][P]
-    // >
+    [P in ResourceFieldNameWithFlag<
+      T['fields'],
+      ResourceFieldFlag.NeverPost
+    >]?: JSONAPIClient.IllegalField<
+      'Field with NeverPost flag must be omitted from ResourceCreateData',
+      T['fields'][P]
+    >
   }
 
-export type ResourcePatchData<T extends ResourceConstructor<any, any>> = {
+export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
   [P in ResourceFieldNameWithFlag<
     T['fields'],
     ResourceFieldFlag.AlwaysPatch
@@ -120,42 +122,51 @@ export type ResourcePatchData<T extends ResourceConstructor<any, any>> = {
     >]?: ResourceFieldPatchValue<T['fields'][P]>
   } &
   {
-    [P in ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.NeverPatch>]?: never
-    // JSONAPIClient.IllegalField<
-    //   'Field with NeverPatch flag must be omitted from ResourcePatchData',
-    //   T['fields'][P]
-    // >
+    [P in ResourceFieldNameWithFlag<
+      T['fields'],
+      ResourceFieldFlag.NeverPatch
+    >]?: JSONAPIClient.IllegalField<
+      'Field with NeverPatch flag must be omitted from ResourcePatchData',
+      T['fields'][P]
+    >
   }
 
 // Constructor
-export type ResourceConstructor<T extends ResourceType, U extends ResourceFields> = {
-  new (data: ResourceConstructorData<T, U>): Resource<ResourceConstructor<T, U>>
+export type ResourceFormatter<T extends ResourceType, U extends ResourceFields> = {
+  new (data: ResourceConstructorData<T, U>): Resource<ResourceFormatter<T, U>>
   type: T
   path: ResourcePath
   fields: U
   identifier(id: ResourceId): ResourceIdentifier<T>
   parseResourceDocument(
-    resourceDocument: JSONAPIDocument<ResourceConstructor<T, U>>,
-  ): Resource<ResourceConstructor<T, U>>
-  encode(resource: Resource<ResourceConstructor<T, U>>): JSONAPIDocument<ResourceConstructor<T, U>>
+    resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
+  ): Resource<ResourceFormatter<T, U>>
+  encode(resource: Resource<ResourceFormatter<T, U>>): JSONAPIDocument<ResourceFormatter<T, U>>
   createFilter<
-    V extends ResourceFieldsQuery<ResourceConstructor<T, U>>,
-    W extends ResourceIncludeQuery<ResourceConstructor<T, U>, V>
+    V extends ResourceFieldsQuery<ResourceFormatter<T, U>>,
+    W extends ResourceIncludeQuery<ResourceFormatter<T, U>, V>
   >(
     fields?: V,
     include?: W,
   ): { fields: V; include: W }
-  createResourcePostObject<V extends ResourceCreateData<ResourceConstructor<T, U>>>(
+  withFilter<
+    V extends ResourceFieldsQuery<ResourceFormatter<T, U>>,
+    W extends ResourceIncludeQuery<ResourceFormatter<T, U>, V>
+  >(
+    fields?: V,
+    include?: W,
+  ): { fields: V; include: W }
+  createResourcePostObject<V extends ResourceCreateData<ResourceFormatter<T, U>>>(
     data: V,
-  ): JSONAPIResourceObject<ResourceConstructor<T, U>>
-  createResourcePatchObject<V extends ResourcePatchData<ResourceConstructor<T, U>>>(
+  ): JSONAPIResourceObject<ResourceFormatter<T, U>>
+  createResourcePatchObject<V extends ResourcePatchData<ResourceFormatter<T, U>>>(
     id: ResourceId,
     data: V,
-  ): JSONAPIResourceObject<ResourceConstructor<T, U>>
+  ): JSONAPIResourceObject<ResourceFormatter<T, U>>
 }
 
 export type ExperimentalResourceQuery<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsQuery<T>,
   V extends ResourceIncludeQuery<T, U>
 > = {
@@ -171,7 +182,7 @@ type BaseResourceFieldsResources<T> = T extends ResourceFields
     }[keyof T]
   : never
 
-type BaseResourceRelatedResources<T, U extends ResourceType> = T extends ResourceConstructor<
+type BaseResourceRelatedResources<T, U extends ResourceType> = T extends ResourceFormatter<
   any,
   infer R
 >
@@ -196,18 +207,18 @@ type BaseResourceFieldsRelatedResources<T, U extends ResourceType> = T extends R
   : never
 
 export type ResourceRelatedResources<
-  T extends ResourceConstructor<any, any>
+  T extends ResourceFormatter<any, any>
 > = BaseResourceFieldsRelatedResources<T['fields'], never>
 
 // Query
-export type ResourceQueryParams<T extends ResourceConstructor<any, any>> = {
+export type ResourceQueryParams<T extends ResourceFormatter<any, any>> = {
   [P in 'fields']?: ResourceFieldsQuery<T>
 } &
   {
     [P in 'include']?: ResourceIncludeQuery<T>
   }
 
-type BaseResourcesFieldsQuery<T> = T extends ResourceConstructor<any, any>
+type BaseResourcesFieldsQuery<T> = T extends ResourceFormatter<any, any>
   ? {
       [P in T['type']]?: NonEmptyReadonlyArray<
         ResourceFieldNameWithFlag<
@@ -218,12 +229,12 @@ type BaseResourcesFieldsQuery<T> = T extends ResourceConstructor<any, any>
     }
   : never
 
-export type ResourceFieldsQuery<T extends ResourceConstructor<any, any>> = Intersect<
+export type ResourceFieldsQuery<T extends ResourceFormatter<any, any>> = Intersect<
   BaseResourcesFieldsQuery<ResourceRelatedResources<T>>
 >
 
 export type ResourceIncludeQuery<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsQuery<T> | {} = {}
 > = {
   [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<
@@ -231,14 +242,20 @@ export type ResourceIncludeQuery<
     any,
     ResourceFieldFlag.NeverGet
   >
-    ? never // JSONAPIClient.IllegalField< //     'Field with NeverGet flag must be omitted from ResourceIncludeQuery', //     T[P] //   >
+    ? JSONAPIClient.IllegalField<
+        'Field with NeverGet flag must be omitted from ResourceIncludeQuery',
+        T[P]
+      >
     : T['fields'][P] extends RelationshipField<infer R, any, any>
     ? T['type'] extends keyof U
       ? P extends U[T['type']][number]
         ? ResourceIncludeQuery<R, U> | null
-        : never // JSONAPIClient.IllegalField< //     'Field must be present in ResourceIncludeQuery', //     { [P in T['type']]: U[T['type']] } //   >
+        : JSONAPIClient.IllegalField<
+            'Field must be present in ResourceIncludeQuery',
+            { [P in T['type']]: U[T['type']] }
+          >
       : ResourceIncludeQuery<R, U> | null
-    : never //JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
+    : JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
 }
 
 // Fields
@@ -501,18 +518,18 @@ export type ToManyRelationshipFieldNameWithFlag<
 > = ResourceFieldNameWithFlag<Pick<T, ToManyRelationshipFieldName<T>>, U>
 
 export type RelationshipFieldFactory = (
-  getResources: () => Array<ResourceConstructor<any, any>>,
+  getResources: () => Array<ResourceFormatter<any, any>>,
 ) => RelationshipField<any, RelationshipFieldType, any>
 
 export type ToOneRelationshipFieldFromFactory<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends RelationshipFieldFactory
 > = ReturnType<U> extends RelationshipField<any, any, infer R>
   ? RelationshipField<T, RelationshipFieldType.ToOne, R>
   : never
 
 export type ToManyRelationshipFieldFromFactory<
-  T extends ResourceConstructor<any, any>,
+  T extends ResourceFormatter<any, any>,
   U extends RelationshipFieldFactory
 > = ReturnType<U> extends RelationshipField<any, any, infer R>
   ? RelationshipField<T, RelationshipFieldType.ToMany, R>
@@ -531,15 +548,15 @@ export type JSONAPIVersion = '1.0'
  * {@link https://jsonapi.org/format/#document-structure|JSON:API Reference}
  */
 export type JSONAPIDocument<
-  T extends ResourceConstructor<any, any> | Array<ResourceConstructor<any, any>>
+  T extends ResourceFormatter<any, any> | Array<ResourceFormatter<any, any>>
 > = (
   | ((
       | {
           // data and errors are mutually exclusive
           data: JSONAPIResourceObject<
-            T extends ResourceConstructor<any, any>
+            T extends ResourceFormatter<any, any>
               ? T
-              : T extends Array<ResourceConstructor<any, any>>
+              : T extends Array<ResourceFormatter<any, any>>
               ? T[number]
               : never
           >
@@ -563,9 +580,9 @@ export type JSONAPIDocument<
   included?: Array<
     JSONAPIResourceObject<
       ResourceRelatedResources<
-        T extends ResourceConstructor<any, any>
+        T extends ResourceFormatter<any, any>
           ? T
-          : T extends Array<ResourceConstructor<any, any>>
+          : T extends Array<ResourceFormatter<any, any>>
           ? T[number]
           : never
       >
@@ -576,7 +593,7 @@ export type JSONAPIDocument<
 /**
  * {@link https://jsonapi.org/format/#document-resource-objects|JSON:API Reference}
  */
-export type JSONAPIResourceObject<T extends ResourceConstructor<any, any>> = ResourceIdentifier<
+export type JSONAPIResourceObject<T extends ResourceFormatter<any, any>> = ResourceIdentifier<
   T['type']
 > & {
   attributes?: JSONAPIResourceObjectAttributes<T['fields']>
@@ -677,22 +694,42 @@ export type JSONAPIErrorObject = {
   }
 }
 
+/**
+ * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
+ */
 export type JSONAPISearchParams = {
   page?: JSONAPIPageParams
   sort?: JSONAPISortParams
   filter?: JSONAPIFilterParams
 }
 
-export type JSONAPIPageParams = {
-  [name: string]: string | number | JSONAPIPageParams
-}
+/**
+ * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
+ */
+export type JSONAPIPageParams =
+  | string
+  | number
+  | {
+      [name: string]: string | number | JSONAPIPageParams
+    }
 
+/**
+ * {@link https://jsonapi.org/format/#fetching-sorting|JSON:API Reference}
+ */
 export type JSONAPISortParams = NonEmptyReadonlyArray<string>
 
-export type JSONAPIFilterParams = {
-  [name: string]: Serializable
-}
+/**
+ * {@link https://jsonapi.org/format/#fetching-filtering|JSON:API Reference}
+ */
+export type JSONAPIFilterParams =
+  | string
+  | {
+      [name: string]: Serializable
+    }
 
+/**
+ * {@link https://jsonapi.org/faq/#wheres-put|JSON:API Reference}
+ */
 export type JSONAPIRequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 // JSONAPIClient

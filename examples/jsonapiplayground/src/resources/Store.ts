@@ -1,5 +1,5 @@
 import { isString, isUint } from 'isntnt'
-import { resource, Attribute, Relationship, ResourceConstructor } from '../../../../src'
+import { resource, Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
 import Book from './Book'
 import Country from './Country'
@@ -16,7 +16,7 @@ type StoreFields = {
   countries: Relationship.ToOne<typeof Country>
 }
 
-type StoreResource = ResourceConstructor<StoreType, StoreFields>
+type StoreResource = ResourceFormatter<StoreType, StoreFields>
 
 const Store: StoreResource = resource('stores', 'stores', {
   name: Attribute.required(isString),

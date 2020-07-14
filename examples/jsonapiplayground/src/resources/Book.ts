@@ -1,5 +1,5 @@
 import { isString, isUint } from 'isntnt'
-import { resource, Attribute, Relationship, ResourceConstructor } from '../../../../src'
+import { resource, Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
 import { dateFormatter, isDateString } from './attribute-types'
 import Author from './Author'
@@ -21,7 +21,7 @@ type BookFields = {
   stores: Relationship.ToMany<typeof Store>
 }
 
-type BookResource = ResourceConstructor<BookType, BookFields>
+type BookResource = ResourceFormatter<BookType, BookFields>
 
 const Book: BookResource = resource('books', 'books', {
   title: Attribute.required(isString),

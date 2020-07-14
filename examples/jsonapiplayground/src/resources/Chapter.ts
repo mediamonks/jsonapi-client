@@ -1,5 +1,5 @@
 import { isString, isUint } from 'isntnt'
-import { resource, Attribute, Relationship, ResourceConstructor } from '../../../../src'
+import { resource, Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
 import Photo from './Photo'
 import Book from './Book'
@@ -13,7 +13,7 @@ type ChapterFields = {
   book: Relationship.ToOne<typeof Book>
 }
 
-type ChapterResource = ResourceConstructor<ChapterType, ChapterFields>
+type ChapterResource = ResourceFormatter<ChapterType, ChapterFields>
 
 const Chapter: ChapterResource = resource('chapters', 'chapters', {
   title: Attribute.required(isString),

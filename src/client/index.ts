@@ -2,7 +2,7 @@ import { Serializable, SerializableObject } from 'isntnt'
 
 import {
   FilteredResource,
-  ResourceConstructor,
+  ResourceFormatter,
   ResourceId,
   ResourceQueryParams,
   ResourceCreateData,
@@ -28,7 +28,7 @@ const JSON_API_MIME_TYPE = 'application/vnd.api+json'
 type JSONAPIRequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 // Whether a relative path that starts with '/' will start from the client url or the url domain
-export type RelativePathBase = 'client' | 'domain'
+export type AbsolutePathRoot = 'client' | 'domain'
 
 // Whether fields are opt-in or available by default
 export type ImplicitResourceFields = 'none' | 'all'
@@ -44,7 +44,7 @@ export type ImplicitRelationshipData =
 type RelationshipSelfLinkKey = null | string
 
 export type DefaultClientSetup = ClientSetup & {
-  relativePathBase: 'domain'
+  absolutePathRoot: 'domain'
   initialResourceFields: 'all'
   initialRelationshipData: 'none'
 }
@@ -52,7 +52,7 @@ export type DefaultClientSetup = ClientSetup & {
 const reflect = <T>(value: T) => value
 
 const defaultClientSetup: DefaultClientSetup = {
-  relativePathBase: 'domain',
+  absolutePathRoot: 'domain',
   initialResourceFields: 'all',
   initialRelationshipData: 'none',
   transformRelationshipPath: reflect,
@@ -64,7 +64,7 @@ const defaultClientSetup: DefaultClientSetup = {
 }
 
 export type ClientSetup = {
-  relativePathBase: RelativePathBase
+  absolutePathRoot: AbsolutePathRoot
   initialResourceFields: ImplicitResourceFields
   initialRelationshipData: ImplicitRelationshipData
   transformRelationshipPath(path: string): string
@@ -84,7 +84,7 @@ export class Client<T extends Partial<ClientSetup>> {
     this.setup = { ...defaultClientSetup, ...setup } as any
   }
 
-  async create<U extends ResourceConstructor<any, any>>(
+  async create<U extends ResourceFormatter<any, any>>(
     Resource: U,
     data: ResourceCreateData<U>,
   ): Promise<OneResource<FilteredResource<U, {}>>> {
@@ -95,7 +95,7 @@ export class Client<T extends Partial<ClientSetup>> {
     })
   }
 
-  async update<U extends ResourceConstructor<any, any>, V extends ResourceIdentifier<U['type']>>(
+  async update<U extends ResourceFormatter<any, any>, V extends ResourceIdentifier<U['type']>>(
     Resource: U,
     id: ResourceId,
     data: ResourcePatchData<U>,
@@ -107,17 +107,14 @@ export class Client<T extends Partial<ClientSetup>> {
     })
   }
 
-  async delete<U extends ResourceConstructor<any, any>>(
-    Resource: U,
-    id: ResourceId,
-  ): Promise<void> {
+  async delete<U extends ResourceFormatter<any, any>>(Resource: U, id: ResourceId): Promise<void> {
     console.log('Delete', id)
     const url = createURL(this.url, [Resource.path, id])
     await this.request(url, 'DELETE')
   }
 
   async updateRelationship<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends RelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
@@ -137,7 +134,7 @@ export class Client<T extends Partial<ClientSetup>> {
   }
 
   async addRelationships<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends ToManyRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.AlwaysPost | ResourceFieldFlag.MaybePost
@@ -155,7 +152,7 @@ export class Client<T extends Partial<ClientSetup>> {
   }
 
   async deleteRelationships<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends ToManyRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.AlwaysPatch | ResourceFieldFlag.MaybePatch
@@ -172,7 +169,7 @@ export class Client<T extends Partial<ClientSetup>> {
     await this.request(url, 'DELETE')
   }
 
-  async getOne<U extends ResourceConstructor<any, any>, V extends ResourceQueryParams<U>>(
+  async getOne<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
     Resource: U,
     id: ResourceId,
     resourceQuery?: V,
@@ -184,7 +181,7 @@ export class Client<T extends Partial<ClientSetup>> {
     })
   }
 
-  async getMany<U extends ResourceConstructor<any, any>, V extends ResourceQueryParams<U>>(
+  async getMany<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
     Resource: U,
     searchQuery: {} | null,
     resourceQuery?: V,
@@ -200,7 +197,7 @@ export class Client<T extends Partial<ClientSetup>> {
   }
 
   async getOneRelationship<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends ToOneRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
@@ -223,7 +220,7 @@ export class Client<T extends Partial<ClientSetup>> {
   }
 
   async getManyRelationship<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends ToManyRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
@@ -253,14 +250,14 @@ export class Client<T extends Partial<ClientSetup>> {
     })
   }
 
-  one<U extends ResourceConstructor<any, any>, V extends ResourceQueryParams<U>>(
+  one<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
     Resource: U,
     resourceQuery?: V,
   ) {
     return (id: ResourceId) => this.getOne(Resource, id, resourceQuery)
   }
 
-  many<U extends ResourceConstructor<any, any>, V extends ResourceQueryParams<U>>(
+  many<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
     Resource: U,
     resourceQuery: V,
   ) {
@@ -268,7 +265,7 @@ export class Client<T extends Partial<ClientSetup>> {
   }
 
   toOne<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends ToOneRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
@@ -279,7 +276,7 @@ export class Client<T extends Partial<ClientSetup>> {
   }
 
   toMany<
-    U extends ResourceConstructor<any, any>,
+    U extends ResourceFormatter<any, any>,
     V extends ToManyRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
