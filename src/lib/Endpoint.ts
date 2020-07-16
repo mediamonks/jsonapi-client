@@ -126,7 +126,15 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
 
   async delete(id: ResourceId) {
     const url = new URL(`${this}/${id}`)
-    return this.client.controller.handleRequest(url, HTTPRequestMethod.DELETE)
+    return new Promise((resolve, reject) =>
+      this.client.controller.handleRequest(url, HTTPRequestMethod.DELETE).then((result) => {
+        if (result.isSuccess()) {
+          resolve(result.value)
+        } else {
+          reject(result.value)
+        }
+      }),
+    )
   }
 
   /**
