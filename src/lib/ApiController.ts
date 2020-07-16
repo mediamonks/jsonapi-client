@@ -71,6 +71,11 @@ export class ApiController<S extends Partial<ClientSetup>> {
       const errorMessage = response.statusText || `Request Error ${response.status}`
       return Result.reject([new JSONAPIResponseError(errorMessage, response.status)])
     }
+
+    if (response.status === 204) {
+      return Result.accept(null)
+    }
+
     return response
       .json()
       .then((data): any => {
