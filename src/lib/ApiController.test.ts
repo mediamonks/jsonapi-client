@@ -1,7 +1,7 @@
 import { Client } from './Client'
 import { url } from '../../test/mocks'
 import { Post } from '../../test/resources'
-import { keys } from '../utils/data'
+import { keys, HTTPRequestMethod } from '../utils/data'
 
 describe('ApiController', () => {
   describe('encodeResource', () => {
@@ -39,6 +39,22 @@ describe('ApiController', () => {
       )
 
       expect(result.value[0].message).toEqual(`Invalid type for Resource of type ${Post.type}`)
+    })
+  })
+  describe('handleRequest', () => {
+    it('No Content - 204', async () => {
+      const client = new Client(url, {
+        fetchAdapter: () =>
+          Promise.resolve({
+            ok: true,
+            status: 204,
+            json: () => Promise.resolve(JSON.parse('')),
+          } as any),
+      })
+
+      const result = await client.controller.handleRequest(url, HTTPRequestMethod.GET)
+      expect(result.state).toEqual('accepted')
+      expect(result.value).toEqual(null)
     })
   })
 })
