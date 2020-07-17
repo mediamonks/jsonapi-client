@@ -1,5 +1,4 @@
 import {
-  Resource as ResourceValues,
   ResourceConstructorData,
   ResourceCreateData,
   ResourceFormatter,
@@ -13,6 +12,8 @@ import {
   ResourceIncludeQuery,
   ResourceFieldsQuery,
   JSONAPIResourceObject,
+  FilteredResource,
+  ResourceFilter,
 } from '../types'
 
 export const resource = <T extends ResourceType, U extends ResourceFields>(
@@ -25,7 +26,7 @@ export const resource = <T extends ResourceType, U extends ResourceFields>(
     static path = path
     static fields = fields
 
-    constructor(data: ResourceConstructorData<T, U>) {
+    private constructor(data: ResourceConstructorData<T, U>) {
       Object.assign(this, data)
     }
 
@@ -47,9 +48,10 @@ export const resource = <T extends ResourceType, U extends ResourceFields>(
       return { fields, include }
     }
 
-    static parseResourceDocument(
+    static decode<V extends ResourceFilter<ResourceFormatter<T, U>>>(
       resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
-    ): ResourceValues<ResourceFormatter<T, U>> {
+      resourceFilter?: V,
+    ): FilteredResource<ResourceFormatter<T, U>, V> {
       return {} as any
     }
 

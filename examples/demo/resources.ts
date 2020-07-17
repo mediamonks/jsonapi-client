@@ -1,6 +1,6 @@
 import { isString, test } from 'isntnt'
 
-import { resource, Attribute, Relationship, ResourceFormatter } from '../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../src'
 
 // User
 type UserType = 'User'
@@ -26,7 +26,7 @@ const dateStringFormatter = {
   deserialize: (value: string) => new Date(value),
 }
 
-export const User: UserResource = resource('User', 'users', {
+export const User: UserResource = JSONAPI.resource('User', 'users', {
   password: Attribute.requiredWriteOnly(isString),
   emailAddress: Attribute.required(isString),
   givenName: Attribute.requiredReadonly(isString),
@@ -47,7 +47,7 @@ type CountryFields = {
 
 type CountryResource = ResourceFormatter<CountryType, CountryFields>
 
-const Country: CountryResource = resource('Country', 'countries', {
+const Country: CountryResource = JSONAPI.resource('Country', 'countries', {
   name: Attribute.requiredReadonly(isString),
   locales: Relationship.toMany(() => [Locale]),
   a: Relationship.toOne(() => [{} as AResource]),
@@ -64,7 +64,7 @@ type LocaleFields = {
 
 type LocaleResource = ResourceFormatter<LocaleType, LocaleFields>
 
-const Locale: LocaleResource = resource('Locale', 'locales', {
+const Locale: LocaleResource = JSONAPI.resource('Locale', 'locales', {
   name: Attribute.required(isString),
   code: Attribute.requiredReadonly(isString),
   country: Relationship.toMany(() => [Country]),

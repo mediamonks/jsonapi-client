@@ -46,12 +46,12 @@ type BaseRelationshipFieldValueWrapper<T, U, V> = V extends ResourceFieldFlag.Al
 
 type FilteredResourceFieldName<
   T extends ResourceFormatter<any, any>,
-  U extends ResourceQueryParams<T>
+  U extends ResourceFilter<T>
 > = T['type'] extends keyof U['fields'] ? U['fields'][T['type']][number] : keyof T['fields']
 
 export type FilteredResource<
   T extends ResourceFormatter<any, any>,
-  U extends ResourceQueryParams<T> = {}
+  U extends ResourceFilter<T> = {}
 > = ResourceIdentifier<T['type']> &
   {
     [P in FilteredResourceFieldName<T, U>]: T['fields'][P] extends RelationshipField<
@@ -132,16 +132,14 @@ export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
   }
 
 // Constructor
-export type ResourceFormatter<T extends ResourceType, U extends ResourceFields> = {
-  new (data: ResourceConstructorData<T, U>): Resource<ResourceFormatter<T, U>>
+export interface ResourceFormatter<T extends ResourceType, U extends ResourceFields> {
+  // new (data: ResourceConstructorData<T, U>): Resource<ResourceFormatter<T, U>>
   type: T
   path: ResourcePath
   fields: U
+
   identifier(id: ResourceId): ResourceIdentifier<T>
-  parseResourceDocument(
-    resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
-  ): Resource<ResourceFormatter<T, U>>
-  encode(resource: Resource<ResourceFormatter<T, U>>): JSONAPIDocument<ResourceFormatter<T, U>>
+
   createFilter<
     V extends ResourceFieldsQuery<ResourceFormatter<T, U>>,
     W extends ResourceIncludeQuery<ResourceFormatter<T, U>, V>
@@ -149,6 +147,7 @@ export type ResourceFormatter<T extends ResourceType, U extends ResourceFields> 
     fields?: V,
     include?: W,
   ): { fields: V; include: W }
+
   withFilter<
     V extends ResourceFieldsQuery<ResourceFormatter<T, U>>,
     W extends ResourceIncludeQuery<ResourceFormatter<T, U>, V>
@@ -156,9 +155,17 @@ export type ResourceFormatter<T extends ResourceType, U extends ResourceFields> 
     fields?: V,
     include?: W,
   ): { fields: V; include: W }
+
+  // encode(resource: Resource<ResourceFormatter<T, U>>): JSONAPIDocument<ResourceFormatter<T, U>>
+  decode<V extends ResourceFilter<ResourceFormatter<T, U>>>(
+    resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
+    resourceFilter?: V,
+  ): FilteredResource<ResourceFormatter<T, U>, V>
+
   createResourcePostObject<V extends ResourceCreateData<ResourceFormatter<T, U>>>(
     data: V,
   ): JSONAPIResourceObject<ResourceFormatter<T, U>>
+
   createResourcePatchObject<V extends ResourcePatchData<ResourceFormatter<T, U>>>(
     id: ResourceId,
     data: V,
@@ -210,13 +217,16 @@ export type ResourceRelatedResources<
   T extends ResourceFormatter<any, any>
 > = BaseResourceFieldsRelatedResources<T['fields'], never>
 
-// Query
-export type ResourceQueryParams<T extends ResourceFormatter<any, any>> = {
+// ResourceFilter
+export type ResourceFilter<T extends ResourceFormatter<any, any>> = {
   [P in 'fields']?: ResourceFieldsQuery<T>
 } &
   {
     [P in 'include']?: ResourceIncludeQuery<T>
   }
+
+// Query
+export type ResourceQueryParams = ResourceFilter<any>
 
 type BaseResourcesFieldsQuery<T> = T extends ResourceFormatter<any, any>
   ? {

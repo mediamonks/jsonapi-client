@@ -1,9 +1,9 @@
-import { ResourceFieldsQuery, ResourceQueryParams, JSONAPISearchParams } from '../types'
+import { ResourceFieldsQuery, ResourceFilter, JSONAPISearchParams } from '../types'
 
 export const createURL = (
   baseUrl: URL,
   path: Array<string>,
-  resourceQuery: ResourceQueryParams<any> = {},
+  resourceQuery: ResourceFilter<any> = {},
   searchParams: JSONAPISearchParams = {},
 ) => {
   const url = new URL(path.join('/'), baseUrl)

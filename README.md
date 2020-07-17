@@ -135,16 +135,16 @@ constructs a Resource instance
 
 Create a ResourceIdentifier from the Resource static `type` and `id` parameter
 
-### Resource.parseResourceQuery
+### Resource.createFilter
 
 ```
 (ResourceFieldsQuery, ResourceIncludeQuery) -> ResourceQuery<ResourceFieldsQuery, ResourceIncludeQuery>
 ```
 
-### Resource.parseResourceDocument
+### Resource.decode
 
 ```
-(JSONAPIDocument) -> Resource
+(JSONAPIDocument, ResourceQueryParams) -> Resource
 ```
 
 ### Resource.createResourcePostObject

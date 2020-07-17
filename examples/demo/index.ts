@@ -31,27 +31,25 @@ getUserDetails('42').then((resource) => {
   console.log(Object.keys(resource.data)) // > ['type', 'id', 'emailAddress']
 })
 
-client.getOne(User, '42', userDetailsFilter).then((resource) => {
+client.getOne(User, '42', userDetailsFilter).then(async (resource) => {
   if (resource.data.birthCountry?.type === 'Country') {
     console.log(resource.data.birthCountry.locales)
-
-    resource.data.givenName
   }
 
-  client.update(User, '12', {
+  await client.update(User, '12', {
     // givenName: 'Hans', // Uncomment to see IllegalField error
     birthCountry: null,
     friends: [{ type: 'User', id: '16' }],
   })
 
-  client.updateRelationship(User, '96', 'birthCountry', {
+  await client.updateRelationship(User, '96', 'birthCountry', {
     type: 'Country',
     id: '<id>',
   })
 
-  client.addRelationships(User, '8', 'partners', [])
+  await client.addRelationships(User, '8', 'partners', [])
 
-  client.delete(User, '13')
+  await client.delete(User, '13')
 })
 
 // client.getOneRelationship(User, '128', 'birthCountry').then((resource) => {

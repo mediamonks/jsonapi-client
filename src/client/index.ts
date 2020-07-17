@@ -4,7 +4,7 @@ import {
   FilteredResource,
   ResourceFormatter,
   ResourceId,
-  ResourceQueryParams,
+  ResourceFilter,
   ResourceCreateData,
   ResourcePatchData,
   RelationshipFieldNameWithFlag,
@@ -74,6 +74,8 @@ export type ClientSetup = {
   afterRequest(response: Response): Response | Promise<Response>
   fetchAdapter: Window['fetch']
 }
+
+export const client = <T extends Partial<ClientSetup>>(url: URL, setup: T) => new Client(url, setup)
 
 export class Client<T extends Partial<ClientSetup>> {
   readonly url: URL
@@ -169,19 +171,19 @@ export class Client<T extends Partial<ClientSetup>> {
     await this.request(url, 'DELETE')
   }
 
-  async getOne<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
+  async getOne<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
     Resource: U,
     id: ResourceId,
     resourceQuery?: V,
   ): Promise<OneResource<FilteredResource<U, V>>> {
     const url = createURL(this.url, [Resource.type, id], resourceQuery as any)
     return this.request(url, 'GET').then((data) => {
-      const resource = Resource.parseResourceDocument(data as any)
+      const resource = Resource.decode(data as any)
       return new OneResource(resource as any, data.meta ?? {}, {})
     })
   }
 
-  async getMany<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
+  async getMany<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
     Resource: U,
     searchQuery: {} | null,
     resourceQuery?: V,
@@ -189,7 +191,7 @@ export class Client<T extends Partial<ClientSetup>> {
     const url = createURL(this.url, [Resource.path], resourceQuery as any, searchQuery || {})
 
     return this.request(url, 'GET').then((data) => {
-      const resource = Resource.parseResourceDocument(data as any)
+      const resource = Resource.decode(data as any)
       return new ManyResource(resource as any, data.meta ?? {}, {
         pagination: {},
       })
@@ -202,7 +204,7 @@ export class Client<T extends Partial<ClientSetup>> {
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
     >,
-    W extends ResourceQueryParams<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
   >(
     Resource: U,
     id: ResourceId,
@@ -214,7 +216,7 @@ export class Client<T extends Partial<ClientSetup>> {
     const url = createURL(this.url, [Resource.type, id, fieldName], resourceQuery as any)
 
     return this.request(url, 'GET').then((data) => {
-      const resource = Resource.parseResourceDocument(data as any)
+      const resource = Resource.decode(data as any)
       return new OneResource(resource as any, data.meta ?? {}, {})
     })
   }
@@ -225,7 +227,7 @@ export class Client<T extends Partial<ClientSetup>> {
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
     >,
-    W extends ResourceQueryParams<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
   >(
     Resource: U,
     id: ResourceId,
@@ -243,21 +245,21 @@ export class Client<T extends Partial<ClientSetup>> {
     )
 
     return this.request(url, 'GET').then((data) => {
-      const resource = Resource.parseResourceDocument(data as any)
+      const resource = Resource.decode(data as any)
       return new ManyResource(resource as any, data.meta ?? {}, {
         pagination: {},
       })
     })
   }
 
-  one<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
+  one<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
     Resource: U,
     resourceQuery?: V,
   ) {
     return (id: ResourceId) => this.getOne(Resource, id, resourceQuery)
   }
 
-  many<U extends ResourceFormatter<any, any>, V extends ResourceQueryParams<U>>(
+  many<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
     Resource: U,
     resourceQuery: V,
   ) {
@@ -270,7 +272,7 @@ export class Client<T extends Partial<ClientSetup>> {
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
     >,
-    W extends ResourceQueryParams<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
   >(Resource: U, fieldName: V, resourceQuery?: W) {
     return (id: ResourceId) => this.getOneRelationship(Resource, id, fieldName, resourceQuery)
   }
@@ -281,7 +283,7 @@ export class Client<T extends Partial<ClientSetup>> {
       U['fields'],
       ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
     >,
-    W extends ResourceQueryParams<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
   >(Resource: U, fieldName: V, resourceQuery?: W) {
     return (id: ResourceId, searchQuery?: {}) =>
       this.getManyRelationship(Resource, id, fieldName, searchQuery, resourceQuery)

@@ -1,10 +1,10 @@
-import { Client } from '../../../src'
+import JSONAPI from '../../../src'
 
 import Author from './resources/Author'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
-const client = new Client(url, {
+const client = JSONAPI.client(url, {
   initialResourceFields: 'none',
   initialRelationshipData: 'resource-identifiers',
   resources: {
@@ -24,7 +24,7 @@ client
     console.log(author.data.date_of_death) // null
   })
 
-const authorWithBooks = Author.parseResourceQuery(
+const authorWithBooks = Author.createFilter(
   {
     authors: ['name', 'books'],
   },
