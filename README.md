@@ -43,7 +43,7 @@ const dateStringFormatter = {
 
 const isUserRole = either('admin', 'editor', 'subscriber')
 
-const User = resource('User', 'users', {
+const User = JSONAPI.resource('User', 'users', {
   emailAddress: Attribute.required(isString),
   password: Attribute.requiredWriteOnly(isString),
   userName: Attribute.requiredStatic(isString),
@@ -59,8 +59,8 @@ const User = resource('User', 'users', {
 ```typescript
 const url = new URL('https://example.com/api/')
 
-const client = new JSONAPIClient(url, {
-  defaultIncludeFields: 'primary-relationships',
+const client = new JSONAPI.client(url, {
+  initialRelationshipData: 'primary-relationships',
 })
 ```
 

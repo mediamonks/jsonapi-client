@@ -1,5 +1,6 @@
 import { Serializable, SerializableObject } from 'isntnt'
 
+import { ResourceFieldFlag } from '../resource/field'
 import {
   FilteredResource,
   ResourceFormatter,
@@ -20,7 +21,6 @@ import {
   JSONAPIPaginationLinks,
   JSONAPIDocument,
 } from '../types'
-import { ResourceFieldFlag } from '../resource/field'
 import { createURL } from './utils'
 
 const JSON_API_MIME_TYPE = 'application/vnd.api+json'
@@ -36,8 +36,8 @@ export type ImplicitResourceFields = 'none' | 'all'
 // To what degree relationship data is included by default
 export type ImplicitRelationshipData =
   | 'none'
-  | 'included'
-  | 'included-primary-relationships'
+  | 'all'
+  | 'primary-relationships'
   | 'resource-identifiers'
 
 // Whether a self-link is present on a relationship field and if so what key it has
