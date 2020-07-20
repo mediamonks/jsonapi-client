@@ -71,11 +71,12 @@ describe('Type', () => {
       const never = Type.is('never', isNever)
       const value = {}
       expect(never.validate(value)).toEqual([
-        {
-          code: null,
-          detail: 'value must be never',
-          pointer: [],
-        },
+        'value must be never',
+        // {
+        //   code: null,
+        //   detail: 'value must be never',
+        //   pointer: [],
+        // },
       ])
     })
   })
@@ -264,11 +265,12 @@ describe('Type', () => {
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([never, string])
         expect(anyAndString.validate('ABC')).toEqual([
-          {
-            code: null,
-            detail: 'value must be never',
-            pointer: [],
-          },
+          'value must be never',
+          // {
+          //   code: null,
+          //   detail: 'value must be never',
+          //   pointer: [],
+          // },
         ])
       })
 
@@ -277,16 +279,18 @@ describe('Type', () => {
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([never, string])
         expect(anyAndString.validate(12)).toEqual([
-          {
-            code: null,
-            detail: 'value must be never',
-            pointer: [],
-          },
-          {
-            code: null,
-            detail: 'value must be a string',
-            pointer: [],
-          },
+          'value must be never',
+          'value must be a string',
+          // {
+          //   code: null,
+          //   detail: 'value must be never',
+          //   pointer: [],
+          // },
+          // {
+          //   code: null,
+          //   detail: 'value must be a string',
+          //   pointer: [],
+          // },
         ])
       })
     })
@@ -405,11 +409,12 @@ describe('Type', () => {
         const string = Type.is('a string', isString)
         const neverOrString = Type.or([never, string])
         expect(neverOrString.validate(12)).toEqual([
-          {
-            code: null,
-            detail: 'value must be never or a string',
-            pointer: [],
-          },
+          'value must be never or a string',
+          // {
+          //   code: null,
+          //   detail: 'value must be never or a string',
+          //   pointer: [],
+          // },
         ])
       })
     })
@@ -550,21 +555,24 @@ describe('Type', () => {
           bar: any,
         })
         expect(anyShape.validate(null)).toEqual([
-          {
-            code: null,
-            detail: 'value must be an object',
-            pointer: [],
-          },
-          {
-            code: null,
-            detail: 'value at foo must be any',
-            pointer: ['foo'],
-          },
-          {
-            code: null,
-            detail: 'value at bar must be any',
-            pointer: ['bar'],
-          },
+          'value must be an object',
+          'value at foo must be any',
+          'value at bar must be any',
+          // {
+          //   code: null,
+          //   detail: 'value must be an object',
+          //   pointer: [],
+          // },
+          // {
+          //   code: null,
+          //   detail: 'value at foo must be any',
+          //   pointer: ['foo'],
+          // },
+          // {
+          //   code: null,
+          //   detail: 'value at bar must be any',
+          //   pointer: ['bar'],
+          // },
         ])
       })
 
@@ -576,11 +584,12 @@ describe('Type', () => {
           bar: never,
         })
         expect(anyAndNeverShape.validate({})).toEqual([
-          {
-            code: null,
-            detail: 'value at bar must be never',
-            pointer: ['bar'],
-          },
+          'value at bar must be never',
+          // {
+          //   code: null,
+          //   detail: 'value at bar must be never',
+          //   pointer: ['bar'],
+          // },
         ])
       })
 
@@ -591,16 +600,18 @@ describe('Type', () => {
           bar: never,
         })
         expect(neverShape.validate(12)).toEqual([
-          {
-            code: null,
-            detail: 'value at foo must be never',
-            pointer: ['foo'],
-          },
-          {
-            code: null,
-            detail: 'value at bar must be never',
-            pointer: ['bar'],
-          },
+          'value at foo must be never',
+          'value at bar must be never',
+          // {
+          //   code: null,
+          //   detail: 'value at foo must be never',
+          //   pointer: ['foo'],
+          // },
+          // {
+          //   code: null,
+          //   detail: 'value at bar must be never',
+          //   pointer: ['bar'],
+          // },
         ])
       })
     })

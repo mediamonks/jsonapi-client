@@ -73,7 +73,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     >
   >(
     id: ResourceId,
-    fieldName: string,
+    fieldName: V,
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
     console.log(`Add some ${fieldName}`, data)

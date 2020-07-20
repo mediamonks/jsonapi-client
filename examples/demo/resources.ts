@@ -26,7 +26,7 @@ export type UserFields = {
   givenName: Attribute.RequiredReadonly<string>
   familyName: Attribute.RequiredGenerated<string>
   dateOfBirth: Attribute.Optional<string, Date>
-  birthCountry: Relationship.ToOne<CountryResource>
+  birthCountry: Relationship.ToOneReadOnly<CountryResource>
   friends: Relationship.ToMany<UserResource>
 }
 
@@ -38,7 +38,7 @@ export const user: UserResource = JSONAPI.resource('User', {
   givenName: Attribute.requiredReadonly(string),
   familyName: Attribute.requiredGenerated(string),
   dateOfBirth: Attribute.optional(dateString, dateStringFormatter),
-  birthCountry: Relationship.toOne(() => [country]),
+  birthCountry: Relationship.toOneReadOnly(() => [country]),
   friends: Relationship.toMany(() => [user]),
 })
 

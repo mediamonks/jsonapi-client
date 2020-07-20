@@ -52,18 +52,17 @@ export default class Type<T> implements TypeMeta {
     return value as T
   }
 
-  validate(value: unknown): Array<TypeErrorDetails> {
+  validate(value: unknown): ReadonlyArray<string> {
     switch (this.mode) {
       case TypeAssertionMode.Union: {
-        return this.predicate(value)
-          ? []
-          : [
-              {
-                code: this.code,
-                detail: String(this),
-                pointer: this.pointer,
-              },
-            ]
+        return this.predicate(value) ? [] : [String(this)]
+        // [
+        //     {
+        //       code: this.code,
+        //       detail: String(this),
+        //       pointer: this.pointer,
+        //     },
+        //   ]
       }
       case TypeAssertionMode.Intersection: {
         return this.rules

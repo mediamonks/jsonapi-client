@@ -40,16 +40,13 @@ users.getOne('42', userDetailsFilter).then(async (resource) => {
 
   await users.update('12', {
     // givenName: 'Hans', // Uncomment to see IllegalField error
-    birthCountry: null,
+    // birthCountry: null,
     friends: [{ type: 'User', id: '16' }],
   })
 
-  await users.updateRelationship('96', 'birthCountry', {
-    type: 'Country',
-    id: '<id>',
-  })
+  await users.updateRelationship('96', 'friends', [])
 
-  await users.addRelationships('8', 'partners', [])
+  await users.addRelationships('8', 'friends', [resource.data])
 
   await users.delete('13')
 })

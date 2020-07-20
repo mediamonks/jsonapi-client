@@ -1,11 +1,9 @@
 import { None, Predicate } from 'isntnt'
-import Type from '../../../type'
 
 import {
   AttributeFieldFromFactory,
   AttributeValue,
   AttributeValueFormatter,
-  ResourceFieldMaybeMask,
   ResourceFieldFactoryRules,
   AttributeFieldValidator,
 } from '../../../types'
@@ -33,7 +31,7 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
   U extends AttributeValue,
   V = U
 >(
-  type: Type<U>,
+  validator: AttributeFieldValidator<U>,
   formatter: AttributeValueFormatter<U, V> = defaultAttributeFormatter,
 ): AttributeField<
   V,
@@ -44,7 +42,7 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
 > => {
   const ruleMasks = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
   const flag = ruleMasks.reduce((flag, mask) => flag | mask, 0)
-  return new AttributeField(flag as any, type, formatter)
+  return new AttributeField(flag as any, validator, formatter)
 }
 
 export class AttributeField<
@@ -52,31 +50,32 @@ export class AttributeField<
   U extends AttributeValue,
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Attributes, V> {
-  readonly type: Type<U>
+  readonly validate: (value: unknown, method: ResourceFieldMethod) => ReadonlyArray<string>
+  readonly predicate: Predicate<U>
   readonly serialize: (value: T) => U
   readonly deserialize: (value: U) => T
 
-  constructor(flag: V, validator: Type<U>, formatter: AttributeValueFormatter<U, T>) {
+  constructor(
+    flag: V,
+    validator: AttributeFieldValidator<U>,
+    formatter: AttributeValueFormatter<U, T>,
+  ) {
     super(ResourceFieldRoot.Attributes, flag)
-    this.type = validator
     this.serialize = formatter.serialize
     this.deserialize = formatter.deserialize
+    this.predicate = validator.predicate
+    this.validate = (value: unknown, method: ResourceFieldMethod): ReadonlyArray<string> => {
+      if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Never])) {
+        return [`value must be omitted`]
+      }
+      if (value == null) {
+        return !this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Maybe])
+          ? ['value is required']
+          : []
+      }
+      return validator.validate(value)
+    }
   }
-
-  // validate(
-  //   value: unknown,
-  //   method: ResourceFieldMethod,
-  // ): V extends ResourceFieldMaybeMask ? U | null : U {
-  //   if (this.type.predicate(value)) {
-  //     return value as any
-  //   } else if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Maybe])) {
-  //     return null as any
-  //   }
-  //   if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Never])) {
-  //     throw new Error(`Invalid Attribute (...)`)
-  //   }
-  //   throw new Error(`Invalid Attribute Value (...)`)
-  // }
 }
 
 export namespace Attribute {

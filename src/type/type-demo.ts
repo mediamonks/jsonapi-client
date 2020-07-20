@@ -6,46 +6,29 @@ const int = Type.is('an int', isInt)
 
 const string = Type.is('a string', isString)
 
-const name = string.assert(12)
-/* 
-TypeValidationError { 
-  message: string, 
-  actual: 12, 
-  details: [TypeValidationErrorDetails {
-    code: null,
-    title: string
-    pointer: [],
-  }]  
-}
-*/
+string.assert(12) // TypeError { value must be a string }
 
 const MIN_PASSWORD_LENGTH = 8
 
-const minLengthPassword = Type.has(
-  `a length of at least ${MIN_PASSWORD_LENGTH}`,
+const minLengthPassword = Type.is(
+  `a string with a length of at least ${MIN_PASSWORD_LENGTH}`,
   at('length', min(MIN_PASSWORD_LENGTH)),
 ).with({ code: 'password-too-short' })
 
-const withNumericCharacterString = Type.includes('a numeric character', test(/\d/)).with({
-  code: 'missing-numeric-character',
-})
+const isStringWithNumericCharacter = test(/\d/)
 
-const password = string.with({
-  code: 'invalid-password',
-  rules: [minLengthPassword as Type<string>, withNumericCharacterString],
-})
+const withNumericCharacterString = Type.is(
+  'a string with a numeric character',
+  isStringWithNumericCharacter,
+)
 
-const emailAddress = string.with({
-  code: 'invalid-email-address',
-  rules: [],
-})
+const password = Type.and([string, minLengthPassword, withNumericCharacterString])
 
-const oi = Type.shape({
+const user = Type.shape('a user', {
   name: string,
+  emailAddress: string,
   password: password,
 })
-
-const user = Type.shape({ name: string })
 
 const x = Type.and([user])
 const stringOrInt = Type.or([string, int])
