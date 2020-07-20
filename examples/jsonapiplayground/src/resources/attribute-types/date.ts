@@ -1,11 +1,12 @@
 import { test } from 'isntnt'
+import Type from '../../../../../src/type'
 
 const serializeYearMonthDayDate = (date: Date): string =>
   [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0')].join('-')
 
-export const isDateString = test(/^\d{4}(-\d{2}){2}$/)
+export const dateString = Type.is('a date string', test(/^\d{4}(-\d{2}){2}$/))
 
-export const dateFormatter = {
+export const dateStringFormatter = {
   serialize: serializeYearMonthDayDate,
   deserialize: (value: string) => new Date(value),
 }

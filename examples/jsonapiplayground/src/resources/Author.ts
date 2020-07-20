@@ -1,9 +1,10 @@
-import { isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
-import { dateFormatter, isDateString } from './attribute-types/date'
+import { dateString, dateStringFormatter } from './attribute-types/date'
+import { string } from './attribute-types/string'
+
 import book from './book'
-import photo from './Photo'
+import photo from './photo'
 
 type AuthorType = 'authors'
 
@@ -19,10 +20,10 @@ type AuthorFields = {
 type AuthorResource = ResourceFormatter<AuthorType, AuthorFields>
 
 const author: AuthorResource = JSONAPI.resource('authors', {
-  name: Attribute.required(isString),
-  birthplace: Attribute.required(isString),
-  date_of_birth: Attribute.required(isDateString, dateFormatter),
-  date_of_death: Attribute.optional(isDateString, dateFormatter),
+  name: Attribute.required(string),
+  birthplace: Attribute.required(string),
+  date_of_birth: Attribute.required(dateString, dateStringFormatter),
+  date_of_death: Attribute.optional(dateString, dateStringFormatter),
   photos: Relationship.toMany(() => [photo]),
   books: Relationship.toMany(() => [book]),
 })

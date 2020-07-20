@@ -1,7 +1,9 @@
-import { isString, isUint } from 'isntnt'
 import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
-import photo from './Photo'
+import { string } from './attribute-types/string'
+import { uint } from './attribute-types/uint'
+
+import photo from './photo'
 import book from './book'
 
 type ChapterType = 'chapters'
@@ -16,8 +18,8 @@ type ChapterFields = {
 type ChapterResource = ResourceFormatter<ChapterType, ChapterFields>
 
 const chapter: ChapterResource = JSONAPI.resource('chapters', {
-  title: Attribute.required(isString),
-  ordering: Attribute.required(isUint),
+  title: Attribute.required(string),
+  ordering: Attribute.required(uint),
   photos: Relationship.toMany(() => [photo]),
   book: Relationship.toOne(() => [book]),
 })

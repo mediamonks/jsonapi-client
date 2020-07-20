@@ -1,6 +1,21 @@
 import { isString, test } from 'isntnt'
+import Type from '../../src/type'
 
 import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../src'
+
+const string = Type.is('a string', isString)
+
+const dateString = Type.is(
+  'an ISO_8601 date string',
+  test(
+    /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(.[0-9]+)?(Z)?$/,
+  ),
+)
+
+const dateStringFormatter = {
+  serialize: (value: Date) => value.toISOString(),
+  deserialize: (value: string) => new Date(value),
+}
 
 // User
 export type UserType = 'User'
@@ -17,21 +32,12 @@ export type UserFields = {
 
 export type UserResource = ResourceFormatter<UserType, UserFields>
 
-const isISODateString = test(
-  /^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(.[0-9]+)?(Z)?$/,
-)
-
-const dateStringFormatter = {
-  serialize: (value: Date) => value.toISOString(),
-  deserialize: (value: string) => new Date(value),
-}
-
 export const user: UserResource = JSONAPI.resource('User', {
-  password: Attribute.requiredWriteOnly(isString),
-  emailAddress: Attribute.required(isString),
-  givenName: Attribute.requiredReadonly(isString),
-  familyName: Attribute.requiredGenerated(isString),
-  dateOfBirth: Attribute.optional(isISODateString, dateStringFormatter),
+  password: Attribute.requiredWriteOnly(string),
+  emailAddress: Attribute.required(string),
+  givenName: Attribute.requiredReadonly(string),
+  familyName: Attribute.requiredGenerated(string),
+  dateOfBirth: Attribute.optional(dateString, dateStringFormatter),
   birthCountry: Relationship.toOne(() => [country]),
   friends: Relationship.toMany(() => [user]),
 })
@@ -48,8 +54,8 @@ type CountryFields = {
 type CountryResource = ResourceFormatter<CountryType, CountryFields>
 
 const country: CountryResource = JSONAPI.resource('Country', {
-  name: Attribute.requiredReadonly(isString),
-  locales: Relationship.toMany(() => [Locale]),
+  name: Attribute.requiredReadonly(string),
+  locales: Relationship.toMany(() => [locale]),
   a: Relationship.toOne(() => [{} as AResource]),
 })
 
@@ -64,9 +70,9 @@ type LocaleFields = {
 
 type LocaleResource = ResourceFormatter<LocaleType, LocaleFields>
 
-const Locale: LocaleResource = JSONAPI.resource('Locale', {
-  name: Attribute.required(isString),
-  code: Attribute.requiredReadonly(isString),
+const locale: LocaleResource = JSONAPI.resource('Locale', {
+  name: Attribute.required(string),
+  code: Attribute.requiredReadonly(string),
   country: Relationship.toMany(() => [country]),
 })
 

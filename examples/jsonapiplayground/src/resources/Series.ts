@@ -1,7 +1,8 @@
-import { isString } from 'isntnt'
 import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
-import photo from './Photo'
+import { string } from './attribute-types/string'
+
+import photo from './photo'
 import book from './book'
 
 type SeriesType = 'series'
@@ -15,7 +16,7 @@ type SeriesFields = {
 type SeriesResource = ResourceFormatter<SeriesType, SeriesFields>
 
 const series: SeriesResource = JSONAPI.resource('series', {
-  title: Attribute.required(isString),
+  title: Attribute.required(string),
   photos: Relationship.toMany(() => [photo]),
   books: Relationship.toMany(() => [book]),
 })

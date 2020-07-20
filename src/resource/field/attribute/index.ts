@@ -1,4 +1,5 @@
 import { None, Predicate } from 'isntnt'
+import Type from '../../../type'
 
 import {
   AttributeFieldFromFactory,
@@ -6,6 +7,7 @@ import {
   AttributeValueFormatter,
   ResourceFieldMaybeMask,
   ResourceFieldFactoryRules,
+  AttributeFieldValidator,
 } from '../../../types'
 import {
   ResourceField,
@@ -31,7 +33,7 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
   U extends AttributeValue,
   V = U
 >(
-  predicate: Predicate<U>,
+  type: Type<U>,
   formatter: AttributeValueFormatter<U, V> = defaultAttributeFormatter,
 ): AttributeField<
   V,
@@ -42,7 +44,7 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
 > => {
   const ruleMasks = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
   const flag = ruleMasks.reduce((flag, mask) => flag | mask, 0)
-  return new AttributeField(flag as any, predicate, formatter)
+  return new AttributeField(flag as any, type, formatter)
 }
 
 export class AttributeField<
@@ -50,31 +52,31 @@ export class AttributeField<
   U extends AttributeValue,
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Attributes, V> {
-  readonly predicate: Predicate<U>
+  readonly type: Type<U>
   readonly serialize: (value: T) => U
   readonly deserialize: (value: U) => T
 
-  constructor(flag: V, predicate: Predicate<U>, formatter: AttributeValueFormatter<U, T>) {
+  constructor(flag: V, validator: Type<U>, formatter: AttributeValueFormatter<U, T>) {
     super(ResourceFieldRoot.Attributes, flag)
-    this.predicate = predicate
+    this.type = validator
     this.serialize = formatter.serialize
     this.deserialize = formatter.deserialize
   }
 
-  validate(
-    value: unknown,
-    method: ResourceFieldMethod,
-  ): V extends ResourceFieldMaybeMask ? U | null : U {
-    if (this.predicate(value)) {
-      return value as any
-    } else if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Maybe])) {
-      return null as any
-    }
-    if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Never])) {
-      throw new Error(`Invalid Attribute (...)`)
-    }
-    throw new Error(`Invalid Attribute Value (...)`)
-  }
+  // validate(
+  //   value: unknown,
+  //   method: ResourceFieldMethod,
+  // ): V extends ResourceFieldMaybeMask ? U | null : U {
+  //   if (this.type.predicate(value)) {
+  //     return value as any
+  //   } else if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Maybe])) {
+  //     return null as any
+  //   }
+  //   if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Never])) {
+  //     throw new Error(`Invalid Attribute (...)`)
+  //   }
+  //   throw new Error(`Invalid Attribute Value (...)`)
+  // }
 }
 
 export namespace Attribute {

@@ -12,6 +12,7 @@ import { AttributeField } from './resource/field/attribute'
 import { RelationshipField, RelationshipFieldType } from './resource/field/relationship'
 import { ResourceFormatter } from './resource/formatter'
 import { ResourceIdentifier } from './resource/identifier'
+import Type from './type'
 
 // Util
 type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
@@ -344,13 +345,25 @@ export type AttributeFieldNameWithFlag<
   U extends ResourceFieldFlag
 > = ResourceFieldNameWithFlag<Pick<T, AttributeFieldName<T>>, U>
 
-export type AttributeFieldFactory = (predicate: Predicate<any>) => AttributeField<any, any, any>
+export type AttributeFieldFactory = (type: Type<any>) => AttributeField<any, any, any>
 
 export type AttributeFieldFromFactory<
   T extends AttributeValue,
   U,
   V extends AttributeFieldFactory
 > = ReturnType<V> extends AttributeField<any, any, infer R> ? AttributeField<U, T, R> : never
+
+// Attribute Validator
+export type AttributeFieldValidator<T> = {
+  predicate: T
+  validate: Array<ValidatorDetail>
+}
+
+export type ValidatorDetail = {
+  code: string | null
+  detail: string
+  pointer: ReadonlyArray<string>
+}
 
 // Relationships
 export type RelationshipValue = Resource<any> | null | Array<Resource<any>>

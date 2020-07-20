@@ -1,12 +1,14 @@
-import { isString, isUint } from 'isntnt'
 import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
-import { dateFormatter, isDateString } from './attribute-types/date'
+import { dateString, dateStringFormatter } from './attribute-types/date'
+import { string } from './attribute-types/string'
+import { uint } from './attribute-types/uint'
+
 import author from './author'
-import chapter from './Chapter'
-import photo from './Photo'
-import series from './Series'
-import store from './Store'
+import chapter from './chapter'
+import photo from './photo'
+import series from './series'
+import store from './store'
 
 type BookType = 'books'
 
@@ -24,9 +26,9 @@ type BookFields = {
 type BookResource = ResourceFormatter<BookType, BookFields>
 
 const book: BookResource = JSONAPI.resource('books', {
-  title: Attribute.required(isString),
-  date_published: Attribute.required(isDateString, dateFormatter),
-  isbn: Attribute.required(isUint),
+  title: Attribute.required(string),
+  date_published: Attribute.required(dateString, dateStringFormatter),
+  isbn: Attribute.required(uint),
   author: Relationship.toOne(() => [author]),
   chapters: Relationship.toManyReadOnly(() => [chapter]),
   photos: Relationship.toMany(() => [photo]),
