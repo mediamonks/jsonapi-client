@@ -4,7 +4,7 @@ export type StaticType<T extends Type<any>> = T extends Type<infer R> ? R : neve
 
 export type TypePointer = ReadonlyArray<PropertyKey>
 
-export type TypeMeta<T> = {
+export type TypeMeta = {
   code: string | null
   description: string
   pointer: TypePointer
@@ -23,7 +23,7 @@ enum TypeAssertionMode {
 
 const assertionModeDetailMap: Record<TypeAssertionMode, string> = ['and', 'or']
 
-export default class Type<T> implements TypeMeta<T> {
+export default class Type<T> implements TypeMeta {
   private readonly mode: TypeAssertionMode
   readonly predicate: Predicate<T>
   readonly rules: Array<Type<T>> = []
@@ -35,7 +35,7 @@ export default class Type<T> implements TypeMeta<T> {
     predicate: Predicate<T>,
     rules: Array<Type<T>>,
     mode: TypeAssertionMode,
-    meta: TypeMeta<T>,
+    meta: TypeMeta,
   ) {
     this.predicate = predicate
     this.rules = rules
@@ -73,7 +73,7 @@ export default class Type<T> implements TypeMeta<T> {
     }
   }
 
-  with(meta: Partial<TypeMeta<T>>): Type<T> {
+  with(meta: Partial<TypeMeta>): Type<T> {
     return Object.assign(Object.create(Object.getPrototypeOf(this)), this, meta)
   }
 
