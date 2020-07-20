@@ -1,7 +1,7 @@
 import { isString } from 'isntnt'
-import { resource, Attribute, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, ResourceFormatter } from '../../../../src'
 
-import { isImageUrl, urlFormatter } from './attribute-types'
+import { isImageUrl, urlFormatter } from './attribute-types/url'
 
 type PhotoType = 'photos'
 
@@ -12,9 +12,9 @@ type PhotoFields = {
 
 type PhotoResource = ResourceFormatter<PhotoType, PhotoFields>
 
-const Photo: PhotoResource = resource('photos', 'photos', {
+const photo: PhotoResource = JSONAPI.resource('photos', {
   title: Attribute.required(isString),
   uri: Attribute.required(isImageUrl, urlFormatter),
 })
 
-export default Photo
+export default photo

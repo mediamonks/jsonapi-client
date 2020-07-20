@@ -7,13 +7,11 @@ import {
   Serializable,
 } from 'isntnt'
 
-import ResourceField, {
-  AttributeField,
-  RelationshipField,
-  RelationshipFieldType,
-  ResourceFieldFlag,
-  ResourceFieldRule,
-} from './resource/field'
+import { ResourceField, ResourceFieldFlag, ResourceFieldRule } from './resource/field'
+import { AttributeField } from './resource/field/attribute'
+import { RelationshipField, RelationshipFieldType } from './resource/field/relationship'
+import { ResourceFormatter } from './resource/formatter'
+import { ResourceIdentifier } from './resource/identifier'
 
 // Util
 type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
@@ -23,11 +21,6 @@ export type ResourceType = string
 export type ResourceId = string
 
 export type ResourcePath = string
-
-export type ResourceIdentifier<T extends ResourceType> = {
-  type: T
-  id: ResourceId
-}
 
 export type ResourceIdentifierKey = keyof ResourceIdentifier<any>
 
@@ -131,47 +124,7 @@ export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
     >
   }
 
-// Constructor
-export interface ResourceFormatter<T extends ResourceType, U extends ResourceFields> {
-  // new (data: ResourceConstructorData<T, U>): Resource<ResourceFormatter<T, U>>
-  type: T
-  path: ResourcePath
-  fields: U
-
-  identifier(id: ResourceId): ResourceIdentifier<T>
-
-  createFilter<
-    V extends ResourceFieldsQuery<ResourceFormatter<T, U>>,
-    W extends ResourceIncludeQuery<ResourceFormatter<T, U>, V>
-  >(
-    fields?: V,
-    include?: W,
-  ): { fields: V; include: W }
-
-  withFilter<
-    V extends ResourceFieldsQuery<ResourceFormatter<T, U>>,
-    W extends ResourceIncludeQuery<ResourceFormatter<T, U>, V>
-  >(
-    fields?: V,
-    include?: W,
-  ): { fields: V; include: W }
-
-  // encode(resource: Resource<ResourceFormatter<T, U>>): JSONAPIDocument<ResourceFormatter<T, U>>
-  decode<V extends ResourceFilter<ResourceFormatter<T, U>>>(
-    resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
-    resourceFilter?: V,
-  ): FilteredResource<ResourceFormatter<T, U>, V>
-
-  createResourcePostObject<V extends ResourceCreateData<ResourceFormatter<T, U>>>(
-    data: V,
-  ): JSONAPIResourceObject<ResourceFormatter<T, U>>
-
-  createResourcePatchObject<V extends ResourcePatchData<ResourceFormatter<T, U>>>(
-    id: ResourceId,
-    data: V,
-  ): JSONAPIResourceObject<ResourceFormatter<T, U>>
-}
-
+//
 export type ExperimentalResourceQuery<
   T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsQuery<T>,
@@ -698,7 +651,7 @@ export type JSONAPIErrorObject = {
   title?: string
   detail?: string
   meta?: JSONAPIMetaObject
-  source: {
+  source?: {
     pointer?: string
     parameter?: string
   }

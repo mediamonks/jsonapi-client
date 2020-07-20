@@ -34,7 +34,7 @@ type UserFields = {
   friends: Relationship.ToMany<UserResource>
 }
 
-type UserResource = ResourceConstructor<UserType, UserFields>
+type UserResource = ResourceFormatter<UserType, UserFields>
 
 const dateStringFormatter = {
   serialize: (value: Date) => value.toISOString(),
@@ -43,7 +43,7 @@ const dateStringFormatter = {
 
 const isUserRole = either('admin', 'editor', 'subscriber')
 
-const User = JSONAPI.resource('User', 'users', {
+const user = JSONAPI.resource('User', {
   emailAddress: Attribute.required(isString),
   password: Attribute.requiredWriteOnly(isString),
   userName: Attribute.requiredStatic(isString),
@@ -59,9 +59,17 @@ const User = JSONAPI.resource('User', 'users', {
 ```typescript
 const url = new URL('https://example.com/api/')
 
-const client = new JSONAPI.client(url, {
+const client = JSONAPI.client(url, {
   initialRelationshipData: 'primary-relationships',
 })
+```
+
+## Create an Endpoint
+
+```typescript
+const userPath = 'users'
+
+const users = client.endpoint(userPath, user)
 ```
 
 ## Create a Resource
@@ -73,7 +81,7 @@ const myFirstUser = {
   userName: 'example_jane',
 }
 
-client.create(User, myFirstUser).then((user) => {
+users.create(myFirstUser).then((user) => {
   console.log(user.data.messages)
 })
 ```
@@ -85,7 +93,7 @@ const myFirstUserUpdate = {
   emailAddress: 'jane.smith@example.com',
 }
 
-client.update(User, myFirstUserUpdate)
+users.update('17', myFirstUserUpdate)
 ```
 
 ## Get a Single Resource Using a Filter
@@ -95,7 +103,7 @@ const userEmailFilter = User.createFilter({
   User: ['emailAddress', 'dateOfBirth'],
 })
 
-client.getOne(User, '12', userEmailFilter).then((userResource) => {
+users.getOne('12', userEmailFilter).then((userResource) => {
   console.log(userResource.data)
   /* Resource { 
     type: 'User', 
@@ -114,46 +122,38 @@ client.getOne(User, '12', userEmailFilter).then((userResource) => {
 ### resource
 
 ```
-(ResourceType, ResourceFields) -> ResourceConstructor
+(ResourceType, ResourceFields) -> ResourceFormatter
 ```
 
-ResourceConstructor factory, returns a ResourceConstructor (Resource) with static methods to perform operations on (formatted) JSON:API data for this resource.
+ResourceFormatter factory, returns a ResourceFormatter with methods to perform operations on (formatted) JSON:API data for this resource.
 
-### Resource#constructor
-
-```
-(Resource) -> Resource
-```
-
-constructs a Resource instance
-
-### Resource.identifier
+### ResourceFormatter#identifier
 
 ```
-(ResourceId) -> ResourceIdentifier<ResourceType>
+(ResourceId) -> ResourceIdentifier
 ```
 
 Create a ResourceIdentifier from the Resource static `type` and `id` parameter
 
-### Resource.createFilter
+### ResourceFormatter#filter
 
 ```
-(ResourceFieldsQuery, ResourceIncludeQuery) -> ResourceQuery<ResourceFieldsQuery, ResourceIncludeQuery>
+(ResourceFieldsQuery, ResourceIncludeQuery) -> ResourceFilter
 ```
 
-### Resource.decode
+### ResourceFormatter#decode
 
 ```
-(JSONAPIDocument, ResourceQueryParams) -> Resource
+(JSONAPIDocument, ResourceFilter?) -> Resource
 ```
 
-### Resource.createResourcePostObject
+### ResourceFormatter#createResourcePostObject
 
 ```
 (ResourcePostData) -> JSONAPIResourceObject
 ```
 
-### Resource.createResourcePatchObject
+### ResourceFormatter#createResourcePatchObject
 
 ```
 (ResourceId, ResourcePatchData) -> JSONAPIResourceObject

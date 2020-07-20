@@ -1,7 +1,81 @@
-import { None } from 'isntnt'
+import { None, Predicate } from 'isntnt'
 
-import { createAttributeFieldFactory, ResourceFieldRule } from '../resource/field'
-import { AttributeFieldFromFactory, AttributeValue } from '../types'
+import {
+  AttributeFieldFromFactory,
+  AttributeValue,
+  AttributeValueFormatter,
+  ResourceFieldMaybeMask,
+  ResourceFieldFactoryRules,
+} from '../../../types'
+import {
+  ResourceField,
+  ResourceFieldRule,
+  ResourceFieldFlag,
+  ResourceFieldRoot,
+  ResourceFieldMethod,
+  resourceFieldMaskIndex,
+  ResourceFieldMaskIndex,
+} from '..'
+
+const reflect = <T>(value: T): T => value
+
+/*
+ * @private
+ */
+export const defaultAttributeFormatter: AttributeValueFormatter<any, any> = {
+  serialize: reflect,
+  deserialize: reflect,
+}
+
+export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>(...rules: T) => <
+  U extends AttributeValue,
+  V = U
+>(
+  predicate: Predicate<U>,
+  formatter: AttributeValueFormatter<U, V> = defaultAttributeFormatter,
+): AttributeField<
+  V,
+  U,
+  | ResourceFieldMaskIndex[ResourceFieldMethod.Get][T[ResourceFieldMethod.Get]]
+  | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
+  | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
+> => {
+  const ruleMasks = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
+  const flag = ruleMasks.reduce((flag, mask) => flag | mask, 0)
+  return new AttributeField(flag as any, predicate, formatter)
+}
+
+export class AttributeField<
+  T,
+  U extends AttributeValue,
+  V extends ResourceFieldFlag
+> extends ResourceField<ResourceFieldRoot.Attributes, V> {
+  readonly predicate: Predicate<U>
+  readonly serialize: (value: T) => U
+  readonly deserialize: (value: U) => T
+
+  constructor(flag: V, predicate: Predicate<U>, formatter: AttributeValueFormatter<U, T>) {
+    super(ResourceFieldRoot.Attributes, flag)
+    this.predicate = predicate
+    this.serialize = formatter.serialize
+    this.deserialize = formatter.deserialize
+  }
+
+  validate(
+    value: unknown,
+    method: ResourceFieldMethod,
+  ): V extends ResourceFieldMaybeMask ? U | null : U {
+    if (this.predicate(value)) {
+      return value as any
+    } else if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Maybe])) {
+      return null as any
+    }
+    if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Never])) {
+      throw new Error(`Invalid Attribute (...)`)
+    }
+    throw new Error(`Invalid Attribute Value (...)`)
+  }
+}
 
 export namespace Attribute {
   export const optional = createAttributeFieldFactory(

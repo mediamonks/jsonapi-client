@@ -1,23 +1,23 @@
-import { isString, isUint } from 'isntnt'
-import { resource, Attribute, Relationship, ResourceFormatter } from '../../../../src'
+import { isString } from 'isntnt'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
-import Photo from './Photo'
-import Book from './Book'
+import photo from './Photo'
+import book from './book'
 
 type SeriesType = 'series'
 
 type SeriesFields = {
   title: Attribute.Required<string>
-  photos: Relationship.ToMany<typeof Photo>
-  books: Relationship.ToMany<typeof Book>
+  photos: Relationship.ToMany<typeof photo>
+  books: Relationship.ToMany<typeof book>
 }
 
 type SeriesResource = ResourceFormatter<SeriesType, SeriesFields>
 
-const Series: SeriesResource = resource('series', 'series', {
+const series: SeriesResource = JSONAPI.resource('series', {
   title: Attribute.required(isString),
-  photos: Relationship.toMany(() => [Photo]),
-  books: Relationship.toMany(() => [Book]),
+  photos: Relationship.toMany(() => [photo]),
+  books: Relationship.toMany(() => [book]),
 })
 
-export default Series
+export default series

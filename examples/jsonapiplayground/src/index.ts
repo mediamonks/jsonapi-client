@@ -1,6 +1,6 @@
 import JSONAPI from '../../../src'
 
-import Author from './resources/Author'
+import author from './resources/author'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
@@ -8,14 +8,16 @@ const client = JSONAPI.client(url, {
   initialResourceFields: 'none',
   initialRelationshipData: 'resource-identifiers',
   resources: {
-    authors: Author,
+    authors: author,
   },
 })
 
-client.getOne(Author, '2').then((resource) => console.log(resource.data))
+const authors = client.endpoint('authors', author)
 
-client
-  .create(Author, {
+authors.getOne('2').then((resource) => console.log(resource.data))
+
+authors
+  .create({
     name: 'Hans',
     date_of_birth: new Date(1970, 0, 1),
     birthplace: 'Netherlands',
@@ -24,18 +26,18 @@ client
     console.log(author.data.date_of_death) // null
   })
 
-const authorWithBooks = Author.createFilter(
+const authorWithBooks = author.filter(
   {
     authors: ['name', 'books'],
   },
   { books: null },
 )
 
-client.getOne(Author, '2', authorWithBooks).then((book) => console.log(book.data.name))
+authors.getOne('2', authorWithBooks).then((book) => console.log(book.data.name))
 
-client.getMany(Author, null, authorWithBooks).then((books) => console.log(books.data.length))
+authors.getMany(null, authorWithBooks).then((books) => console.log(books.data.length))
 
-const getAuthorsWithBooks = client.many(Author, authorWithBooks)
+const getAuthorsWithBooks = authors.many(authorWithBooks)
 
 getAuthorsWithBooks({
   page: {
@@ -43,7 +45,7 @@ getAuthorsWithBooks({
   },
 })
 
-const getAuthorBooks = client.toMany(Author, 'books')
+const getAuthorBooks = authors.toMany('books')
 
 getAuthorBooks('1').then((books) => {
   console.log(books.data[0].date_published)

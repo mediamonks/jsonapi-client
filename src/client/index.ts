@@ -1,27 +1,8 @@
 import { Serializable, SerializableObject } from 'isntnt'
 
-import { ResourceFieldFlag } from '../resource/field'
-import {
-  FilteredResource,
-  ResourceFormatter,
-  ResourceId,
-  ResourceFilter,
-  ResourceCreateData,
-  ResourcePatchData,
-  RelationshipFieldNameWithFlag,
-  RelationshipPatchData,
-  ToManyRelationshipFieldNameWithFlag,
-  ToManyRelationshipCreateData as ToManyRelationshipPatchData,
-  ResourceIdentifier,
-  ToOneRelationshipFieldNameWithFlag,
-  RelationshipFieldResourceConstructor,
-  Resource,
-  JSONAPIMetaObject,
-  JSONAPIResourceLinks,
-  JSONAPIPaginationLinks,
-  JSONAPIDocument,
-} from '../types'
-import { createURL } from './utils'
+import { ResourceFormatter } from '../resource/formatter'
+import { JSONAPIDocument, ResourcePath } from '../types'
+import { Endpoint } from './endpoint'
 
 const JSON_API_MIME_TYPE = 'application/vnd.api+json'
 
@@ -86,210 +67,14 @@ export class Client<T extends Partial<ClientSetup>> {
     this.setup = { ...defaultClientSetup, ...setup } as any
   }
 
-  async create<U extends ResourceFormatter<any, any>>(
-    Resource: U,
-    data: ResourceCreateData<U>,
-  ): Promise<OneResource<FilteredResource<U, {}>>> {
-    console.log('Create', data)
-    const url = createURL(this.url, [Resource.path])
-    return this.request(url, 'POST', data).then((data) => {
-      return new OneResource(data as any, {}, {})
-    })
+  endpoint<U extends ResourceFormatter<any, any>>(
+    path: ResourcePath,
+    resource: U,
+  ): Endpoint<this, U> {
+    return new Endpoint(this, path, resource)
   }
 
-  async update<U extends ResourceFormatter<any, any>, V extends ResourceIdentifier<U['type']>>(
-    Resource: U,
-    id: ResourceId,
-    data: ResourcePatchData<U>,
-  ): Promise<void> {
-    console.log('Patch', data)
-    const url = createURL(this.url, [Resource.path, id])
-    await this.request(url, 'PATCH', data).then((data) => {
-      return new OneResource(data as any, {}, {})
-    })
-  }
-
-  async delete<U extends ResourceFormatter<any, any>>(Resource: U, id: ResourceId): Promise<void> {
-    console.log('Delete', id)
-    const url = createURL(this.url, [Resource.path, id])
-    await this.request(url, 'DELETE')
-  }
-
-  async updateRelationship<
-    U extends ResourceFormatter<any, any>,
-    V extends RelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
-    >
-  >(
-    Resource: U,
-    id: ResourceId,
-    fieldName: V,
-    data: RelationshipPatchData<U['fields'][V]>,
-  ): Promise<void> {
-    console.log(`Update ${fieldName}`, data)
-    const field = Resource.fields[fieldName]
-    const url = createURL(this.url, [Resource.type, id, field.root, fieldName])
-    await this.request(url, 'PATCH', data as any).then((data) => {
-      return new OneResource(data as any, {}, {})
-    })
-  }
-
-  async addRelationships<
-    U extends ResourceFormatter<any, any>,
-    V extends ToManyRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.AlwaysPost | ResourceFieldFlag.MaybePost
-    >
-  >(
-    Resource: U,
-    id: ResourceId,
-    fieldName: string,
-    data: ToManyRelationshipPatchData<U['fields'][V]>,
-  ): Promise<void> {
-    console.log(`Add some ${fieldName}`, data)
-    const field = Resource.fields[fieldName]
-    const url = createURL(this.url, [Resource.type, id, field.root, fieldName])
-    await this.request(url, 'PATCH', data as any)
-  }
-
-  async deleteRelationships<
-    U extends ResourceFormatter<any, any>,
-    V extends ToManyRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.AlwaysPatch | ResourceFieldFlag.MaybePatch
-    >
-  >(
-    Resource: U,
-    id: ResourceId,
-    fieldName: string,
-    data: ToManyRelationshipPatchData<U['fields'][V]>,
-  ): Promise<void> {
-    console.log(`Delete some ${fieldName}`, data)
-    const field = Resource.fields[fieldName]
-    const url = createURL(this.url, [Resource.type, id, field.root, fieldName])
-    await this.request(url, 'DELETE')
-  }
-
-  async getOne<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
-    Resource: U,
-    id: ResourceId,
-    resourceQuery?: V,
-  ): Promise<OneResource<FilteredResource<U, V>>> {
-    const url = createURL(this.url, [Resource.type, id], resourceQuery as any)
-    return this.request(url, 'GET').then((data) => {
-      const resource = Resource.decode(data as any)
-      return new OneResource(resource as any, data.meta ?? {}, {})
-    })
-  }
-
-  async getMany<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
-    Resource: U,
-    searchQuery: {} | null,
-    resourceQuery?: V,
-  ): Promise<ManyResource<FilteredResource<U, V>>> {
-    const url = createURL(this.url, [Resource.path], resourceQuery as any, searchQuery || {})
-
-    return this.request(url, 'GET').then((data) => {
-      const resource = Resource.decode(data as any)
-      return new ManyResource(resource as any, data.meta ?? {}, {
-        pagination: {},
-      })
-    })
-  }
-
-  async getOneRelationship<
-    U extends ResourceFormatter<any, any>,
-    V extends ToOneRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
-  >(
-    Resource: U,
-    id: ResourceId,
-    fieldName: V,
-    resourceQuery?: W,
-  ): Promise<
-    OneResource<FilteredResource<RelationshipFieldResourceConstructor<U['fields'][V]>, W>>
-  > {
-    const url = createURL(this.url, [Resource.type, id, fieldName], resourceQuery as any)
-
-    return this.request(url, 'GET').then((data) => {
-      const resource = Resource.decode(data as any)
-      return new OneResource(resource as any, data.meta ?? {}, {})
-    })
-  }
-
-  async getManyRelationship<
-    U extends ResourceFormatter<any, any>,
-    V extends ToManyRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
-  >(
-    Resource: U,
-    id: ResourceId,
-    fieldName: V,
-    resourceQuery?: W,
-    searchQuery?: {},
-  ): Promise<
-    ManyResource<FilteredResource<RelationshipFieldResourceConstructor<U['fields'][V]>, W>>
-  > {
-    const url = createURL(
-      this.url,
-      [Resource.type, id, fieldName],
-      resourceQuery as any,
-      searchQuery as any,
-    )
-
-    return this.request(url, 'GET').then((data) => {
-      const resource = Resource.decode(data as any)
-      return new ManyResource(resource as any, data.meta ?? {}, {
-        pagination: {},
-      })
-    })
-  }
-
-  one<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
-    Resource: U,
-    resourceQuery?: V,
-  ) {
-    return (id: ResourceId) => this.getOne(Resource, id, resourceQuery)
-  }
-
-  many<U extends ResourceFormatter<any, any>, V extends ResourceFilter<U>>(
-    Resource: U,
-    resourceQuery: V,
-  ) {
-    return (searchQuery: {} | null = null) => this.getMany(Resource, searchQuery, resourceQuery)
-  }
-
-  toOne<
-    U extends ResourceFormatter<any, any>,
-    V extends ToOneRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
-  >(Resource: U, fieldName: V, resourceQuery?: W) {
-    return (id: ResourceId) => this.getOneRelationship(Resource, id, fieldName, resourceQuery)
-  }
-
-  toMany<
-    U extends ResourceFormatter<any, any>,
-    V extends ToManyRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.MaybeGet | ResourceFieldFlag.AlwaysGet
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
-  >(Resource: U, fieldName: V, resourceQuery?: W) {
-    return (id: ResourceId, searchQuery?: {}) =>
-      this.getManyRelationship(Resource, id, fieldName, searchQuery, resourceQuery)
-  }
-
-  private async request<U extends JSONAPIRequestMethod>(
+  async request<U extends JSONAPIRequestMethod>(
     url: URL,
     method: U,
     body?: Partial<SerializableObject>,
@@ -345,47 +130,5 @@ export class Client<T extends Partial<ClientSetup>> {
         // TODO: Assert if data is JSONAPIDocument<any>
         return data as any
       })
-  }
-}
-
-class ResourceResult<
-  T extends Resource<any> | Array<Resource<any>>,
-  U extends JSONAPIResourceLinks | Required<JSONAPIPaginationLinks>
-> {
-  readonly data: T
-  readonly meta: JSONAPIMetaObject
-  readonly links: U
-
-  constructor(data: T, meta: JSONAPIMetaObject, links: U) {
-    this.data = data
-    this.meta = meta
-    this.links = links
-  }
-}
-
-class OneResource<T extends Resource<any>> extends ResourceResult<T, JSONAPIResourceLinks> {
-  constructor(data: T, meta: JSONAPIMetaObject, links: JSONAPIResourceLinks) {
-    super(data, meta, links)
-  }
-}
-
-class ManyResource<T extends Resource<any>> extends ResourceResult<
-  Array<T>,
-  JSONAPIResourceLinks & Required<JSONAPIPaginationLinks>
-> {
-  constructor(
-    data: Array<T>,
-    meta: JSONAPIMetaObject,
-    links: JSONAPIResourceLinks & Required<JSONAPIPaginationLinks>,
-  ) {
-    super(data, meta, links)
-  }
-
-  hasNextPage(): this is { links: { pagination: { next: string } } } {
-    return this.links.pagination.next != null
-  }
-
-  hasPrevPage(): this is { links: { pagination: { prev: string } } } {
-    return this.links.pagination.prev != null
   }
 }

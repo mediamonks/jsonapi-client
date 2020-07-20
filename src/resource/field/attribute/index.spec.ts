@@ -1,7 +1,23 @@
 import { isString } from 'isntnt'
 
-import { ResourceFieldFlag, ResourceFieldMethod } from '../resource/field'
-import Attribute from './attribute'
+import { ResourceFieldFlag, ResourceFieldMethod } from '..'
+import { Attribute } from '.'
+
+describe('AttributeField', () => {
+  it.todo('is an AttributeField constructor')
+
+  it.todo('extends ResourceField')
+
+  describe('#root', () => {
+    it.todo('equals ResourceFieldRoot.Attributes')
+  })
+})
+
+describe('createAttributeFieldFactory', () => {
+  it.todo('is a function')
+
+  it.todo('returns a function')
+})
 
 describe('Attribute', () => {
   describe('optional', () => {

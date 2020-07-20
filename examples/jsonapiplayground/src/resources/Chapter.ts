@@ -1,25 +1,25 @@
 import { isString, isUint } from 'isntnt'
-import { resource, Attribute, Relationship, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
 
-import Photo from './Photo'
-import Book from './Book'
+import photo from './Photo'
+import book from './book'
 
 type ChapterType = 'chapters'
 
 type ChapterFields = {
   title: Attribute.Required<string>
   ordering: Attribute.Required<number>
-  photos: Relationship.ToMany<typeof Photo>
-  book: Relationship.ToOne<typeof Book>
+  photos: Relationship.ToMany<typeof photo>
+  book: Relationship.ToOne<typeof book>
 }
 
 type ChapterResource = ResourceFormatter<ChapterType, ChapterFields>
 
-const Chapter: ChapterResource = resource('chapters', 'chapters', {
+const chapter: ChapterResource = JSONAPI.resource('chapters', {
   title: Attribute.required(isString),
   ordering: Attribute.required(isUint),
-  photos: Relationship.toMany(() => [Photo]),
-  book: Relationship.toOne(() => [Book]),
+  photos: Relationship.toMany(() => [photo]),
+  book: Relationship.toOne(() => [book]),
 })
 
-export default Chapter
+export default chapter

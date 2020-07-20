@@ -9,10 +9,3 @@ export const dateFormatter = {
   serialize: serializeYearMonthDayDate,
   deserialize: (value: string) => new Date(value),
 }
-
-export const isImageUrl = test(/^https:\/\//) // this will do
-
-export const urlFormatter = {
-  serialize: (url: URL) => url.href,
-  deserialize: (value: string) => new URL(value),
-}
