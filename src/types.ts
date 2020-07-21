@@ -223,7 +223,7 @@ export type ResourceIncludeQuery<
 
 // Fields
 export type ResourceFields = {
-  [name: string]: ResourceField<any, any>
+  [name: string]: AttributeField<any, any, any> | RelationshipField<any, any, any>
 }
 
 export type ResourceFieldValues<T extends ResourceFields> = {
@@ -355,16 +355,12 @@ export type AttributeFieldFromFactory<
 > = ReturnType<V> extends AttributeField<any, any, infer R> ? AttributeField<U, T, R> : never
 
 // Attribute Validator
+type Validator = (value: unknown) => ReadonlyArray<string>
+
 export type AttributeFieldValidator<T> = {
   predicate: Predicate<T>
-  validate: (value: unknown) => ReadonlyArray<string>
+  validate: Validator
 }
-
-// type AttributeFieldValidation = {
-//   code: string | null
-//   detail: string
-//   pointer: ReadonlyArray<string>
-// }
 
 // Relationships
 export type RelationshipValue = Resource<any> | null | Array<Resource<any>>

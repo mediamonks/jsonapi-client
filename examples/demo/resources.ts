@@ -42,6 +42,8 @@ export const user: UserResource = JSONAPI.resource('User', {
   friends: Relationship.toMany(() => [user]),
 })
 
+user.getField('password').validate('')
+
 // Country
 type CountryType = 'Country'
 

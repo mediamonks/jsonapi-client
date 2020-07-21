@@ -3,49 +3,17 @@ import { JSONAPIErrorObject, JSONAPIMetaObject } from '../types'
 
 const isContent = or(isNumber, isString)
 
-export type ErrorDetail = ResourceValidationErrorDetail | ClientResponseError
-
-// Error Pointer
-const ATTRIBUTES_POINTER_ROOT = Object.freeze(['attributes', 'data'])
-const RELATIONSHIPS_POINTER_ROOT = Object.freeze(['relationships', 'data'])
-
-export const getErrorPointerRoot = (pointer: string): ReadonlyArray<string> => {
-  if (pointer.startsWith('attributes/data')) {
-    return ATTRIBUTES_POINTER_ROOT
-  }
-  if (pointer.startsWith('relationships/data')) {
-    return RELATIONSHIPS_POINTER_ROOT
-  }
-  return Object.freeze(pointer.split('/'))
-}
-
-export const getErrorPointerPath = (pointer: string): ReadonlyArray<string> => {
-  return []
-}
-
-export class ErrorPointer {
-  root: ReadonlyArray<string>
-  path: ReadonlyArray<string>
-
-  constructor(pointer: string) {
-    this.root = getErrorPointerRoot(pointer)
-    this.path = getErrorPointerPath(pointer)
-  }
-
-  toString() {
-    return this.root.concat(this.path).join('/')
-  }
-}
-
 // Client Response Error
-export type ClientResponseErrorDetail = {
+type ErrorObjectPointer = ReadonlyArray<string>
+
+export type ClientResponseErrorObject = {
   id: string | null
   code: string | null
   title: string | null
   detail: string | null
   status: string | null
   source: {
-    pointer: ErrorPointer
+    pointer: ErrorObjectPointer
     parameter: string | null
   }
   meta: JSONAPIMetaObject
@@ -54,16 +22,16 @@ export type ClientResponseErrorDetail = {
 export class ClientResponseError extends Error {
   readonly name = 'ClientResponseError'
   readonly actual: unknown
-  readonly details: ReadonlyArray<ClientResponseErrorDetail>
+  readonly details: ReadonlyArray<ClientResponseErrorObject>
 
-  constructor(message: string, value: unknown, errors: Array<JSONAPIErrorObject>) {
+  constructor(message: string, value: unknown, errors: ReadonlyArray<JSONAPIErrorObject>) {
     super(message)
     this.actual = value
     this.details = errors.map(toClientResponseErrorDetail)
   }
 }
 
-const toClientResponseErrorDetail = (error: JSONAPIErrorObject): ClientResponseErrorDetail => {
+const toClientResponseErrorDetail = (error: JSONAPIErrorObject): ClientResponseErrorObject => {
   return {
     id: isContent(error.id) ? String(error.id) : null,
     code: isContent(error.code) ? String(error.code) : null,
@@ -72,28 +40,44 @@ const toClientResponseErrorDetail = (error: JSONAPIErrorObject): ClientResponseE
     detail: isString(error.detail) ? error.detail : null,
     meta: isSome(error.meta) ? error.meta : {},
     source: {
-      pointer: new ErrorPointer(error.source?.pointer ?? ''),
+      pointer: error.source?.pointer ? error.source.pointer.split('/') : [],
       parameter: isSome(error.source?.parameter) ? error.source!.parameter : null,
     },
   }
 }
 
-// Resource Validation Error
-export type ResourceValidationErrorDetail = {
-  code: string | null
+export type ResourceValidationErrorObject = {
   title: string
   detail: string
   source: {
-    pointer: ErrorPointer
+    pointer: ReadonlyArray<string>
+  }
+}
+
+const toResourceValidationErrorDetail = (
+  title: string,
+  detail: string,
+  pointer: ErrorObjectPointer,
+): ResourceValidationErrorObject => {
+  return {
+    title,
+    detail,
+    source: {
+      pointer,
+    },
   }
 }
 
 export class ResourceValidationError extends Error {
   readonly name = 'ResourceValidationError'
   readonly actual: unknown
-  readonly details: ReadonlyArray<ResourceValidationErrorDetail>
+  readonly details: ReadonlyArray<ResourceValidationErrorObject>
 
-  constructor(message: string, value: unknown, details: Array<ResourceValidationErrorDetail>) {
+  constructor(
+    message: string,
+    value: unknown,
+    details: ReadonlyArray<ResourceValidationErrorObject>,
+  ) {
     super(message)
     this.actual = value
     this.details = details

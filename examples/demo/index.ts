@@ -1,11 +1,12 @@
-import JSONAPI from '../../src'
+import JSONAPI, { ImplicitRelationshipData } from '../../src'
 
 import { user } from './resources'
 
 const url = new URL('https://example.com/api/v1/')
 
 const client = JSONAPI.client(url, {
-  initialRelationshipData: 'resource-identifiers',
+  implicitRelationshipData: ImplicitRelationshipData.None,
+  implicitPrimaryRelationshipData: ImplicitRelationshipData.None,
 })
 
 const users = client.endpoint('users', user)

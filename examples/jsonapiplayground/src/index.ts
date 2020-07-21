@@ -1,15 +1,12 @@
-import JSONAPI from '../../../src'
+import JSONAPI, { ImplicitRelationshipData, AbsolutePathRoot } from '../../../src'
 
 import author from './resources/author'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
 const client = JSONAPI.client(url, {
-  initialResourceFields: 'none',
-  initialRelationshipData: 'resource-identifiers',
-  resources: {
-    authors: author,
-  },
+  absolutePathRoot: AbsolutePathRoot.Client,
+  implicitRelationshipData: ImplicitRelationshipData.ResourceIdentifiers,
 })
 
 const authors = client.endpoint('authors', author)
