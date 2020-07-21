@@ -1,7 +1,7 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
-import { string } from './attribute-types/string'
-import { uint } from './attribute-types/uint'
+import { string } from '../attributes/string'
+import { uint } from '../attributes/uint'
 
 import book from './book'
 import country from './country'

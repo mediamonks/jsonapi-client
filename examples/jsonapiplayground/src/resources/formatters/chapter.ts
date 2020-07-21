@@ -1,10 +1,9 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
-import { string } from './attribute-types/string'
-import { uint } from './attribute-types/uint'
-
-import photo from './photo'
-import book from './book'
+import { string } from '../attributes/string'
+import { uint } from '../attributes/uint'
+import { book } from './book'
+import { photo } from './photo'
 
 type ChapterType = 'chapters'
 
@@ -17,11 +16,9 @@ type ChapterFields = {
 
 type ChapterResource = ResourceFormatter<ChapterType, ChapterFields>
 
-const chapter: ChapterResource = JSONAPI.resource('chapters', {
+export const chapter: ChapterResource = JSONAPI.resource('chapters', {
   title: Attribute.required(string),
   ordering: Attribute.required(uint),
   photos: Relationship.toMany(() => [photo]),
   book: Relationship.toOne(() => [book]),
 })
-
-export default chapter

@@ -1,5 +1,5 @@
 import { test } from 'isntnt'
-import { Type } from '../../../../../src'
+import { Type } from 'jsonapi-client'
 
 const serializeYearMonthDayDate = (date: Date): string =>
   [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0')].join('-')

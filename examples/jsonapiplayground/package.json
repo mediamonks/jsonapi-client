@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "typescript": "^3.9.6"
+  },
+  "dependencies": {
+    "jsonapi-client": "../../"
   }
 }

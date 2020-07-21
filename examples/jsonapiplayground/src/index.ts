@@ -1,6 +1,6 @@
-import JSONAPI, { ImplicitRelationshipData, AbsolutePathRoot } from '../../../src'
+import JSONAPI, { ImplicitRelationshipData, AbsolutePathRoot } from 'jsonapi-client'
 
-import author from './resources/author'
+import { author } from './resources'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
@@ -25,7 +25,7 @@ authors
 
 const authorWithBooks = author.filter(
   {
-    authors: ['name', 'books'],
+    [author.type]: ['name', 'books'],
   },
   { books: null },
 )

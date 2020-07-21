@@ -1,7 +1,7 @@
-import JSONAPI, { Attribute, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, ResourceFormatter } from 'jsonapi-client'
 
-import { string } from './attribute-types/string'
-import { url, urlFormatter } from './attribute-types/url'
+import { string } from '../attributes/string'
+import { url, urlFormatter } from '../attributes/url'
 
 type PhotoType = 'photos'
 
@@ -12,9 +12,7 @@ type PhotoFields = {
 
 type PhotoResource = ResourceFormatter<PhotoType, PhotoFields>
 
-const photo: PhotoResource = JSONAPI.resource('photos', {
+export const photo: PhotoResource = JSONAPI.resource('photos', {
   title: Attribute.required(string),
   uri: Attribute.required(url, urlFormatter),
 })
-
-export default photo

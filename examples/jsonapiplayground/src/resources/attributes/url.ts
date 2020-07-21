@@ -1,5 +1,5 @@
 import { test } from 'isntnt'
-import { Type } from '../../../../../src'
+import { Type } from 'jsonapi-client'
 
 export const url = Type.is('a url string', test(/^https:\/\//)) // this will do
 

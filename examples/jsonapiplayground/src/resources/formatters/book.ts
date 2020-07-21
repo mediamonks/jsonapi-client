@@ -1,14 +1,13 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
-import { dateString, dateStringFormatter } from './attribute-types/date'
-import { string } from './attribute-types/string'
-import { uint } from './attribute-types/uint'
-
-import author from './author'
-import chapter from './chapter'
-import photo from './photo'
-import series from './series'
-import store from './store'
+import { dateString, dateStringFormatter } from '../attributes/date'
+import { string } from '../attributes/string'
+import { uint } from '../attributes/uint'
+import { author } from './author'
+import { chapter } from './chapter'
+import { photo } from './photo'
+import { series } from './series'
+import { store } from './store'
 
 type BookType = 'books'
 
@@ -25,7 +24,7 @@ type BookFields = {
 
 type BookResource = ResourceFormatter<BookType, BookFields>
 
-const book: BookResource = JSONAPI.resource('books', {
+export const book: BookResource = JSONAPI.resource('books', {
   title: Attribute.required(string),
   date_published: Attribute.required(dateString, dateStringFormatter),
   isbn: Attribute.required(uint),
@@ -35,5 +34,3 @@ const book: BookResource = JSONAPI.resource('books', {
   series: Relationship.toOne(() => [series]),
   stores: Relationship.toMany(() => [store]),
 })
-
-export default book

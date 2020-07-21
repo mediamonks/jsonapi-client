@@ -1,10 +1,10 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
-import { dateString, dateStringFormatter } from './attribute-types/date'
-import { string } from './attribute-types/string'
+import { dateString, dateStringFormatter } from '../attributes/date'
+import { string } from '../attributes/string'
 
-import book from './book'
-import photo from './photo'
+import { book } from './book'
+import { photo } from './photo'
 
 type AuthorType = 'authors'
 
@@ -19,7 +19,7 @@ type AuthorFields = {
 
 type AuthorResource = ResourceFormatter<AuthorType, AuthorFields>
 
-const author: AuthorResource = JSONAPI.resource('authors', {
+export const author: AuthorResource = JSONAPI.resource('authors', {
   name: Attribute.required(string),
   birthplace: Attribute.required(string),
   date_of_birth: Attribute.required(dateString, dateStringFormatter),
@@ -27,5 +27,3 @@ const author: AuthorResource = JSONAPI.resource('authors', {
   photos: Relationship.toMany(() => [photo]),
   books: Relationship.toMany(() => [book]),
 })
-
-export default author
