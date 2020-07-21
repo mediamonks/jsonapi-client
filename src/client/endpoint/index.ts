@@ -105,6 +105,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   ): Promise<OneResource<FilteredResource<U, V>>> {
     const url = createURL(this.client.url, [this.resource.type, id], resourceFilter as any)
     return this.client.request(url, 'GET').then((data) => {
+      if (data === null) {
+        throw new TypeError(`Data must be a JSON:API Resource Document`)
+      }
       const resource = this.resource.decode(data as any)
       return new OneResource(resource as any, data.meta ?? {}, {})
     })
@@ -117,6 +120,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     const url = createURL(this.client.url, [this.path], resourceFilter as any, searchParams || {})
 
     return this.client.request(url, 'GET').then((data) => {
+      if (data === null) {
+        throw new TypeError(`Data must be a JSON:API Resource Document`)
+      }
       const resource = this.resource.decode(data as any, resourceFilter as any)
       return new ManyResource(resource as any, data.meta ?? {}, {
         pagination: {},
@@ -144,6 +150,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     )
 
     return this.client.request(url, 'GET').then((data) => {
+      if (data === null) {
+        throw new TypeError(`Data must be a JSON:API Resource Document`)
+      }
       const resource = this.resource.decode(data as any, resourceFilter as any)
       return new OneResource(resource as any, data.meta ?? {}, {})
     })
@@ -171,6 +180,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     )
 
     return this.client.request(url, 'GET').then((data) => {
+      if (data === null) {
+        throw new TypeError(`Data must be a JSON:API Resource Document`)
+      }
       const resource = this.resource.decode(data as any, resourceFilter as any)
       return new ManyResource(resource as any, data.meta ?? {}, {
         pagination: {

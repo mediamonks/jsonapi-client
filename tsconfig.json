@@ -1,5 +1,6 @@
 {
-  "exclude": ["node_modules"],
+  "exclude": ["node_modules", "examples"],
+  "include": ["src"],
   "compilerOptions": {
     "strict": true,
     "forceConsistentCasingInFileNames": true,
