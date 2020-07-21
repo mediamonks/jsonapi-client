@@ -1,4 +1,17 @@
-import { Predicate, isObjectLike, at, isUndefined, isNull } from 'isntnt'
+import {
+  at,
+  isNull,
+  isObject,
+  isString,
+  isUndefined,
+  literal,
+  None,
+  Predicate,
+  SerializablePrimitive,
+  isFunction,
+  Constructor,
+  instance,
+} from 'isntnt'
 
 export type StaticType<T extends Type<any>> = T extends Type<infer R> ? R : never
 
@@ -45,24 +58,27 @@ export default class Type<T> implements TypeMeta {
     this.pointer = meta.pointer
   }
 
-  assert(value: unknown): T {
+  assert(value: any): asserts value is T {
+    if (!this.predicate(value)) {
+      throw new TypeError(String(this))
+    }
+  }
+
+  parse(value: unknown): T {
     if (!this.predicate(value)) {
       throw new TypeError(String(this))
     }
     return value as T
   }
 
+  async resolve(value: unknown): Promise<T> {
+    return this.parse(value)
+  }
+
   validate(value: unknown): ReadonlyArray<string> {
     switch (this.mode) {
       case TypeAssertionMode.Union: {
         return this.predicate(value) ? [] : [String(this)]
-        // [
-        //     {
-        //       code: this.code,
-        //       detail: String(this),
-        //       pointer: this.pointer,
-        //     },
-        //   ]
       }
       case TypeAssertionMode.Intersection: {
         return this.rules
@@ -90,11 +106,15 @@ export default class Type<T> implements TypeMeta {
 
   toString(): string {
     const pointer = this.pointer.join('/')
-    return `value${pointer ? ` at ${pointer} ` : ` `}must be ${this.description}`
+    return `Value${pointer ? ` at ${pointer} ` : ` `}must be ${this.description}${
+      this.code ? ` (${this.code})` : ''
+    }`
   }
 
   static null = Type.is('null', isNull)
   static undefined = Type.is('undefined', isUndefined)
+  static function = Type.is('a function', isFunction as Predicate<(...rest: any) => any>)
+  static object = Type.is('an object', isObject)
 
   static is<T>(description: string, predicate: Predicate<T>): Type<T> {
     return new Type(predicate, [], TypeAssertionMode.Union, {
@@ -102,6 +122,21 @@ export default class Type<T> implements TypeMeta {
       pointer: [],
       code: null,
     })
+  }
+
+  static literal<T extends SerializablePrimitive>(literalValue: T): Type<T> {
+    const description = isString(literalValue) ? `"${literalValue}"` : String(literalValue)
+    return Type.is(description, literal(literalValue))
+  }
+
+  static either<T extends ReadonlyArray<SerializablePrimitive>>(
+    ...literalValues: T
+  ): Type<T[number]> {
+    return Type.or(literalValues.map((literalValue) => Type.literal(literalValue)))
+  }
+
+  static instance<T extends Constructor<any, any>>(constructor: T): Type<InstanceType<T>> {
+    return Type.is(`an instance of ${constructor.name}`, instance(constructor))
   }
 
   static at<T extends PropertyKey, U>(
@@ -112,13 +147,12 @@ export default class Type<T> implements TypeMeta {
     return new Type(at(key, type.predicate) as any, rules, type.mode, {
       description: type.description,
       pointer: type.pointer.concat([key]),
-      code: null,
+      code: type.code,
     })
   }
 
   static shape<T extends TypeShape>(description: string, types: T): Type<StaticShapeType<T>> {
-    const objectLike = Type.is('an object', isObjectLike)
-    const rules = [objectLike, ...Object.keys(types).map((key) => Type.at(key, types[key]))]
+    const rules = [Type.object, ...Object.keys(types).map((key) => Type.at(key, types[key]))]
     const predicate = (value: unknown) => rules.every((type) => type.predicate(value))
 
     return new Type(predicate as any, rules, TypeAssertionMode.Intersection, {
@@ -164,6 +198,18 @@ export default class Type<T> implements TypeMeta {
         })
       }
     }
+  }
+
+  static optional<T>(type: Type<T>): Type<T | undefined> {
+    return Type.or([type, Type.undefined])
+  }
+
+  static nullable<T>(type: Type<T>): Type<T | null> {
+    return Type.or([type, Type.null])
+  }
+
+  static maybe<T>(type: Type<T>): Type<T | None> {
+    return Type.or([type, Type.null, Type.undefined])
   }
 }
 

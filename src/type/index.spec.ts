@@ -48,16 +48,16 @@ describe('Type', () => {
     })
   })
 
-  describe('#assert', () => {
+  describe('#parse', () => {
     it('must return the input value when it meets the type rules', () => {
       const any = Type.is('any', isAny)
       const value = {}
-      expect(any.assert(value)).toBe(value)
+      expect(any.parse(value)).toBe(value)
     })
 
     it('must throw a TypeError when the input value does not meet the type rules', () => {
       const never = Type.is('never', isNever)
-      expect(() => never.assert(null)).toThrowError(String(never))
+      expect(() => never.parse(null)).toThrowError(String(never))
     })
   })
 
@@ -70,14 +70,7 @@ describe('Type', () => {
     it('must return an Array with error details if its input value does not meet the type rules', () => {
       const never = Type.is('never', isNever)
       const value = {}
-      expect(never.validate(value)).toEqual([
-        'value must be never',
-        // {
-        //   code: null,
-        //   detail: 'value must be never',
-        //   pointer: [],
-        // },
-      ])
+      expect(never.validate(value)).toEqual(['Value must be never'])
     })
   })
 
@@ -135,12 +128,12 @@ describe('Type', () => {
   describe('#toString', () => {
     it('must return a detail string', () => {
       const any = Type.is('any', isAny)
-      expect(any.toString()).toBe('value must be any')
+      expect(any.toString()).toBe('Value must be any')
     })
 
     it('must return a detail string including its pointer if present', () => {
       const any = Type.is('any', isAny).withPointer(['foo', 'bar'])
-      expect(any.toString()).toBe('value at foo/bar must be any')
+      expect(any.toString()).toBe('Value at foo/bar must be any')
     })
   })
 
@@ -157,7 +150,7 @@ describe('Type', () => {
 
     it('must format its detail using TypeVerb.Is', () => {
       const any = Type.is('any', isAny)
-      expect(String(any)).toBe('value must be any')
+      expect(String(any)).toBe('Value must be any')
     })
   })
 
@@ -174,13 +167,19 @@ describe('Type', () => {
       expect(anyAtAny.rules.length).toBe(0)
     })
 
-    it('must have a pointer that appends its given type pointer', () => {
+    it('must inherit the pointer from its given type and append its given key', () => {
       const any = Type.is('any', isAny)
       const anyAtAny = Type.at('any', any)
       expect(anyAtAny.pointer).toEqual(['any'])
 
       const anyWithPointerAtAny = Type.at('any', any.withPointer(['foo']))
       expect(anyWithPointerAtAny.pointer).toEqual(['foo', 'any'])
+    })
+
+    it('must inherit the code from its given type', () => {
+      const anyWithCode = Type.is('any', isAny).withCode('some-code')
+      const anyAtAny = Type.at('any', anyWithCode)
+      expect(anyAtAny.code).toEqual('some-code')
     })
   })
 
@@ -236,19 +235,19 @@ describe('Type', () => {
       })
     })
 
-    describe('#assert', () => {
+    describe('#parse', () => {
       it('must return the input value when it meets the type rules', () => {
         const any = Type.is('any', isAny)
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([any, string])
-        expect(anyAndString.assert('ABC')).toBe('ABC')
+        expect(anyAndString.parse('ABC')).toBe('ABC')
       })
 
       it('must throw a TypeError when the input value does not meet the type rules', () => {
         const any = Type.is('any', isAny)
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([any, string])
-        expect(() => anyAndString.assert(12)).toThrowError(String(anyAndString))
+        expect(() => anyAndString.parse(12)).toThrowError(String(anyAndString))
       })
     })
 
@@ -264,34 +263,14 @@ describe('Type', () => {
         const never = Type.is('never', isNever)
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([never, string])
-        expect(anyAndString.validate('ABC')).toEqual([
-          'value must be never',
-          // {
-          //   code: null,
-          //   detail: 'value must be never',
-          //   pointer: [],
-          // },
-        ])
+        expect(anyAndString.validate('ABC')).toEqual(['Value must be never'])
       })
 
       it('must return an Array with an error detail for each rule if none of its rules evaluates to true', () => {
         const never = Type.is('never', isNever)
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([never, string])
-        expect(anyAndString.validate(12)).toEqual([
-          'value must be never',
-          'value must be a string',
-          // {
-          //   code: null,
-          //   detail: 'value must be never',
-          //   pointer: [],
-          // },
-          // {
-          //   code: null,
-          //   detail: 'value must be a string',
-          //   pointer: [],
-          // },
-        ])
+        expect(anyAndString.validate({})).toEqual(['Value must be never', 'Value must be a string'])
       })
     })
 
@@ -301,13 +280,13 @@ describe('Type', () => {
         const never = Type.is('never', isNever)
         const string = Type.is('a string', isString)
         const anyAndString = Type.and([any, string])
-        expect(anyAndString.toString()).toBe('value must be any and a string')
+        expect(anyAndString.toString()).toBe('Value must be any and a string')
 
         const anyAndNeverAndString = Type.and([any, never, string])
-        expect(anyAndNeverAndString.toString()).toBe('value must be any, never, and a string')
+        expect(anyAndNeverAndString.toString()).toBe('Value must be any, never, and a string')
 
         const neverAndAnyAndString = Type.and([never, anyAndString])
-        expect(neverAndAnyAndString.toString()).toBe('value must be never, any, and a string')
+        expect(neverAndAnyAndString.toString()).toBe('Value must be never, any, and a string')
       })
 
       it.todo('must properly format rules with mixed type modes')
@@ -373,19 +352,19 @@ describe('Type', () => {
       })
     })
 
-    describe('#assert', () => {
+    describe('#parse', () => {
       it('must return the input value when it meets the type rules', () => {
         const any = Type.is('any', isAny)
         const string = Type.is('a string', isString)
         const anyOrString = Type.or([any, string])
-        expect(anyOrString.assert('ABC')).toBe('ABC')
+        expect(anyOrString.parse('ABC')).toBe('ABC')
       })
 
       it('must throw a TypeError when the input value does not meet the type rules', () => {
         const never = Type.is('never', isNever)
         const string = Type.is('a string', isString)
         const neverOrString = Type.or([never, string])
-        expect(() => neverOrString.assert(12)).toThrowError(String(neverOrString))
+        expect(() => neverOrString.parse(12)).toThrowError(String(neverOrString))
       })
     })
 
@@ -408,14 +387,7 @@ describe('Type', () => {
         const never = Type.is('never', isNever)
         const string = Type.is('a string', isString)
         const neverOrString = Type.or([never, string])
-        expect(neverOrString.validate(12)).toEqual([
-          'value must be never or a string',
-          // {
-          //   code: null,
-          //   detail: 'value must be never or a string',
-          //   pointer: [],
-          // },
-        ])
+        expect(neverOrString.validate(12)).toEqual(['Value must be never or a string'])
       })
     })
 
@@ -425,13 +397,13 @@ describe('Type', () => {
         const never = Type.is('never', isNever)
         const string = Type.is('a string', isString)
         const anyOrString = Type.or([any, string])
-        expect(anyOrString.toString()).toBe('value must be any or a string')
+        expect(anyOrString.toString()).toBe('Value must be any or a string')
 
         const anyOrNeverOrString = Type.or([any, never, string])
-        expect(anyOrNeverOrString.toString()).toBe('value must be any, never, or a string')
+        expect(anyOrNeverOrString.toString()).toBe('Value must be any, never, or a string')
 
         const neverOrAnyOrString = Type.or([never, anyOrString])
-        expect(neverOrAnyOrString.toString()).toBe('value must be never, any, or a string')
+        expect(neverOrAnyOrString.toString()).toBe('Value must be never, any, or a string')
       })
     })
 
@@ -498,7 +470,7 @@ describe('Type', () => {
       })
     })
 
-    describe('#assert', () => {
+    describe('#parse', () => {
       it('must return the input value when it meets the type rules', () => {
         const any = Type.is('any', isAny)
         const anyShape = Type.shape('any object', {
@@ -506,7 +478,7 @@ describe('Type', () => {
           bar: any,
         })
         const value = {}
-        expect(anyShape.assert(value)).toBe(value)
+        expect(anyShape.parse(value)).toBe(value)
       })
 
       it('must throw a TypeError if its given value is not object-like', () => {
@@ -515,7 +487,7 @@ describe('Type', () => {
           foo: any,
           bar: any,
         })
-        expect(() => anyShape.assert(null)).toThrowError(String(anyShape))
+        expect(() => anyShape.parse(null)).toThrowError(String(anyShape))
       })
 
       it('must throw a TypeError if some properties meet their predicate', () => {
@@ -525,7 +497,7 @@ describe('Type', () => {
           foo: any,
           bar: never,
         })
-        expect(() => anyAndNeverShape.assert(12)).toThrowError(String(anyAndNeverShape))
+        expect(() => anyAndNeverShape.parse(12)).toThrowError(String(anyAndNeverShape))
       })
 
       it('must throw a TypeError if no properties meet their predicate', () => {
@@ -534,7 +506,7 @@ describe('Type', () => {
           foo: never,
           bar: never,
         })
-        expect(() => neverShape.assert(12)).toThrowError(String(neverShape))
+        expect(() => neverShape.parse(12)).toThrowError(String(neverShape))
       })
     })
 
@@ -555,24 +527,9 @@ describe('Type', () => {
           bar: any,
         })
         expect(anyShape.validate(null)).toEqual([
-          'value must be an object',
-          'value at foo must be any',
-          'value at bar must be any',
-          // {
-          //   code: null,
-          //   detail: 'value must be an object',
-          //   pointer: [],
-          // },
-          // {
-          //   code: null,
-          //   detail: 'value at foo must be any',
-          //   pointer: ['foo'],
-          // },
-          // {
-          //   code: null,
-          //   detail: 'value at bar must be any',
-          //   pointer: ['bar'],
-          // },
+          'Value must be an object',
+          'Value at foo must be any',
+          'Value at bar must be any',
         ])
       })
 
@@ -583,14 +540,7 @@ describe('Type', () => {
           foo: any,
           bar: never,
         })
-        expect(anyAndNeverShape.validate({})).toEqual([
-          'value at bar must be never',
-          // {
-          //   code: null,
-          //   detail: 'value at bar must be never',
-          //   pointer: ['bar'],
-          // },
-        ])
+        expect(anyAndNeverShape.validate({})).toEqual(['Value at bar must be never'])
       })
 
       it('must return an Array with an error detail for each rule if none of its rules evaluates to true', () => {
@@ -599,19 +549,9 @@ describe('Type', () => {
           foo: never,
           bar: never,
         })
-        expect(neverShape.validate(12)).toEqual([
-          'value at foo must be never',
-          'value at bar must be never',
-          // {
-          //   code: null,
-          //   detail: 'value at foo must be never',
-          //   pointer: ['foo'],
-          // },
-          // {
-          //   code: null,
-          //   detail: 'value at bar must be never',
-          //   pointer: ['bar'],
-          // },
+        expect(neverShape.validate({})).toEqual([
+          'Value at foo must be never',
+          'Value at bar must be never',
         ])
       })
     })
@@ -623,7 +563,7 @@ describe('Type', () => {
           foo: any,
           bar: any,
         })
-        expect(anyShape.toString()).toBe('value must be any object')
+        expect(anyShape.toString()).toBe('Value must be any object')
       })
     })
   })
