@@ -1,4 +1,4 @@
-import { None, Predicate } from 'isntnt'
+import { None, Predicate, isString } from 'isntnt'
 
 import {
   AttributeFieldFromFactory,
@@ -50,7 +50,7 @@ export class AttributeField<
   U extends AttributeValue,
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Attributes, V> {
-  readonly validate: (value: unknown, method: ResourceFieldMethod) => ReadonlyArray<string>
+  readonly validate: (value: unknown) => ReadonlyArray<any>
   readonly predicate: Predicate<U>
   readonly serialize: (value: T) => U
   readonly deserialize: (value: U) => T
@@ -64,17 +64,7 @@ export class AttributeField<
     this.serialize = formatter.serialize
     this.deserialize = formatter.deserialize
     this.predicate = validator.predicate
-    this.validate = (value: unknown, method: ResourceFieldMethod): ReadonlyArray<string> => {
-      if (this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Never])) {
-        return [`value must be omitted`]
-      }
-      if (value == null) {
-        return !this.matches(resourceFieldMaskIndex[method][ResourceFieldRule.Maybe])
-          ? ['value is required']
-          : []
-      }
-      return validator.validate(value)
-    }
+    this.validate = validator.validate
   }
 }
 

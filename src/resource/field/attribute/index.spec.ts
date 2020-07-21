@@ -1,6 +1,6 @@
 import { isString, Predicate } from 'isntnt'
 
-import { ResourceFieldFlag, ResourceFieldMethod } from '..'
+import { ResourceFieldFlag } from '..'
 import { Attribute } from '.'
 
 const createValidator = <T>(description: string, predicate: Predicate<T>) => {
@@ -39,12 +39,8 @@ describe('Attribute', () => {
         ResourceFieldFlag.MaybeGet | ResourceFieldFlag.MaybePost | ResourceFieldFlag.MaybePatch,
       )
 
-      expect(optionalAttributeField.validate('abc', ResourceFieldMethod.Get)).toEqual([])
-      expect(optionalAttributeField.validate(null, ResourceFieldMethod.Get)).toEqual([])
-      expect(optionalAttributeField.validate('abc', ResourceFieldMethod.Post)).toEqual([])
-      expect(optionalAttributeField.validate(null, ResourceFieldMethod.Post)).toEqual([])
-      expect(optionalAttributeField.validate('abc', ResourceFieldMethod.Patch)).toEqual([])
-      expect(optionalAttributeField.validate(null, ResourceFieldMethod.Patch)).toEqual([])
+      expect(optionalAttributeField.validate('abc')).toEqual([])
+      expect(optionalAttributeField.validate(null)).toEqual(['value must be a string'])
     })
   })
 
@@ -56,16 +52,8 @@ describe('Attribute', () => {
         ResourceFieldFlag.AlwaysGet | ResourceFieldFlag.AlwaysPost | ResourceFieldFlag.MaybePatch,
       )
 
-      expect(requiredAttributeField.validate('abc', ResourceFieldMethod.Get)).toEqual([])
-      expect(requiredAttributeField.validate(null, ResourceFieldMethod.Get)).toEqual([
-        'value is required',
-      ])
-      expect(requiredAttributeField.validate('abc', ResourceFieldMethod.Post)).toEqual([])
-      expect(requiredAttributeField.validate(null, ResourceFieldMethod.Post)).toEqual([
-        'value is required',
-      ])
-      expect(requiredAttributeField.validate('abc', ResourceFieldMethod.Patch)).toEqual([])
-      expect(requiredAttributeField.validate(null, ResourceFieldMethod.Patch)).toEqual([])
+      expect(requiredAttributeField.validate('abc')).toEqual([])
+      expect(requiredAttributeField.validate(null)).toEqual(['value must be a string'])
     })
   })
 })
