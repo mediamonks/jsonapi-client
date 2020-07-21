@@ -36,7 +36,7 @@ enum TypeAssertionMode {
 
 const assertionModeDetailMap: Record<TypeAssertionMode, string> = ['and', 'or']
 
-export default class Type<T> implements TypeMeta {
+export class Type<T> implements TypeMeta {
   private readonly mode: TypeAssertionMode
   readonly predicate: Predicate<T>
   readonly rules: Array<Type<T>> = []

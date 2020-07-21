@@ -8,6 +8,7 @@ export * from './resource/field'
 export * from './resource/field/attribute'
 export * from './resource/formatter'
 export * from './resource/field/relationship'
+export * from './type'
 export * from './types'
 
 export default {

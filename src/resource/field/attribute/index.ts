@@ -1,4 +1,4 @@
-import { None, Predicate, isString } from 'isntnt'
+import { None, Predicate } from 'isntnt'
 
 import {
   AttributeFieldFromFactory,

@@ -1,6 +1,6 @@
 import { isAny, isNever, isString } from 'isntnt'
 
-import Type from '.'
+import { Type } from '.'
 
 describe('Type', () => {
   describe('#constructor', () => {

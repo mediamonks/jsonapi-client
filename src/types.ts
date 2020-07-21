@@ -14,7 +14,10 @@ import { ResourceFormatter } from './resource/formatter'
 import { ResourceIdentifier } from './resource/identifier'
 
 // Util
-type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
+/**
+ * @private
+ */
+export type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
 
 // Resource
 export type ResourceType = string
@@ -491,7 +494,7 @@ export type ToManyRelationshipFieldNameWithFlag<
 > = ResourceFieldNameWithFlag<Pick<T, ToManyRelationshipFieldName<T>>, U>
 
 export type RelationshipFieldFactory = (
-  getResources: () => Array<ResourceFormatter<any, any>>,
+  getResources: () => NonEmptyReadonlyArray<ResourceFormatter<any, any>>,
 ) => RelationshipField<any, RelationshipFieldType, any>
 
 export type ToOneRelationshipFieldFromFactory<

@@ -1,7 +1,6 @@
 import { isString, test } from 'isntnt'
-import Type from '../../src/type'
 
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../../src'
+import JSONAPI, { Attribute, Relationship, ResourceFormatter, Type } from '../../src'
 
 const string = Type.is('a string', isString)
 
@@ -26,8 +25,8 @@ export type UserFields = {
   givenName: Attribute.RequiredReadonly<string>
   familyName: Attribute.RequiredGenerated<string>
   dateOfBirth: Attribute.Optional<string, Date>
-  birthCountry: Relationship.ToOneReadOnly<CountryResource>
-  friends: Relationship.ToMany<UserResource>
+  birthCountry: Relationship.ToOneReadOnly<typeof country>
+  friends: Relationship.ToMany<typeof user>
 }
 
 export type UserResource = ResourceFormatter<UserType, UserFields>

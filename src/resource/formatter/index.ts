@@ -13,7 +13,7 @@ import {
 } from '../../types'
 import { resourceFieldName, resourceType, ResourceIdentifier } from '../identifier'
 import { ResourceFieldRoot, ResourceFieldFlag, ResourceField } from '../field'
-import Type from '../../type'
+import { Type } from '../../type'
 
 export class ResourceFormatter<T extends ResourceType, U extends ResourceFields> {
   readonly type: T

@@ -2,6 +2,7 @@ import {
   ToOneRelationshipFieldFromFactory,
   ToManyRelationshipFieldFromFactory,
   ResourceFieldFactoryRules,
+  NonEmptyReadonlyArray,
 } from '../../../types'
 import { ResourceFormatter } from '../../formatter'
 import {
@@ -22,7 +23,7 @@ export enum RelationshipFieldType {
 export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
 ) => <U extends ResourceFormatter<any, any>>(
-  getResources: () => Array<U>,
+  getResources: () => NonEmptyReadonlyArray<U>,
 ): RelationshipField<
   U,
   RelationshipFieldType.ToOne,
@@ -37,7 +38,7 @@ export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFacto
 export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
 ) => <U extends ResourceFormatter<any, any>>(
-  getResources: () => Array<U>,
+  getResources: () => NonEmptyReadonlyArray<U>,
 ): RelationshipField<
   U,
   RelationshipFieldType.ToMany,
@@ -55,9 +56,9 @@ export class RelationshipField<
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Relationships, V> {
   relationshipType: U
-  getResources: () => Array<T>
+  getResources: () => NonEmptyReadonlyArray<T>
 
-  constructor(flag: V, relationshipType: U, getResources: () => Array<T>) {
+  constructor(flag: V, relationshipType: U, getResources: () => NonEmptyReadonlyArray<T>) {
     super(ResourceFieldRoot.Relationships, flag)
     this.relationshipType = relationshipType
     this.getResources = getResources

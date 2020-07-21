@@ -3,7 +3,7 @@ import { Serializable, SerializableObject, isString, and, instance, isAny, isObj
 import { ResourceFormatter } from '../resource/formatter'
 import { JSONAPIDocument, JSONAPIRequestMethod, ResourcePath } from '../types'
 import { Endpoint } from './endpoint'
-import Type from '../type'
+import { Type } from '../type'
 
 const JSON_API_MIME_TYPE = 'application/vnd.api+json'
 

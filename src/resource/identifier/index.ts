@@ -1,5 +1,5 @@
-import { isString, test, and, at, above } from 'isntnt'
-import Type from '../../type'
+import { isString, test } from 'isntnt'
+import { Type } from '../../type'
 
 import { ResourceId, ResourceType } from '../../types'
 
