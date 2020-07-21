@@ -11,6 +11,7 @@ import {
   isFunction,
   Constructor,
   instance,
+  array,
 } from 'isntnt'
 
 export type StaticType<T extends Type<any>> = T extends Type<infer R> ? R : never
@@ -160,6 +161,15 @@ export class Type<T> implements TypeMeta {
       code: null,
       pointer: [],
     }) as any
+  }
+
+  static array<T>(type: Type<T>): Type<Array<T>> {
+    const rules = type.rules.map((type) => array(type.predicate))
+    return new Type(array(type.predicate), [], TypeAssertionMode.Union, {
+      description: `an Array where each element is ${type.description}`,
+      pointer: [],
+      code: null,
+    })
   }
 
   static and<T>(types: Array<Type<T>>): Type<T> {
