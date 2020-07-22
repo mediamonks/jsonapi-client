@@ -21,7 +21,7 @@ const client = JSONAPI.client(url)
 
 const eventEndpoint = client.endpoint('event', event)
 
-const complexEventFilter = event.filter(
+const eventFilter = event.filter(
   {
     [event.type]: ['externalId', 'name', 'stages', 'competitors'],
     [stage.type]: ['externalId', 'phases', 'competitors'],
@@ -95,6 +95,6 @@ const complexEventFilter = event.filter(
   },
 )
 
-eventEndpoint.getOne('12', complexEventFilter).then((eventResource) => {
-  console.log(eventResource.data.competitors[0].participant.organisation.flag)
+eventEndpoint.getOne('12', eventFilter).then((eventResource) => {
+  console.log(eventResource.data.externalId)
 })
