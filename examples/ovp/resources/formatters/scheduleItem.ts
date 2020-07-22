@@ -1,15 +1,12 @@
-import {
-  Attribute,
-  Relationship,
-  ResourceFormatter,
-  ResourceId,
-} from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter, ResourceId } from 'jsonapi-client'
 
+import { isoDateString, isoDateStringFormatter } from '../attributes/date'
+import { string } from '../attributes/primitive'
 import { event } from './event'
 import { eventUnit } from './eventUnit'
-import { ParticipantResource } from './participant'
-import { PhaseResource } from './phase'
-import { StageResource } from './stage'
+import { participant } from './participant'
+import { phase } from './phase'
+import { stage } from './stage'
 
 export type ScheduleItemType = 'ScheduleItem'
 
@@ -21,14 +18,26 @@ export type ScheduleItemFields = {
   awardClass: Attribute.Optional<string>
   awardSubClass: Attribute.Optional<string>
   scheduleSessionId: Attribute.Optional<ResourceId>
-  participants: Relationship.ToMany<ParticipantResource>
+  participants: Relationship.ToMany<typeof participant>
   eventUnits: Relationship.ToMany<typeof eventUnit>
   events: Relationship.ToMany<typeof event>
-  phases: Relationship.ToMany<PhaseResource>
-  stages: Relationship.ToMany<StageResource>
+  phases: Relationship.ToMany<typeof phase>
+  stages: Relationship.ToMany<typeof stage>
 }
 
-export type ScheduleItemResource = ResourceFormatter<
-  ScheduleItemType,
-  ScheduleItemFields
->
+export type ScheduleItemResource = ResourceFormatter<ScheduleItemType, ScheduleItemFields>
+
+export const scheduleItem: ScheduleItemResource = jsonapi.resource('ScheduleItem', {
+  title: Attribute.required(string),
+  start: Attribute.required(isoDateString, isoDateStringFormatter),
+  end: Attribute.optional(isoDateString, isoDateStringFormatter),
+  finishType: Attribute.optional(string),
+  awardClass: Attribute.optional(string),
+  awardSubClass: Attribute.optional(string),
+  scheduleSessionId: Attribute.optional(string),
+  events: Relationship.toMany(() => [event]),
+  eventUnits: Relationship.toMany(() => [eventUnit]),
+  phases: Relationship.toMany(() => [phase]),
+  stages: Relationship.toMany(() => [stage]),
+  participants: Relationship.toMany(() => [participant]),
+})

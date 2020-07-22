@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
 import { string, uint } from '../attributes/primitive'
 import { tag } from './tag'
@@ -15,7 +15,7 @@ export type CommentaryFields = {
 
 export type CommentaryResource = ResourceFormatter<CommentaryType, CommentaryFields>
 
-export const commentary: CommentaryResource = JSONAPI.resource('Commentary', {
+export const commentary: CommentaryResource = jsonapi.resource('Commentary', {
   title: Attribute.required(string),
   name: Attribute.required(string),
   language: Attribute.required(string),

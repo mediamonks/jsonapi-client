@@ -1,14 +1,14 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 import { Type } from 'jsonapi-client'
 
 import { number, string } from '../attributes/primitive'
 import { event } from './event'
 import { eventUnit } from './eventUnit'
-import { MedalResource } from './medal'
-import { ParticipantResource } from './participant'
-import { PhaseResource } from './phase'
-import { ResultResource } from './result'
-import { StageResource } from './stage'
+import { MedalResource, medal } from './medal'
+import { ParticipantResource, participant } from './participant'
+import { PhaseResource, phase } from './phase'
+import { ResultResource, result } from './result'
+import { StageResource, stage } from './stage'
 import { tag } from './tag'
 
 export type CompetitorType = 'Competitor'
@@ -29,16 +29,16 @@ export type CompetitorFields = {
 
 export type CompetitorResource = ResourceFormatter<CompetitorType, CompetitorFields>
 
-export const competitor: CompetitorResource = JSONAPI.resource('Competitor', {
+export const competitor: CompetitorResource = jsonapi.resource('Competitor', {
   externalId: Attribute.required(string),
   order: Attribute.optional(number), // Should be sortOrder?
   extendedInfo: Attribute.optional(Type.object),
-  stage: Relationship.toOne(() => [] as any),
+  participant: Relationship.toOne(() => [participant]),
   event: Relationship.toOne(() => [event]),
-  phase: Relationship.toOne(() => [] as any),
   eventUnit: Relationship.toOne(() => [eventUnit]),
-  participant: Relationship.toOne(() => [] as any),
-  medals: Relationship.toMany(() => [] as any),
-  results: Relationship.toMany(() => [] as any),
+  stage: Relationship.toOne(() => [stage]),
+  phase: Relationship.toOne(() => [phase]),
+  medals: Relationship.toMany(() => [medal]),
+  results: Relationship.toMany(() => [result]),
   tags: Relationship.toMany(() => [tag]),
 })

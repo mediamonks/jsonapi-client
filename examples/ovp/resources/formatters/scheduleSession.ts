@@ -1,22 +1,19 @@
-import {
-  Attribute,
-  Relationship,
-  ResourceFormatter,
-  ResourceId,
-} from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter, ResourceId } from 'jsonapi-client'
 
+import { isoDateString, isoDateStringFormatter } from '../attributes/date'
+import { string, boolean, number } from '../attributes/primitive'
 import { asset } from './asset'
 import { channel } from './channel'
 import { commentary } from './commentary'
 import { discipline } from './discipline'
-import { OrganisationResource } from './organisation'
-import { ParticipantResource } from './participant'
-import { ScheduleItemResource } from './scheduleItem'
-import { StreamResource } from './stream'
+import { organisation } from './organisation'
+import { participant } from './participant'
+import { scheduleItem } from './scheduleItem'
+import { StreamResource, stream } from './stream'
 import { tag } from './tag'
-import { TimelineMarkerResource } from './timelineMarker'
-import { USDFMessageIdResource } from './usdfMessageId'
-import { VODResource } from './vod'
+import { timelineMarker } from './timelineMarker'
+import { usdfMessageId } from './usdfMessageId'
+import { vod } from './vod'
 
 export type ScheduleSessionType = 'ScheduleSession'
 
@@ -30,8 +27,8 @@ export type ScheduleSessionFields = {
   coverageStart: Attribute.Required<string, Date>
   coverageEnd: Attribute.Required<string, Date>
   live: Attribute.Required<boolean>
-  runUpTime: Attribute.Required<string> // Date?
-  runDownTime: Attribute.Required<string> // Date?
+  runUpTime: Attribute.Required<string>
+  runDownTime: Attribute.Required<string>
   videoId: Attribute.Required<ResourceId>
   videoFeed: Attribute.Required<string>
   integrated: Attribute.Required<boolean>
@@ -47,22 +44,60 @@ export type ScheduleSessionFields = {
   broadcastPublished: Attribute.Optional<string, Date>
   broadcastUnpublished: Attribute.Optional<string, Date>
   discipline: Relationship.ToOne<typeof discipline>
+  organisation: Relationship.ToOne<typeof organisation>
   channel: Relationship.ToOne<typeof channel>
   stream: Relationship.ToOne<StreamResource>
   thumbnail: Relationship.ToOne<typeof asset>
-  ferVod: Relationship.ToOne<VODResource>
-  highlightVod: Relationship.ToOne<VODResource>
-  timelineMarkers: Relationship.ToMany<TimelineMarkerResource>
+  ferVod: Relationship.ToOne<typeof vod>
+  highlightVod: Relationship.ToOne<typeof vod>
+  timelineMarkers: Relationship.ToMany<typeof timelineMarker>
   commentaries: Relationship.ToMany<typeof commentary>
-  usdfMessageIds: Relationship.ToMany<USDFMessageIdResource>
-  vods: Relationship.ToMany<VODResource>
+  usdfMessageIds: Relationship.ToMany<typeof usdfMessageId>
+  vods: Relationship.ToMany<typeof vod>
   tags: Relationship.ToMany<typeof tag>
-  scheduleItems: Relationship.ToMany<ScheduleItemResource>
-  participants: Relationship.ToMany<ParticipantResource>
-  organisation: Relationship.ToOne<OrganisationResource>
+  scheduleItems: Relationship.ToMany<typeof scheduleItem>
+  participants: Relationship.ToMany<typeof participant>
 }
 
-export type ScheduleSessionResource = ResourceFormatter<
-  ScheduleSessionType,
-  ScheduleSessionFields
->
+export type ScheduleSessionResource = ResourceFormatter<ScheduleSessionType, ScheduleSessionFields>
+
+export const scheduleSession: ScheduleSessionResource = jsonapi.resource('ScheduleSession', {
+  externalId: Attribute.required(string),
+  code: Attribute.required(string),
+  title: Attribute.required(string),
+  awardIndicator: Attribute.required(boolean),
+  broadcastStart: Attribute.required(isoDateString, isoDateStringFormatter),
+  broadcastEnd: Attribute.required(isoDateString, isoDateStringFormatter),
+  coverageStart: Attribute.required(isoDateString, isoDateStringFormatter),
+  coverageEnd: Attribute.required(isoDateString, isoDateStringFormatter),
+  live: Attribute.required(boolean),
+  runUpTime: Attribute.required(string),
+  runDownTime: Attribute.required(string),
+  videoId: Attribute.required(string),
+  videoFeed: Attribute.required(string),
+  integrated: Attribute.required(boolean),
+  disciplineCode: Attribute.optional(string),
+  disciplineId: Attribute.optional(string),
+  end: Attribute.optional(isoDateString, isoDateStringFormatter),
+  competitionDate: Attribute.optional(isoDateString, isoDateStringFormatter),
+  scheduleItemCount: Attribute.required(number),
+  unilateral: Attribute.required(boolean),
+  promotionStatus: Attribute.required(string),
+  state: Attribute.required(string),
+  broadcastPublished: Attribute.optional(isoDateString, isoDateStringFormatter),
+  broadcastUnpublished: Attribute.optional(isoDateString, isoDateStringFormatter),
+  discipline: Relationship.toOne(() => [discipline]),
+  organisation: Relationship.toOne(() => [organisation]),
+  channel: Relationship.toOne(() => [channel]),
+  stream: Relationship.toOne(() => [stream]),
+  thumbnail: Relationship.toOne(() => [asset]),
+  ferVod: Relationship.toOne(() => [vod]),
+  highlightVod: Relationship.toOne(() => [vod]),
+  timelineMarkers: Relationship.toMany(() => [timelineMarker]),
+  commentaries: Relationship.toMany(() => [commentary]),
+  usdfMessageIds: Relationship.toMany(() => [usdfMessageId]),
+  vods: Relationship.toMany(() => [vod]),
+  tags: Relationship.toMany(() => [tag]),
+  scheduleItems: Relationship.toMany(() => [scheduleItem]),
+  participants: Relationship.toMany(() => [participant]),
+})

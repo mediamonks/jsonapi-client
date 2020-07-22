@@ -1,5 +1,6 @@
-import { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from 'jsonapi-client'
 
+import { string, uint } from '../attributes/primitive'
 import { competitor } from './competitor'
 import { tag } from './tag'
 
@@ -43,4 +44,38 @@ export type ResultFields = {
 
 export type ResultResource = ResourceFormatter<ResultType, ResultFields>
 
-export const result: ResultResource = {} as any
+export const result: ResultResource = jsonapi.resource('Result', {
+  resultType: Attribute.optional(string),
+  externalId: Attribute.required(string),
+  irm: Attribute.optional(string),
+  title: Attribute.optional(string),
+  status: Attribute.required(string),
+  ingestOrganisation: Attribute.optional(string),
+  qualificationMark: Attribute.optional(string),
+  rank: Attribute.optional(uint),
+  penalty: Attribute.optional(string),
+  wlt: Attribute.optional(string),
+  pool: Attribute.optional(string),
+  valueType: Attribute.optional(string),
+  value: Attribute.optional(string),
+  totalValue: Attribute.optional(string),
+  extendedInfo: Attribute.optional(Type.object),
+  resultFor: Attribute.optional(string),
+  against: Attribute.optional(string),
+  externalRowKeyList: Attribute.optional(Type.array(string)),
+  won: Attribute.optional(uint),
+  sortOrder: Attribute.optional(uint),
+  universalIdsList: Attribute.optional(Type.array(string)),
+  competitorId: Attribute.optional(string),
+  played: Attribute.optional(uint),
+  rankEqual: Attribute.optional(string),
+  diff: Attribute.optional(string),
+  ratio: Attribute.optional(string),
+  tied: Attribute.optional(uint),
+  lost: Attribute.optional(uint),
+  extendedInfoMap: Attribute.optional(Type.object),
+  children: Relationship.toMany(() => [result]),
+  parent: Relationship.toOne(() => [result]),
+  competitor: Relationship.toOne(() => [competitor]),
+  tags: Relationship.toMany(() => [tag]),
+})

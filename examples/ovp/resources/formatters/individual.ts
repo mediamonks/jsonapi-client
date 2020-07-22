@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter, ResourceId } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter, ResourceId } from 'jsonapi-client'
 
 import { number, string } from '../attributes/primitive'
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
@@ -13,7 +13,7 @@ export type IndividualFields = {
   ambition: Attribute.Optional<string>
   clubName: Attribute.Optional<string>
   coach: Attribute.Optional<string>
-  countryOfBirth: Attribute.Optional<ResourceId> // Country Id?
+  countryOfBirth: Attribute.Optional<string>
   dateOfBirth: Attribute.Optional<string, Date>
   education: Attribute.Optional<string>
   fullFamilyName: Attribute.Optional<string>
@@ -37,7 +37,7 @@ export type IndividualFields = {
 
 export type IndividualResource = ResourceFormatter<IndividualType, IndividualFields>
 
-export const individual: IndividualResource = JSONAPI.resource('Individual', {
+export const individual: IndividualResource = jsonapi.resource('Individual', {
   individualType: Attribute.required(string),
   externalId: Attribute.required(string),
   ambition: Attribute.optional(string),

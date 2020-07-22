@@ -1,15 +1,9 @@
-import JSONAPI, { ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { ResourceFormatter } from 'jsonapi-client'
 
 export type USDFMessageIdType = 'USDFMessageId'
 
 export type USDFMessageIdFields = {}
 
-export type USDFMessageIdResource = ResourceFormatter<
-  USDFMessageIdType,
-  USDFMessageIdFields
->
+export type USDFMessageIdResource = ResourceFormatter<USDFMessageIdType, USDFMessageIdFields>
 
-export const usdfMessageId: USDFMessageIdResource = JSONAPI.resource(
-  'USDFMessageId',
-  {},
-)
+export const usdfMessageId: USDFMessageIdResource = jsonapi.resource('USDFMessageId', {})

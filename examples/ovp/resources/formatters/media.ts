@@ -1,18 +1,23 @@
-import { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
+import { string } from '../attributes/primitive'
 import { asset } from './asset'
-import { StageResource } from './stage'
-import { MedalResource } from './medal'
+import { stage } from './stage'
 
 export type MediaType = 'Media'
 
 export type MediaFields = {
   typeMedia: Attribute.Required<string>
   title: Attribute.Required<string>
+  stage: Relationship.ToOne<typeof stage>
   assets: Relationship.ToMany<typeof asset>
-  stage: Relationship.ToOne<StageResource>
 }
 
 export type MediaResource = ResourceFormatter<MediaType, MediaFields>
 
-export const medal: MedalResource = {} as any
+export const media: MediaResource = jsonapi.resource('Media', {
+  typeMedia: Attribute.required(string),
+  title: Attribute.required(string),
+  stage: Relationship.toOne(() => [stage]),
+  assets: Relationship.toMany(() => [asset]),
+})

@@ -1,9 +1,9 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter, Type } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from 'jsonapi-client'
 
 import { boolean, string } from '../attributes/primitive'
 import { asset } from './asset'
-import { OrganisationResource } from './organisation'
-import { ParticipantResource } from './participant'
+import { organisation } from './organisation'
+import { participant } from './participant'
 import { tag } from './tag'
 
 export type CountryType = 'Country'
@@ -18,15 +18,15 @@ export type CountryFields = {
   nameVariations: Attribute.Optional<Array<string>>
   thumbnailUrl: Attribute.Optional<string>
   isFeatured: Attribute.Optional<boolean>
-  organisation: Relationship.ToOne<OrganisationResource>
+  organisation: Relationship.ToOne<typeof organisation>
   flag: Relationship.ToOne<typeof asset>
-  participants: Relationship.ToMany<ParticipantResource>
+  participants: Relationship.ToMany<typeof participant>
   tags: Relationship.ToMany<typeof tag>
 }
 
 export type CountryResource = ResourceFormatter<CountryType, CountryFields>
 
-export const country: CountryResource = JSONAPI.resource('Country', {
+export const country: CountryResource = jsonapi.resource('Country', {
   iso2Code: Attribute.optional(string),
   iso3Code: Attribute.required(string),
   iocCode: Attribute.required(string),
@@ -36,8 +36,8 @@ export const country: CountryResource = JSONAPI.resource('Country', {
   nameVariations: Attribute.optional(Type.array(string)),
   thumbnailUrl: Attribute.optional(string),
   isFeatured: Attribute.optional(boolean),
-  organisation: Relationship.toOne(() => [] as any),
+  organisation: Relationship.toOne(() => [organisation]),
   flag: Relationship.toOne(() => [asset]),
-  participants: Relationship.toMany(() => [] as any),
+  participants: Relationship.toMany(() => [participant]),
   tags: Relationship.toMany(() => [tag]),
 })

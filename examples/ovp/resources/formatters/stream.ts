@@ -1,4 +1,6 @@
-import { Attribute, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, ResourceFormatter } from 'jsonapi-client'
+import { string } from '../attributes/primitive'
+import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 
 export type StreamType = 'Stream'
 
@@ -14,3 +16,14 @@ export type StreamFields = {
 }
 
 export type StreamResource = ResourceFormatter<StreamType, StreamFields>
+
+export const stream: StreamResource = jsonapi.resource('Stream', {
+  streamType: Attribute.required(string),
+  stream: Attribute.optional(string),
+  start: Attribute.optional(isoDateString, isoDateStringFormatter),
+  end: Attribute.optional(isoDateString, isoDateStringFormatter),
+  manifestUrl: Attribute.optional(string),
+  origin: Attribute.optional(string),
+  alias: Attribute.optional(string),
+  path: Attribute.optional(string),
+})

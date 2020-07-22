@@ -1,10 +1,10 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
 import { string } from '../attributes/primitive'
 import { discipline } from './discipline'
 import { event } from './event'
 import { individual } from './individual'
-import { OrganisationResource } from './organisation'
+import { organisation } from './organisation'
 
 export type TagType = 'Tag'
 
@@ -14,16 +14,16 @@ export type TagFields = {
   discipline: Relationship.ToOne<typeof discipline>
   event: Relationship.ToOne<typeof event>
   individual: Relationship.ToOne<typeof individual>
-  organisation: Relationship.ToOne<OrganisationResource>
+  organisation: Relationship.ToOne<typeof organisation>
 }
 
 export type TagResource = ResourceFormatter<TagType, TagFields>
 
-export const tag: TagResource = JSONAPI.resource('Tag', {
+export const tag: TagResource = jsonapi.resource('Tag', {
   tagType: Attribute.required(string),
   value: Attribute.required(string),
-  discipline: Relationship.toOne(() => [] as any),
+  discipline: Relationship.toOne(() => [discipline]),
   event: Relationship.toOne(() => [event]),
   individual: Relationship.toOne(() => [individual]),
-  organisation: Relationship.toOne(() => [] as any),
+  organisation: Relationship.toOne(() => [organisation]),
 })

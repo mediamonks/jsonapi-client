@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, ResourceFormatter } from 'jsonapi-client'
 import { Type } from 'jsonapi-client'
 
 import { string } from '../attributes/primitive'
@@ -12,7 +12,7 @@ export type ConfigurationFields = {
 
 export type ConfigurationResource = ResourceFormatter<ConfigurationType, ConfigurationFields>
 
-export const configuration: ConfigurationResource = JSONAPI.resource('Configuration', {
+export const configuration: ConfigurationResource = jsonapi.resource('Configuration', {
   key: Attribute.required(string),
   value: Attribute.required(Type.object),
 })

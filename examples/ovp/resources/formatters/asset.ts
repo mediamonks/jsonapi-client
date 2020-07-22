@@ -1,7 +1,7 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
 import { string } from '../attributes/primitive'
-import { RenditionResource } from './rendition'
+import { rendition } from './rendition'
 import { tag } from './tag'
 
 export type AssetType = 'Asset'
@@ -11,17 +11,17 @@ export type AssetFields = {
   name: Attribute.Required<string>
   source: Attribute.Required<string>
   alt: Attribute.Optional<string>
-  rendition: Relationship.ToMany<RenditionResource>
+  rendition: Relationship.ToMany<typeof rendition>
   tags: Relationship.ToMany<typeof tag>
 }
 
 export type AssetResource = ResourceFormatter<AssetType, AssetFields>
 
-export const asset: AssetResource = JSONAPI.resource('Asset', {
+export const asset: AssetResource = jsonapi.resource('Asset', {
   assetType: Attribute.required(string),
   name: Attribute.required(string),
   source: Attribute.required(string),
   alt: Attribute.optional(string),
-  rendition: Relationship.toMany(() => [] as any),
+  rendition: Relationship.toMany(() => [rendition]),
   tags: Relationship.toMany(() => [tag]),
 })
