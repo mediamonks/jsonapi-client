@@ -5,21 +5,20 @@ import { country } from './country'
 import { discipline } from './discipline'
 import { organisation } from './organisation'
 
-export type MedalCountType = 'MedalCount'
-
-export type MedalCountFields = {
-  bronze: Attribute.Required<number>
-  silver: Attribute.Required<number>
-  gold: Attribute.Required<number>
-  total: Attribute.Required<number>
-  goldRank: Attribute.Required<number>
-  totalRank: Attribute.Required<number>
-  discipline: Relationship.ToOne<typeof discipline>
-  organisation: Relationship.ToOne<typeof organisation>
-  country: Relationship.ToOne<typeof country>
-}
-
-export type MedalCountResource = ResourceFormatter<MedalCountType, MedalCountFields>
+export type MedalCountResource = ResourceFormatter<
+  'MedalCount',
+  {
+    bronze: Attribute.Required<number>
+    silver: Attribute.Required<number>
+    gold: Attribute.Required<number>
+    total: Attribute.Required<number>
+    goldRank: Attribute.Required<number>
+    totalRank: Attribute.Required<number>
+    discipline: Relationship.ToOne<typeof discipline>
+    organisation: Relationship.ToOne<typeof organisation>
+    country: Relationship.ToOne<typeof country>
+  }
+>
 
 export const medalCount: MedalCountResource = jsonapi.resource('MedalCount', {
   bronze: Attribute.required(uint),

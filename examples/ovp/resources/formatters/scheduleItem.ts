@@ -8,24 +8,23 @@ import { participant } from './participant'
 import { phase } from './phase'
 import { stage } from './stage'
 
-export type ScheduleItemType = 'ScheduleItem'
-
-export type ScheduleItemFields = {
-  title: Attribute.Required<string>
-  start: Attribute.Required<string, Date>
-  end: Attribute.Optional<string, Date>
-  finishType: Attribute.Optional<string>
-  awardClass: Attribute.Optional<string>
-  awardSubClass: Attribute.Optional<string>
-  scheduleSessionId: Attribute.Optional<ResourceId>
-  participants: Relationship.ToMany<typeof participant>
-  eventUnits: Relationship.ToMany<typeof eventUnit>
-  events: Relationship.ToMany<typeof event>
-  phases: Relationship.ToMany<typeof phase>
-  stages: Relationship.ToMany<typeof stage>
-}
-
-export type ScheduleItemResource = ResourceFormatter<ScheduleItemType, ScheduleItemFields>
+export type ScheduleItemResource = ResourceFormatter<
+  'ScheduleItem',
+  {
+    title: Attribute.Required<string>
+    start: Attribute.Required<string, Date>
+    end: Attribute.Optional<string, Date>
+    finishType: Attribute.Optional<string>
+    awardClass: Attribute.Optional<string>
+    awardSubClass: Attribute.Optional<string>
+    scheduleSessionId: Attribute.Optional<ResourceId>
+    participants: Relationship.ToMany<typeof participant>
+    eventUnits: Relationship.ToMany<typeof eventUnit>
+    events: Relationship.ToMany<typeof event>
+    phases: Relationship.ToMany<typeof phase>
+    stages: Relationship.ToMany<typeof stage>
+  }
+>
 
 export const scheduleItem: ScheduleItemResource = jsonapi.resource('ScheduleItem', {
   title: Attribute.required(string),

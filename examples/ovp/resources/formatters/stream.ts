@@ -2,20 +2,19 @@ import jsonapi, { Attribute, ResourceFormatter } from 'jsonapi-client'
 import { string } from '../attributes/primitive'
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 
-export type StreamType = 'Stream'
-
-export type StreamFields = {
-  streamType: Attribute.Required<string>
-  stream: Attribute.Optional<string>
-  start: Attribute.Optional<string, Date>
-  end: Attribute.Optional<string, Date>
-  manifestUrl: Attribute.Optional<string>
-  origin: Attribute.Optional<string>
-  alias: Attribute.Optional<string>
-  path: Attribute.Optional<string>
-}
-
-export type StreamResource = ResourceFormatter<StreamType, StreamFields>
+export type StreamResource = ResourceFormatter<
+  'Stream',
+  {
+    streamType: Attribute.Required<string>
+    stream: Attribute.Optional<string>
+    start: Attribute.Optional<string, Date>
+    end: Attribute.Optional<string, Date>
+    manifestUrl: Attribute.Optional<string>
+    origin: Attribute.Optional<string>
+    alias: Attribute.Optional<string>
+    path: Attribute.Optional<string>
+  }
+>
 
 export const stream: StreamResource = jsonapi.resource('Stream', {
   streamType: Attribute.required(string),

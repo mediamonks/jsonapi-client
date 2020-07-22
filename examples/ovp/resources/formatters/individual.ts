@@ -1,41 +1,40 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, ResourceId } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
 import { number, string } from '../attributes/primitive'
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import { commaSeparatedListFormatter } from '../attributes/list'
 import { participant } from './participant'
 
-export type IndividualType = 'Individual'
-
-export type IndividualFields = {
-  individualType: Attribute.Required<string>
-  externalId: Attribute.Required<string>
-  ambition: Attribute.Optional<string>
-  clubName: Attribute.Optional<string>
-  coach: Attribute.Optional<string>
-  countryOfBirth: Attribute.Optional<string>
-  dateOfBirth: Attribute.Optional<string, Date>
-  education: Attribute.Optional<string>
-  fullFamilyName: Attribute.Optional<string>
-  fullGivenName: Attribute.Optional<string>
-  gender: Attribute.Optional<string>
-  generalBiography: Attribute.Optional<string>
-  generalBiographyPlain: Attribute.Optional<string>
-  height: Attribute.Optional<number>
-  weight: Attribute.Optional<number>
-  hero: Attribute.Optional<string>
-  hobbies: Attribute.Optional<string, Array<string>>
-  nationality: Attribute.Optional<string>
-  nickname: Attribute.Optional<string>
-  occupation: Attribute.Optional<string>
-  otherSports: Attribute.Optional<string>
-  profileImages: Attribute.Optional<string>
-  sportingDebut: Attribute.Optional<string>
-  startedCompeting: Attribute.Optional<string, Date>
-  participants: Relationship.ToMany<typeof participant>
-}
-
-export type IndividualResource = ResourceFormatter<IndividualType, IndividualFields>
+export type IndividualResource = ResourceFormatter<
+  'Individual',
+  {
+    individualType: Attribute.Required<string>
+    externalId: Attribute.Required<string>
+    ambition: Attribute.Optional<string>
+    clubName: Attribute.Optional<string>
+    coach: Attribute.Optional<string>
+    countryOfBirth: Attribute.Optional<string>
+    dateOfBirth: Attribute.Optional<string, Date>
+    education: Attribute.Optional<string>
+    fullFamilyName: Attribute.Optional<string>
+    fullGivenName: Attribute.Optional<string>
+    gender: Attribute.Optional<string>
+    generalBiography: Attribute.Optional<string>
+    generalBiographyPlain: Attribute.Optional<string>
+    height: Attribute.Optional<number>
+    weight: Attribute.Optional<number>
+    hero: Attribute.Optional<string>
+    hobbies: Attribute.Optional<string, Array<string>>
+    nationality: Attribute.Optional<string>
+    nickname: Attribute.Optional<string>
+    occupation: Attribute.Optional<string>
+    otherSports: Attribute.Optional<string>
+    profileImages: Attribute.Optional<string>
+    sportingDebut: Attribute.Optional<string>
+    startedCompeting: Attribute.Optional<string, Date>
+    participants: Relationship.ToMany<typeof participant>
+  }
+>
 
 export const individual: IndividualResource = jsonapi.resource('Individual', {
   individualType: Attribute.required(string),

@@ -3,9 +3,9 @@ import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-cli
 import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
 
-import book from './book'
-import country from './country'
-import photo from './photo'
+import { book } from './book'
+import { country } from './country'
+import { photo } from './photo'
 
 type StoreType = 'stores'
 
@@ -20,7 +20,7 @@ type StoreFields = {
 
 type StoreResource = ResourceFormatter<StoreType, StoreFields>
 
-const store: StoreResource = JSONAPI.resource('stores', {
+export const store: StoreResource = JSONAPI.resource('stores', {
   name: Attribute.required(string),
   address: Attribute.requiredStatic(string),
   created_by: Attribute.requiredReadonly(uint),
@@ -28,5 +28,3 @@ const store: StoreResource = JSONAPI.resource('stores', {
   books: Relationship.toMany(() => [book]),
   countries: Relationship.toOne(() => [country]),
 })
-
-export default store

@@ -5,16 +5,15 @@ import { uint } from '../attributes/uint'
 import { book } from './book'
 import { photo } from './photo'
 
-type ChapterType = 'chapters'
-
-type ChapterFields = {
-  title: Attribute.Required<string>
-  ordering: Attribute.Required<number>
-  photos: Relationship.ToMany<typeof photo>
-  book: Relationship.ToOne<typeof book>
-}
-
-type ChapterResource = ResourceFormatter<ChapterType, ChapterFields>
+type ChapterResource = ResourceFormatter<
+  'chapters',
+  {
+    title: Attribute.Required<string>
+    ordering: Attribute.Required<number>
+    photos: Relationship.ToMany<typeof photo>
+    book: Relationship.ToOne<typeof book>
+  }
+>
 
 export const chapter: ChapterResource = JSONAPI.resource('chapters', {
   title: Attribute.required(string),

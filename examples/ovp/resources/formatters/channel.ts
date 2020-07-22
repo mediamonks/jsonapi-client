@@ -4,16 +4,15 @@ import { string } from '../attributes/primitive'
 import { scheduleSession } from './scheduleSession'
 import { tag } from './tag'
 
-export type ChannelType = 'Channel'
-
-export type ChannelFields = {
-  name: Attribute.Required<string>
-  stream: Attribute.Required<ResourceId> // Stream id?
-  scheduleSessions: Relationship.ToMany<typeof scheduleSession>
-  tags: Relationship.ToMany<typeof tag>
-}
-
-export type ChannelResource = ResourceFormatter<ChannelType, ChannelFields>
+export type ChannelResource = ResourceFormatter<
+  'Channel',
+  {
+    name: Attribute.Required<string>
+    stream: Attribute.Required<ResourceId>
+    scheduleSessions: Relationship.ToMany<typeof scheduleSession>
+    tags: Relationship.ToMany<typeof tag>
+  }
+>
 
 export const channel: ChannelResource = jsonapi.resource('Channel', {
   name: Attribute.required(string),

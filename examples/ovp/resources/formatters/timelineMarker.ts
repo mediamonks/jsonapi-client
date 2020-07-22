@@ -1,33 +1,37 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
 
-import { string, number } from '../attributes/primitive'
+import { number, string } from '../attributes/primitive'
+import {
+  timelineMarkerStatistics,
+  TimelineMarkerStatistics,
+} from '../attributes/timelineMarkerStatistics'
+import { timelineMarkerType, TimelineMarkerType } from '../attributes/timelineMarkerType'
 import { eventUnit } from './eventUnit'
 import { phase } from './phase'
 import { scheduleSession } from './scheduleSession'
 import { tag } from './tag'
 
-export type TimelineMarkerType = 'TimelineMarker'
-
-export type TimelineMarkerFields = {
-  timelineMarkerType: Attribute.Optional<string>
-  title: Attribute.Optional<string>
-  description: Attribute.Optional<string>
-  statistics: Attribute.Optional<{}>
-  timestamp: Attribute.Optional<number>
-  timeDelta: Attribute.Optional<number>
-  scheduleSession: Relationship.ToOne<typeof scheduleSession>
-  eventUnit: Relationship.ToOne<typeof eventUnit>
-  phase: Relationship.ToOne<typeof phase>
-  tags: Relationship.ToMany<typeof tag>
-}
-
-export type TimelineMarkerResource = ResourceFormatter<TimelineMarkerType, TimelineMarkerFields>
+export type TimelineMarkerResource = ResourceFormatter<
+  'TimelineMarker',
+  {
+    timelineMarkerType: Attribute.Optional<TimelineMarkerType>
+    title: Attribute.Optional<string>
+    description: Attribute.Optional<string>
+    statistics: Attribute.Optional<TimelineMarkerStatistics>
+    timestamp: Attribute.Optional<number>
+    timeDelta: Attribute.Optional<number>
+    scheduleSession: Relationship.ToOne<typeof scheduleSession>
+    eventUnit: Relationship.ToOne<typeof eventUnit>
+    phase: Relationship.ToOne<typeof phase>
+    tags: Relationship.ToMany<typeof tag>
+  }
+>
 
 export const timelineMarker: TimelineMarkerResource = jsonapi.resource('TimelineMarker', {
-  timelineMarkerType: Attribute.optional(string),
+  timelineMarkerType: Attribute.optional(timelineMarkerType),
   title: Attribute.optional(string),
   description: Attribute.optional(string),
-  statistics: Attribute.optional(Type.object),
+  statistics: Attribute.optional(timelineMarkerStatistics),
   timestamp: Attribute.optional(number),
   timeDelta: Attribute.optional(number),
   scheduleSession: Relationship.toOne(() => [scheduleSession]),

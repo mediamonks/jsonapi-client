@@ -1,11 +1,4 @@
-import {
-  isBoolean,
-  isNumber,
-  isSerializableObject,
-  isString,
-  isUint,
-  SerializableObject,
-} from 'isntnt'
+import { isBoolean, isNumber, isString, isUint } from 'isntnt'
 import { Type } from 'jsonapi-client'
 
 export const boolean: Type<boolean> = Type.is('a boolean', isBoolean)
@@ -16,7 +9,4 @@ export const number: Type<number> = Type.is('a number', isNumber)
 
 export const uint: Type<number> = Type.is('an unsigned integer', isUint)
 
-export const object: Type<SerializableObject> = Type.is(
-  'a serializable object',
-  isSerializableObject,
-)
+export const falseOrNull: Type<false | null> = Type.either(false, null)

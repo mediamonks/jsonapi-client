@@ -4,15 +4,14 @@ import { string } from '../attributes/string'
 import { book } from './book'
 import { photo } from './photo'
 
-type SeriesType = 'series'
-
-type SeriesFields = {
-  title: Attribute.Required<string>
-  photos: Relationship.ToMany<typeof photo>
-  books: Relationship.ToMany<typeof book>
-}
-
-type SeriesResource = ResourceFormatter<SeriesType, SeriesFields>
+type SeriesResource = ResourceFormatter<
+  'series',
+  {
+    title: Attribute.Required<string>
+    photos: Relationship.ToMany<typeof photo>
+    books: Relationship.ToMany<typeof book>
+  }
+>
 
 export const series: SeriesResource = JSONAPI.resource('series', {
   title: Attribute.required(string),

@@ -4,18 +4,17 @@ import { string } from '../attributes/primitive'
 import { rendition } from './rendition'
 import { tag } from './tag'
 
-export type AssetType = 'Asset'
-
-export type AssetFields = {
-  assetType: Attribute.Required<string>
-  name: Attribute.Required<string>
-  source: Attribute.Required<string>
-  alt: Attribute.Optional<string>
-  rendition: Relationship.ToMany<typeof rendition>
-  tags: Relationship.ToMany<typeof tag>
-}
-
-export type AssetResource = ResourceFormatter<AssetType, AssetFields>
+export type AssetResource = ResourceFormatter<
+  'Asset',
+  {
+    assetType: Attribute.Required<string>
+    name: Attribute.Required<string>
+    source: Attribute.Required<string>
+    alt: Attribute.Optional<string>
+    rendition: Relationship.ToMany<typeof rendition>
+    tags: Relationship.ToMany<typeof tag>
+  }
+>
 
 export const asset: AssetResource = jsonapi.resource('Asset', {
   assetType: Attribute.required(string),

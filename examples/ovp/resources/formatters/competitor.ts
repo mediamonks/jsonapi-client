@@ -1,6 +1,9 @@
 import jsonapi, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
-import { Type } from 'jsonapi-client'
 
+import {
+  competitorExtendedInfo,
+  CompetitorExtendedInfo,
+} from '../attributes/competitorExtendedInfo'
 import { number, string } from '../attributes/primitive'
 import { event } from './event'
 import { eventUnit } from './eventUnit'
@@ -11,28 +14,27 @@ import { ResultResource, result } from './result'
 import { StageResource, stage } from './stage'
 import { tag } from './tag'
 
-export type CompetitorType = 'Competitor'
-
-export type CompetitorFields = {
-  externalId: Attribute.Required<string>
-  order: Attribute.Optional<number>
-  extendedInfo: Attribute.Optional<{}>
-  stage: Relationship.ToOne<StageResource>
-  event: Relationship.ToOne<typeof event>
-  phase: Relationship.ToOne<PhaseResource>
-  eventUnit: Relationship.ToOne<typeof eventUnit>
-  participant: Relationship.ToOne<ParticipantResource>
-  medals: Relationship.ToMany<MedalResource>
-  results: Relationship.ToMany<ResultResource>
-  tags: Relationship.ToMany<typeof tag>
-}
-
-export type CompetitorResource = ResourceFormatter<CompetitorType, CompetitorFields>
+export type CompetitorResource = ResourceFormatter<
+  'Competitor',
+  {
+    externalId: Attribute.Required<string>
+    order: Attribute.Optional<number>
+    extendedInfo: Attribute.Optional<CompetitorExtendedInfo>
+    stage: Relationship.ToOne<StageResource>
+    event: Relationship.ToOne<typeof event>
+    phase: Relationship.ToOne<PhaseResource>
+    eventUnit: Relationship.ToOne<typeof eventUnit>
+    participant: Relationship.ToOne<ParticipantResource>
+    medals: Relationship.ToMany<MedalResource>
+    results: Relationship.ToMany<ResultResource>
+    tags: Relationship.ToMany<typeof tag>
+  }
+>
 
 export const competitor: CompetitorResource = jsonapi.resource('Competitor', {
   externalId: Attribute.required(string),
-  order: Attribute.optional(number), // Should be sortOrder?
-  extendedInfo: Attribute.optional(Type.object),
+  order: Attribute.optional(number),
+  extendedInfo: Attribute.optional(competitorExtendedInfo),
   participant: Relationship.toOne(() => [participant]),
   event: Relationship.toOne(() => [event]),
   eventUnit: Relationship.toOne(() => [eventUnit]),
