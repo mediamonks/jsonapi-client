@@ -1,5 +1,7 @@
 # JSON:API-Client
 
+An fully type safe and (real-time) type annotated JSON:API client with sparse fieldset and compound document support.
+
 ## Design Goals
 
 - Improve TS performance and type inference.
@@ -14,8 +16,19 @@
 ## TODO
 
 - Explore replacing AttributeField type predicate with type validator for more detailed error messages.
+- Add support for polymorphic endpoints
 - Write specs
 - Implement everything...
+
+# JSON:API Support
+
+- [x] Sparse fieldsets
+- [x] Compound documents
+- [x] Search params (filter, page, sort)
+- [x] CRUD operations on a resource
+- [x] CRUD operations on relationships
+- [x] Polymorphic relationships
+- [ ] Polymorphic endpoints
 
 # Getting Started
 
