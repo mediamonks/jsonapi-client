@@ -26,7 +26,7 @@ An fully type safe and (real-time) type annotated JSON:API client with sparse fi
 - [x] Compound documents
 - [x] Search params (filter, page, sort)
 - [x] CRUD operations on a resource
-- [x] CRUD operations on relationships
+- [x] CRUD operations on a relationship
 - [x] Polymorphic relationships
 - [ ] Polymorphic endpoints
 
@@ -62,8 +62,8 @@ const user = JSONAPI.resource('User', {
   userName: Attribute.requiredStatic(isString),
   dateOfBirth: Attribute.optional(isString, dateStringFormatter),
   role: Attribute.requiredReadOnly(isUserRole),
-  messages: Relationship.toMany(() => [Message]),
-  friends: Relationship.toMany(() => [User]),
+  messages: Relationship.toMany(() => [message]),
+  friends: Relationship.toMany(() => [user]),
 })
 ```
 
@@ -82,7 +82,7 @@ const client = JSONAPI.client(url, {
 ```typescript
 const userPath = 'users'
 
-const users = client.endpoint(userPath, user)
+const userEndpoint = client.endpoint(userPath, user)
 ```
 
 ## Create a Resource
@@ -94,8 +94,8 @@ const myFirstUser = {
   userName: 'example_jane',
 }
 
-users.create(myFirstUser).then((user) => {
-  console.log(user.data.messages)
+userEndpoint.create(myFirstUser).then((oneUser) => {
+  console.log(oneUser.data.messages)
 })
 ```
 
@@ -106,17 +106,17 @@ const myFirstUserUpdate = {
   emailAddress: 'jane.smith@example.com',
 }
 
-users.update('17', myFirstUserUpdate)
+userEndpoint.update('17', myFirstUserUpdate)
 ```
 
 ## Get a Single Resource Using a Filter
 
 ```typescript
 const userEmailFilter = User.createFilter({
-  User: ['emailAddress', 'dateOfBirth'],
+  [user.type]: ['emailAddress', 'dateOfBirth'],
 })
 
-users.getOne('12', userEmailFilter).then((userResource) => {
+userEndpoint.getOne('12', userEmailFilter).then((oneUser) => {
   console.log(userResource.data)
   /* Resource { 
     type: 'User', 
@@ -174,13 +174,13 @@ Create a ResourceIdentifier from the Resource static `type` and `id` parameter
 
 ## ResourceField
 
-## ResourceField#constructor
+### ResourceField#constructor
 
 ```
 (ResourceFieldRoot, ResourceFieldFlag) -> ResourceField
 ```
 
-## ResourceField#matches
+### ResourceField#matches
 
 ```
 (ResourceFieldFlag) -> boolean
