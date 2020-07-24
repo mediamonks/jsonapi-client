@@ -28,16 +28,6 @@ const authorFilter = author.filter(
   { books: null },
 )
 
-authorEndpoint.getOne('2', authorFilter).then((oneBook) => {
-  console.log(oneBook.data)
-})
-
-const authorQuery = {
-  page: {
-    number: 1,
-  },
-}
-
-authorEndpoint.getMany(authorQuery, authorFilter).then((manyBooks) => {
-  console.log(manyBooks.data)
+authorEndpoint.getOne('2', authorFilter).then((oneAuthor) => {
+  console.log(oneAuthor.data)
 })
