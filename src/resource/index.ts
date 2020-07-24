@@ -1,1 +1,0 @@
-export { formatter } from './formatter'

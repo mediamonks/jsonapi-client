@@ -14,9 +14,7 @@ import { ResourceFormatter } from './resource/formatter'
 import { ResourceIdentifier } from './resource/identifier'
 
 // Util
-/**
- * @private
- */
+/** @hidden */
 export type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
 
 // Resource
@@ -200,7 +198,7 @@ export type ResourceFieldsQuery<T extends ResourceFormatter<any, any>> = Interse
 >
 
 export type ResourceIncludeQuery<
-  T extends ResourceFormatter<any, any>,
+  T extends ResourceFormatter<any, any> = any,
   U extends ResourceFieldsQuery<T> | {} = {}
 > = {
   [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<

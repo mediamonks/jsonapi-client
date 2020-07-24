@@ -16,7 +16,7 @@ import {
 } from '../../types'
 import { Client } from '..'
 import { OneResource, ManyResource } from '../result'
-import { createURL } from '../utils'
+import { createURL } from '../../util/url'
 import { ResourceFieldFlag } from '../../resource/field'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, any>> {
