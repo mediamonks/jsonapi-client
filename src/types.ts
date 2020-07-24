@@ -610,46 +610,39 @@ export type JSONAPIMetaObject = SerializableObject
 /**
  * {@link https://jsonapi.org/format/#document-links|JSON:API Reference}
  */
+export type JSONAPILink =
+  | string
+  | {
+      href?: string
+      meta?: JSONAPIMetaObject
+    }
+
+/**
+ * {@link https://jsonapi.org/format/#document-links|JSON:API Reference}
+ */
 export type JSONAPILinksObject = {
-  [key: string]:
-    | string
-    | {
-        href?: string
-        meta?: JSONAPIMetaObject
-      }
+  [P in 'self' | 'related']?: JSONAPILink
 }
 
 /**
  * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
  */
 export type JSONAPIPaginationLinks = {
-  pagination?: {
-    [P in 'first' | 'prev' | 'next' | 'last']?: string | null
-  }
+  [P in 'first' | 'prev' | 'next' | 'last']?: JSONAPILink | null
 }
 
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-links|JSON:API Reference}
  */
 export type JSONAPIResourceLinks = {
-  [P in 'self' | 'related']?:
-    | string
-    | {
-        href?: string
-        meta?: JSONAPIMetaObject
-      }
+  [P in 'self']?: JSONAPILink
 }
 
 /**
  * {@link https://jsonapi.org/format/#error-objects|JSON:API Reference}
  */
 export type JSONAPIErrorLinks = {
-  [P in 'about']?:
-    | string
-    | {
-        href?: string
-        meta?: JSONAPIMetaObject
-      }
+  [P in 'about']?: JSONAPILink
 }
 
 /**
