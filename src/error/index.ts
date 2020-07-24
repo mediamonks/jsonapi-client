@@ -20,7 +20,6 @@ export type ClientResponseErrorObject = {
 }
 
 export class ClientResponseError extends Error {
-  readonly name = 'ClientResponseError'
   readonly actual: unknown
   readonly details: ReadonlyArray<ClientResponseErrorObject>
 
@@ -28,6 +27,7 @@ export class ClientResponseError extends Error {
     super(message)
     this.actual = value
     this.details = errors.map(toClientResponseErrorDetail)
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
@@ -69,7 +69,6 @@ const toResourceValidationErrorDetail = (
 }
 
 export class ResourceValidationError extends Error {
-  readonly name = 'ResourceValidationError'
   readonly actual: unknown
   readonly details: ReadonlyArray<ResourceValidationErrorObject>
 
@@ -81,5 +80,6 @@ export class ResourceValidationError extends Error {
     super(message)
     this.actual = value
     this.details = details
+    Object.setPrototypeOf(this, new.target.prototype)
   }
 }
