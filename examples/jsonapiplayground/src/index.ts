@@ -1,6 +1,6 @@
 import JSONAPI, { ImplicitRelationshipData, AbsolutePathRoot } from 'jsonapi-client'
 
-import { author, book } from './resources'
+import { author } from './resources'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
