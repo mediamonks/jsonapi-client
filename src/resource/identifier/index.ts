@@ -1,7 +1,6 @@
 import { isString, test } from 'isntnt'
-import { Type } from '../../type'
-
 import { ResourceId, ResourceType } from '../../types'
+import { resourceType, resourceId } from '../../util/types'
 
 export class ResourceIdentifier<T extends ResourceType> {
   readonly type: T
@@ -12,18 +11,3 @@ export class ResourceIdentifier<T extends ResourceType> {
     this.id = resourceId.parse(id)
   }
 }
-
-// Type
-const string = Type.is('a string', isString)
-
-export const resourceFieldName = Type.is(
-  'a valid field name',
-  test(/^[^-_ ]([a-zA-Z0-9][^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^`{|}~]+)+[^-_ ]$/),
-).withCode('172')
-
-export const resourceType = resourceFieldName.with({
-  description: 'a valid resource type',
-  code: '162',
-})
-
-const resourceId = string.withCode('123')

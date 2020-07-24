@@ -11,9 +11,9 @@ import {
   JSONAPIResourceObject,
   ResourcePatchData,
 } from '../../types'
-import { resourceFieldName, resourceType, ResourceIdentifier } from '../identifier'
+import { resourceType, parseResourceFields } from '../../util/types'
+import { ResourceIdentifier } from '../identifier'
 import { ResourceFieldRoot, ResourceFieldFlag, ResourceField } from '../field'
-import { Type } from '../../type'
 
 export class ResourceFormatter<T extends ResourceType, U extends ResourceFields> {
   readonly type: T
@@ -139,18 +139,3 @@ const assertFilter = (
     }
   })
 }
-
-// Type
-export const parseResourceType = <T extends ResourceType>(type: T): T => {
-  // TODO: Throw if type is invalid
-  return type
-}
-
-const resourceField = Type.instance(ResourceField)
-
-export const parseResourceFields = <T extends ResourceFields>(fields: T): T =>
-  Object.keys(fields).reduce((pureFields, key) => {
-    const fieldName = resourceFieldName.withPointer([key]).parse(key)
-    pureFields[fieldName] = resourceField.withPointer([key]).parse(fields[fieldName])
-    return pureFields
-  }, Object.create(null))

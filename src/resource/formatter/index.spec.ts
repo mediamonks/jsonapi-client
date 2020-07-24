@@ -1,7 +1,5 @@
 describe('ResourceFormatter', () => {
   describe('#constructor', () => {
-    it.todo('returns an instance of ResourceFormatter')
-
     it.todo('throws an Error if an invalid ResourceType is provided')
 
     it.todo('throws an Error if an invalid ResourceFields object is provided')
