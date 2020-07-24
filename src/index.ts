@@ -1,9 +1,8 @@
 import { client } from './client'
-import { resource } from './resource'
+import { formatter } from './resource/formatter'
 
 export * from './client'
 export * from './client/endpoint'
-export * from './resource'
 export * from './resource/field'
 export * from './resource/field/attribute'
 export * from './resource/formatter'
@@ -13,7 +12,7 @@ export * from './types'
 
 const jsonapi = {
   client,
-  resource,
+  formatter,
 }
 
 export default jsonapi

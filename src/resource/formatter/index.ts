@@ -15,6 +15,9 @@ import { resourceType, parseResourceFields } from '../../util/types'
 import { ResourceIdentifier } from '../identifier'
 import { ResourceFieldRoot, ResourceFieldFlag, ResourceField } from '../field'
 
+export const formatter = <T extends ResourceType, U extends ResourceFields>(type: T, fields: U) =>
+  new ResourceFormatter(type, fields)
+
 export class ResourceFormatter<T extends ResourceType, U extends ResourceFields> {
   readonly type: T
   readonly fields: U
