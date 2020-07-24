@@ -444,18 +444,12 @@ export type RelationshipFieldResourceConstructor<
 
 export type RelationshipFieldResourceIdentifier<
   T extends RelationshipField<any, any, any>
-> = T extends RelationshipField<infer R, RelationshipFieldType.ToOne, any>
+> = T extends RelationshipField<infer R, any, any>
   ?
       | {
           [P in R['type']]: ResourceIdentifier<P>
         }[R['type']]
       | null
-  : T extends RelationshipField<infer R, RelationshipFieldType.ToMany, any>
-  ? Array<
-      {
-        [P in R['type']]: ResourceIdentifier<P>
-      }[R['type']]
-    >
   : never
 
 export type RelationshipFieldName<T extends ResourceFields> = {
@@ -511,8 +505,6 @@ export type ToManyRelationshipFieldFromFactory<
   ? RelationshipField<T, RelationshipFieldType.ToMany, R>
   : never
 
-// ToOne Relationship
-
 // JSONAPI
 /**
  * JSONAPI-Client supports version 1.0 only
@@ -524,7 +516,7 @@ export type JSONAPIVersion = '1.0'
  * {@link https://jsonapi.org/format/#document-structure|JSON:API Reference}
  */
 export type JSONAPIDocument<
-  T extends ResourceFormatter<any, any> | Array<ResourceFormatter<any, any>>
+  T extends ResourceFormatter<any, any> | Array<ResourceFormatter<any, any>> = any
 > = (
   | ((
       | {
@@ -569,7 +561,7 @@ export type JSONAPIDocument<
 /**
  * {@link https://jsonapi.org/format/#document-resource-objects|JSON:API Reference}
  */
-export type JSONAPIResourceObject<T extends ResourceFormatter<any, any>> = ResourceIdentifier<
+export type JSONAPIResourceObject<T extends ResourceFormatter<any, any> = any> = ResourceIdentifier<
   T['type']
 > & {
   attributes?: JSONAPIResourceObjectAttributes<T['fields']>
@@ -581,16 +573,25 @@ export type JSONAPIResourceObject<T extends ResourceFormatter<any, any>> = Resou
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-attributes|JSON:API Reference}
  */
-export type JSONAPIResourceObjectAttributes<U extends ResourceFields> = {
-  [P in AttributeFieldName<U>]?: RawAttributeFieldValue<U[P]>
+export type JSONAPIResourceObjectAttributes<T extends ResourceFields = any> = {
+  [P in AttributeFieldName<T>]?: RawAttributeFieldValue<T[P]>
 }
 
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-relationships|JSON:API Reference}
  */
-export type JSONAPIResourceObjectRelationships<U extends ResourceFields> = {
-  [P in RelationshipFieldName<U>]?: {
-    data?: RelationshipFieldResourceIdentifier<U[P]>
+export type JSONAPIRelationshipData<
+  T extends RelationshipField<any, any, any> = any
+> = T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
+  ? (RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }) | null
+  : Array<RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }>
+
+/**
+ * {@link https://jsonapi.org/format/#document-resource-object-relationships|JSON:API Reference}
+ */
+export type JSONAPIResourceObjectRelationships<T extends ResourceFields = any> = {
+  [P in RelationshipFieldName<T>]?: {
+    data?: JSONAPIRelationshipData<T[P]>
     links?: JSONAPIResourceLinks
     meta?: JSONAPIMetaObject
   }
