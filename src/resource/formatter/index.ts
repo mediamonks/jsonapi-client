@@ -1,6 +1,11 @@
 import { isObject, isString, isArray, isUndefined, Predicate, isSome } from 'isntnt'
 
 import {
+  ClientResponseError,
+  ResourceValidationError,
+  ResourceValidationErrorObject,
+} from '../../error'
+import {
   ResourceFields,
   ResourceFieldsQuery,
   ResourceId,
@@ -13,18 +18,41 @@ import {
   JSONAPIResourceObject,
   ResourcePatchData,
   JSONAPIResourceCreateObject,
+  JSONAPILinksObject,
+  JSONAPIMetaObject,
 } from '../../types'
 import {
   resourceType,
   parseResourceFields,
   resourceIdentifier,
   jsonapiDocument,
-  resourceObject,
+  resourceObject as resourceObjectType,
 } from '../../util/types'
 import { ResourceFieldFlag, ResourceField } from '../field'
 import { AttributeField } from '../field/attribute'
 import { RelationshipField } from '../field/relationship'
 import { ResourceIdentifier } from '../identifier'
+
+const metaMap = new WeakMap<any, any>()
+const linksMap = new WeakMap<any, any>()
+
+const mapResourceData = <T extends ResourceFormatter<any, any>, U extends ResourceFilter<T>>(
+  data: FilteredResource<T, U>,
+  meta: JSONAPIMetaObject | null = null,
+  links: JSONAPILinksObject | null = null,
+): FilteredResource<T, U> => {
+  metaMap.set(data, meta)
+  linksMap.set(data, links)
+  return data
+}
+
+export const getMeta = (
+  value: FilteredResource<any, any> | ResourceIdentifier<any>,
+): JSONAPIMetaObject => metaMap.get(value) ?? {}
+
+export const getLinks = (
+  value: FilteredResource<any, any> | ResourceIdentifier<any>,
+): JSONAPILinksObject => linksMap.get(value) ?? {}
 
 export const formatter = <T extends ResourceType, U extends ResourceFields>(type: T, fields: U) =>
   new ResourceFormatter(type, fields)
@@ -46,21 +74,69 @@ export class ResourceFormatter<T extends ResourceType, U extends ResourceFields>
     fields: V,
     include: W,
   ): { fields: V; include: W } {
-    assertFilter([this], fields as any, include)
+    assertFilter([this], fields as any, include, [])
     return { fields, include }
   }
 
   decode<V extends ResourceFilter<ResourceFormatter<T, U>>>(
     resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
     resourceFilter?: V,
-  ): FilteredResource<ResourceFormatter<T, U>, V> {
-    const [resource, errors] = decodeResourceDocument(
-      this,
-      resourceDocument,
-      resourceFilter as any,
-    ) as any
-    console.log('err', errors)
-    return resource
+  ):
+    | FilteredResource<ResourceFormatter<T, U>, V>
+    | Array<FilteredResource<ResourceFormatter<T, U>, V>> {
+    if (!jsonapiDocument.predicate(resourceDocument)) {
+      throw new ResourceValidationError(`Invalid JSONAPIDocument`, resourceDocument, [])
+    }
+
+    if ('errors' in resourceDocument) {
+      throw new ClientResponseError(
+        `JSONAPIDocument Has Errors`,
+        resourceDocument,
+        resourceDocument.errors!,
+      )
+    }
+
+    if ('data' in resourceDocument) {
+      const included = resourceDocument.included
+        ? resourceDocument.included.concat(resourceDocument.data)
+        : []
+
+      if (Array.isArray(resourceDocument.data)) {
+        const errors: Array<ResourceValidationErrorObject> = []
+        const resources: Array<any> = []
+        resourceDocument.data.forEach((resourceObject, index) => {
+          const [resource, validationErrors] = decodeResourceObject(
+            [this],
+            resourceObject,
+            included,
+            resourceFilter?.fields || ({} as any),
+            resourceFilter?.include || {},
+            [String(index)],
+          )
+          resources.push(resource)
+          validationErrors.forEach((error) => errors.push(error))
+          if (errors.length) {
+            throw new ResourceValidationError(`Validation Error`, resources, validationErrors)
+          }
+        })
+        return resources as any
+      } else {
+        const [resource, validationErrors] = decodeResourceObject(
+          [this],
+          resourceDocument.data,
+          included,
+          resourceFilter?.fields || ({} as any),
+          resourceFilter?.include || {},
+          [],
+        )
+        if (validationErrors.length) {
+          throw new ResourceValidationError(`Validation Error`, resource, validationErrors)
+        }
+        return resource as any
+      }
+    }
+
+    throw new Error(`Unexpected Error`)
   }
 
   createResourcePostObject(
@@ -240,15 +316,27 @@ const getCombinedFilterResourceFields = (
 // Assert the legality of a ResourceFilter for a resources
 const assertFilter = (
   formatters: Array<ResourceFormatter<any, any>>,
-  fields: ResourceFieldsQuery<any>,
-  include: ResourceIncludeQuery<any>,
+  sparseFieldsSet: ResourceFieldsQuery<any>,
+  includeQuery: ResourceIncludeQuery<any>,
+  pointer: ReadonlyArray<string>,
 ) => {
-  const presentFieldNames = getCombinedFilterResourceFields(formatters, fields)
+  const presentRelationshipFieldNames = getCombinedFilterResourceFields(
+    formatters,
+    sparseFieldsSet,
+  ).filter((fieldName) =>
+    formatters.some(
+      (formatter) =>
+        formatter.fields[fieldName].isRelationshipField() &&
+        !formatter.fields[fieldName].matches(ResourceFieldFlag.NeverGet),
+    ),
+  )
 
-  Object.keys(include).forEach((fieldName) => {
-    if (!presentFieldNames.includes(fieldName)) {
+  Object.keys(includeQuery).forEach((fieldName) => {
+    if (!presentRelationshipFieldNames.includes(fieldName)) {
       throw new Error(
-        `Field "${fieldName}" cannot be included because it is not present in the fields filter`,
+        `Field "${pointer
+          .concat([fieldName])
+          .join('.')}" cannot be included because it is not present in the fields filter`,
       )
     }
 
@@ -264,51 +352,30 @@ const assertFilter = (
       throw new Error(`Field "${fieldName}" is not a relationship field`)
     }
 
-    const childIncludeParam = include[fieldName]
+    const childIncludeParam = includeQuery[fieldName]
     if (childIncludeParam !== null) {
-      const relatedFormatters = formattersWithRelationshipField
-        .flatMap((resource) => resource.getField(fieldName).getResources())
-        // De-duplicate to prevent repeated workloads
-        .filter((resource, _, target) => !target.includes(resource))
+      const relatedFormatters = [
+        ...new Set(
+          formattersWithRelationshipField.flatMap((resource) =>
+            resource.getField(fieldName).getResources(),
+          ),
+        ),
+      ]
 
-      assertFilter(relatedFormatters, fields, childIncludeParam as any)
+      assertFilter(
+        relatedFormatters,
+        sparseFieldsSet,
+        childIncludeParam as any,
+        pointer.concat([fieldName]),
+      )
     }
   })
 }
 
 // Impl.
-type Result<T, U> = [T, ReadonlyArray<U>]
-
-const decodeResourceDocument = (
-  formatter: ResourceFormatter<any, any>,
-  document: JSONAPIDocument,
-  resourceFilter: ResourceFilter<any> = {},
-): Result<any, any> => {
-  if (!jsonapiDocument.predicate(document)) {
-    return validationFailure(
-      `Invalid JSONAPIDocument`,
-      `The JSONAPIDocument does not match its schema.`,
-      [],
-    )
-  }
-
-  if ('errors' in document) {
-    throw new Error(`JSONAPIDocument has errors`)
-  }
-
-  if ('data' in document) {
-    return decodeResourceObject(
-      [formatter],
-      document.data,
-      (document.included || []).concat(document.data),
-      resourceFilter.fields || {},
-      resourceFilter.include || {},
-      [],
-    )
-  }
-
-  return validationFailure(`Unexpected Error`, `Something went wrong.`, [])
-}
+type Result<T, U> = Success<T> | Failure<U>
+type Success<T> = [T, readonly []]
+type Failure<T> = [any, ReadonlyArray<T>]
 
 /**
  * Get the combined (filtered) fieldNames from one or more ResourceFormatters.
@@ -319,8 +386,9 @@ const decodeResourceDocument = (
 const getFilteredFieldNames = (
   formatters: Array<ResourceFormatter<any, any>>,
   fieldsFilter: ResourceFieldsQuery<any>,
+  pointer: ReadonlyArray<string>,
 ): ReadonlyArray<string> => {
-  assertFilter(formatters, fieldsFilter, {})
+  assertFilter(formatters, fieldsFilter, {}, pointer)
   return [
     // TODO: De-duplication may be optimized
     ...new Set(
@@ -339,30 +407,32 @@ const getFilteredFieldNames = (
 
 const decodeResourceObject = (
   formatters: Array<ResourceFormatter<any, any>>,
-  data: JSONAPIResourceObject,
+  resourceObject: JSONAPIResourceObject,
   included: Array<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any, any>,
   pointer: ReadonlyArray<string>,
-): Result<any, any> => {
-  if (!resourceObject.predicate(data)) {
+): Result<FilteredResource<any, any>, ResourceValidationErrorObject> => {
+  if (!resourceObjectType.predicate(resourceObject)) {
     return validationFailure(
+      resourceObject,
       'Invalid JSONAPIResourceObject',
       `The JSONAPIResourceObject data does not match its schema.`,
       pointer,
     )
   }
 
-  const formatter = formatters.find((formatter) => formatter.type === data.type)
+  const formatter = formatters.find((formatter) => formatter.type === resourceObject.type)
   if (!formatter) {
     return validationFailure(
+      resourceObject,
       'Invalid resource type',
       `The data type does not match that of its formatters (${formatters}).`,
       pointer.concat(['type']),
     )
   }
 
-  const fieldNames = getFilteredFieldNames(formatters, fieldsFilter)
+  const fieldNames = getFilteredFieldNames(formatters, fieldsFilter, pointer)
     // Only use fieldNames that are relevant to the ResourceFormatter that matches the data type
     .filter((fieldName) =>
       formatter.type in fieldsFilter
@@ -371,24 +441,29 @@ const decodeResourceObject = (
           !formatter.fields[fieldName].matches(ResourceFieldFlag.NeverGet),
     )
 
-  const errors: Array<any> = []
-  const resource: Record<string, any> = {
-    type: data.type,
-    id: data.id,
+  const errors: Array<ResourceValidationErrorObject> = []
+  const data: Record<string, any> = {
+    type: resourceObject.type,
+    id: resourceObject.id,
   }
 
   fieldNames.forEach((fieldName) => {
     const field: ResourceField<any, any> = formatter.fields[fieldName]
     if (field.isAttributeField()) {
-      const [value, attributeErrors] = getAttributeResult(field, fieldName, data, pointer)
-      resource[fieldName] = value
+      const [value, attributeErrors] = getAttributeResult(field, fieldName, resourceObject, pointer)
+      data[fieldName] = value
       attributeErrors.forEach((error) => errors.push(error))
     }
     if (field.isRelationshipField()) {
-      const [value, relationshipErrors] = getRelationshipResult(field, fieldName, data, pointer)
+      const [value, relationshipErrors] = getRelationshipResult(
+        field,
+        fieldName,
+        resourceObject,
+        pointer,
+      )
       if (fieldName in includeFilter && !relationshipErrors.length) {
         if (isArray(value)) {
-          resource[fieldName] = []
+          data[fieldName] = []
           value.forEach((identifier: any) => {
             const includedRelatedResource = included.find(
               (item: unknown) =>
@@ -414,7 +489,7 @@ const decodeResourceObject = (
                 includeFilter[fieldName] || ({} as any),
                 pointer.concat([fieldName]),
               )
-              resource[fieldName].push(relatedResource)
+              data[fieldName].push(relatedResource)
               relatedResourceErrors.forEach((error) => errors.push(error))
             }
           })
@@ -443,23 +518,27 @@ const decodeResourceObject = (
               includeFilter[fieldName] || ({} as any),
               pointer.concat([fieldName]),
             )
-            resource[fieldName] = relatedResource
+            data[fieldName] = relatedResource
             relatedResourceErrors.forEach((error) => errors.push(error))
           }
         }
       } else {
-        resource[fieldName] = value
+        data[fieldName] = value
         relationshipErrors.forEach((error) => errors.push(error))
       }
     }
   })
 
-  return !errors.length ? success(resource) : failure(errors)
+  return !errors.length
+    ? success(mapResourceData(data as any, resourceObject.meta, resourceObject.links))
+    : failure(errors, data)
 }
 
-type ValidationError = ReturnType<typeof createValidationError>
-
-const createValidationError = (title: string, detail: string, pointer: ReadonlyArray<string>) => {
+const createValidationError = (
+  title: string,
+  detail: string,
+  pointer: ReadonlyArray<string>,
+): ResourceValidationErrorObject => {
   return {
     title,
     detail,
@@ -469,17 +548,17 @@ const createValidationError = (title: string, detail: string, pointer: ReadonlyA
   }
 }
 
+const result = <T = any, U = any>(value: T, errors: Array<U> | []): Result<T, U> => [value, errors]
+const success = <T = any>(value: T): Result<T, never> => [value, EMPTY_ARRAY as any]
+const failure = <T = any>(errors: Array<T>, value: unknown = NOTHING): Failure<T> => [value, errors]
+
 const validationFailure = (
+  value: any,
   title: string,
   detail: string,
   pointer: ReadonlyArray<string>,
-): Result<typeof NOTHING, ValidationError> => [
-  NOTHING,
-  [createValidationError(title, detail, pointer)],
-]
-
-const success = <T = any>(value: any): Result<T, never> => [value, EMPTY_ARRAY as any]
-const failure = <T = any>(errors: Array<T>): Result<typeof NOTHING, T> => [NOTHING, errors]
+): Failure<ResourceValidationErrorObject> =>
+  failure([createValidationError(title, detail, pointer)], value)
 
 const NOTHING = null
 const EMPTY_OBJECT = Object.freeze(Object.create(null)) as Record<any, unknown>
@@ -498,16 +577,18 @@ const getAttributeResult = (
   fieldName: string,
   resourceObject: JSONAPIResourceObject<any>,
   pointer: ReadonlyArray<string>,
-): Result<any, any> => {
+): Result<any, ResourceValidationErrorObject> => {
   const value = (resourceObject.attributes || EMPTY_OBJECT)[fieldName]
   if (isSome(value)) {
     const validationErrors = field.validate(value)
     if (validationErrors.length) {
+      console.log(fieldName, field.validate, validationErrors)
       const attributeFieldPointer = pointer.concat([fieldName])
       return failure(
         validationErrors.map((detail) =>
           createValidationError('Invalid Attribute Value', detail, attributeFieldPointer),
         ),
+        value,
       )
     }
     return success(field.deserialize(value))
@@ -515,6 +596,7 @@ const getAttributeResult = (
   return field.matches(ResourceFieldFlag.MaybeGet)
     ? success(null)
     : validationFailure(
+        value,
         `Required Attribute Not Found`,
         `Attribute value "${fieldName}" on resource of type ${resourceObject.type} is required.`,
         pointer.concat([fieldName]),
@@ -532,9 +614,13 @@ const getRelationshipResult = (
 
   const relatedResourceFormatters: ReadonlyArray<ResourceFormatter<any, any>> = field.getResources()
 
-  const parseResourceIdentifier = (data: unknown, id?: number): Result<any, any> => {
+  const parseResourceIdentifier = (
+    data: unknown,
+    id?: number,
+  ): Result<ResourceIdentifier<any>, ResourceValidationErrorObject> => {
     if (!resourceIdentifier.predicate(data)) {
       return validationFailure(
+        data,
         `Invalid Relationship Data`,
         `Relationship data "${fieldName}" on resource of type ${resourceObject.type} must be a resource identifier.`,
         pointer.concat(id === undefined ? [fieldName] : [fieldName, String(id)]),
@@ -542,9 +628,10 @@ const getRelationshipResult = (
     }
     if (!relatedResourceFormatters.some((formatter) => formatter.type === data.type)) {
       return validationFailure(
+        data,
         `Invalid Resource Identifier Type`,
         `Resource identifier "${fieldName}" type does not match the type of its formatter (${relatedResourceFormatters}).`,
-        pointer.concat(id === undefined ? [fieldName] : [fieldName, String(id)]),
+        pointer.concat(id === undefined ? [fieldName] : [fieldName, String(id), data.type]),
       )
     }
     return success(new ResourceIdentifier(data.type, data.id))
@@ -556,6 +643,7 @@ const getRelationshipResult = (
       : field.matches(ResourceFieldFlag.MaybeGet)
       ? success(null)
       : validationFailure(
+          data,
           `Required To-One Relationship Not Found`,
           `To-One relationship "${fieldName}" on resource of type ${resourceObject.type} is required.`,
           pointer.concat([fieldName]),
@@ -565,6 +653,7 @@ const getRelationshipResult = (
     return field.matches(ResourceFieldFlag.MaybeGet)
       ? success([])
       : validationFailure(
+          data,
           `Required To-Many Relationship Not Found`,
           `To-Many relationship "${fieldName}" on resource of type ${resourceObject.type} is required.`,
           pointer.concat([fieldName]),
@@ -572,13 +661,14 @@ const getRelationshipResult = (
   }
   if (!isArray(data)) {
     return validationFailure(
+      data,
       `Invalid To-Many Relationship Data`,
       `To-Many relationship "${fieldName}" on resource of type ${resourceObject.type} must be an Array.`,
       pointer.concat([fieldName]),
     )
   }
   const resourceIdentifiers: Array<ResourceIdentifier<any>> = []
-  const errors: Array<any> = []
+  const errors: Array<ResourceValidationErrorObject> = []
   data.forEach((item, index) => {
     const [resourceIdentifier, resourceIdentifierErrors] = parseResourceIdentifier(item, index)
     resourceIdentifiers.push(resourceIdentifier)
@@ -595,5 +685,6 @@ const getRelationshipResult = (
             pointer.concat([fieldName]),
           ),
         ].concat(errors),
+        resourceIdentifiers,
       )
 }

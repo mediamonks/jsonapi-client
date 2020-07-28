@@ -66,7 +66,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   ): Promise<void> {
     console.log(`Add some ${fieldName}`, data)
     const field = this.formatter.getField(fieldName)
-    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
+    const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
 
@@ -82,7 +82,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   ): Promise<void> {
     console.log(`Remove some ${fieldName}`, data)
     const field = this.formatter.getField(fieldName)
-    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
+    const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'DELETE')
   }
 
@@ -94,7 +94,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
     console.log(`Update ${fieldName}`, data)
     const field = this.formatter.getField(fieldName)
-    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
+    const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
 
@@ -105,7 +105,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     >
   >(id: ResourceId, fieldName: V): Promise<void> {
     const field = this.formatter.getField(fieldName)
-    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
+    const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', {})
   }
 
@@ -113,7 +113,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     id: ResourceId,
     resourceFilter?: V,
   ): Promise<OneResource<FilteredResource<U, V>>> {
-    const url = createURL(this.client.url, [this.formatter.type, id], resourceFilter as any)
+    const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
     return this.client.request(url, 'GET').then((data) => {
       if (data === null) {
         throw new TypeError(`Data must be a JSON:API Resource Document`)
@@ -124,22 +124,15 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   }
 
   async getMany<V extends ResourceFilter<U>>(
-    searchParams: JSONAPISearchParams | null,
+    searchParams?: JSONAPISearchParams | null,
     resourceFilter?: V,
   ): Promise<ManyResource<FilteredResource<U, V>>> {
     const url = createURL(this.client.url, [this.path], resourceFilter as any, searchParams || {})
 
     return this.client.request(url, 'GET').then((data) => {
-      if (data === null) {
-        throw new TypeError(`Data must be a JSON:API Resource Document`)
-      }
+      console.log('data', data)
       const resource = this.formatter.decode(data as any, resourceFilter as any)
-      return new ManyResource(resource as any, data.meta ?? {}, {
-        first: null,
-        prev: null,
-        next: null,
-        last: null,
-      })
+      return new ManyResource(resource as any, data?.meta || {}, data?.links || ({} as any))
     })
   }
 
@@ -158,7 +151,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   > {
     const url = createURL(
       this.client.url,
-      [this.formatter.type, id, fieldName],
+      [this.path, id, fieldName as string],
       resourceFilter as any,
     )
 

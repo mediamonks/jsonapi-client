@@ -26,12 +26,15 @@ export class ClientResponseError extends Error {
   constructor(message: string, value: unknown, errors: ReadonlyArray<JSONAPIErrorObject>) {
     super(message)
     this.actual = value
-    this.details = errors.map(toClientResponseErrorDetail)
+    this.details = errors.map(toClientResponseErrorObject)
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
-const toClientResponseErrorDetail = (error: JSONAPIErrorObject): ClientResponseErrorObject => {
+/** @hidden */
+export const toClientResponseErrorObject = (
+  error: JSONAPIErrorObject,
+): ClientResponseErrorObject => {
   return {
     id: isContent(error.id) ? String(error.id) : null,
     code: isContent(error.code) ? String(error.code) : null,
@@ -54,7 +57,8 @@ export type ResourceValidationErrorObject = {
   }
 }
 
-const toResourceValidationErrorDetail = (
+/** @hidden */
+export const createValidationErrorObject = (
   title: string,
   detail: string,
   pointer: ErrorObjectPointer,

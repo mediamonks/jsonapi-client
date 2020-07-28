@@ -61,10 +61,10 @@ export class AttributeField<
     formatter: AttributeValueFormatter<U, T>,
   ) {
     super(ResourceFieldRoot.Attributes, flag)
-    this.serialize = formatter.serialize
-    this.deserialize = formatter.deserialize
-    this.predicate = validator.predicate
-    this.validate = validator.validate
+    this.serialize = formatter.serialize.bind(formatter)
+    this.deserialize = formatter.deserialize.bind(formatter)
+    this.predicate = validator.predicate.bind(validator)
+    this.validate = validator.validate.bind(validator)
   }
 }
 

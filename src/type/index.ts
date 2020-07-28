@@ -89,10 +89,8 @@ export class Type<T> implements TypeMeta {
           .filter((rule) => !rule.predicate(value))
           .flatMap((rule) => rule.validate(value))
       }
-      // TODO: Should never happen
       default: {
-        // console.error(`Invalid Type mode for type "${this.description}": ${this.mode}`)
-        return this.predicate(value) ? [] : [String(this)]
+        throw new Error(`Type context must be bound`)
       }
     }
   }

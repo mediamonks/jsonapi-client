@@ -20,7 +20,7 @@ export const nonEmptyStringArray: Type<Array<string>> = Type.and([
 /** @hidden */
 export const resourceType = Type.is(
   'a valid resource type',
-  test(/^[^-_ ]([a-zA-Z0-9][^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^`{|}~]+)+[^-_ ]$/),
+  test(/^(?! _-)[a-zA-Z0-9][^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^`{|}~]+(\1)$/),
 )
 
 const resourceIdentifierKey: Type<ResourceIdentifierKey> = Type.is(

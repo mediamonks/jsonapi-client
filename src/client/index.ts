@@ -21,9 +21,6 @@ export enum ImplicitRelationshipData {
   ResourceIdentifiers = 'resource-identifiers',
 }
 
-// Whether a self-link is present on a relationship field and if so what key it has
-type RelationshipSelfLinkKey = null | string
-
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
   implicitRelationshipData: ImplicitRelationshipData.None

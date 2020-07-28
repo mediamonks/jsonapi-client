@@ -9,7 +9,8 @@
     "watch": "parcel index.html --open"
   },
   "dependencies": {
-    "isntnt": "^1.4.0"
+    "isntnt": "^1.4.0",
+    "jsonapi-client": "^0.0.12"
   },
   "devDependencies": {
     "parcel": "^1.12.4",
