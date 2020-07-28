@@ -1,13 +1,12 @@
 {
-  "name": "jsonapiplayground",
+  "name": "jsonapi-client_jsonapiplayground_resources",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "src/index.ts",
   "author": "Nathan Uphoff",
   "license": "MIT",
   "scripts": {
     "start": "yarn && yarn watch",
-    "watch": "parcel index.html --open",
-    "build": "rimraf dist && tsc -d --skipLibCheck"
+    "watch": "parcel index.html --open"
   },
   "dependencies": {
     "isntnt": "^1.4.0"
