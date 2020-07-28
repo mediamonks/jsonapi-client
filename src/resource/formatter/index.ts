@@ -1,5 +1,6 @@
-import { isObject, isString, isArray, isUndefined, Predicate, isSome } from 'isntnt'
+import { isArray, isObject, isSome, isString, isUndefined } from 'isntnt'
 
+import { OneResource, ManyResource } from '../../client/result'
 import {
   ClientResponseError,
   ResourceValidationError,
@@ -82,8 +83,8 @@ export class ResourceFormatter<T extends ResourceType, U extends ResourceFields>
     resourceDocument: JSONAPIDocument<ResourceFormatter<T, U>>,
     resourceFilter?: V,
   ):
-    | FilteredResource<ResourceFormatter<T, U>, V>
-    | Array<FilteredResource<ResourceFormatter<T, U>, V>> {
+    | OneResource<FilteredResource<ResourceFormatter<T, U>, V>>
+    | ManyResource<FilteredResource<ResourceFormatter<T, U>, V>> {
     if (!jsonapiDocument.predicate(resourceDocument)) {
       throw new ResourceValidationError(`Invalid JSONAPIDocument`, resourceDocument, [])
     }
@@ -104,6 +105,7 @@ export class ResourceFormatter<T extends ResourceType, U extends ResourceFields>
       if (Array.isArray(resourceDocument.data)) {
         const errors: Array<ResourceValidationErrorObject> = []
         const resources: Array<any> = []
+
         resourceDocument.data.forEach((resourceObject, index) => {
           const [resource, validationErrors] = decodeResourceObject(
             [this],
@@ -115,11 +117,11 @@ export class ResourceFormatter<T extends ResourceType, U extends ResourceFields>
           )
           resources.push(resource)
           validationErrors.forEach((error) => errors.push(error))
-          if (errors.length) {
-            throw new ResourceValidationError(`Validation Error`, resources, validationErrors)
-          }
         })
-        return resources as any
+        if (errors.length) {
+          throw new ResourceValidationError(`Validation Error`, resources, errors)
+        }
+        return new ManyResource(resources as any, resourceDocument)
       } else {
         const [resource, validationErrors] = decodeResourceObject(
           [this],
@@ -132,7 +134,7 @@ export class ResourceFormatter<T extends ResourceType, U extends ResourceFields>
         if (validationErrors.length) {
           throw new ResourceValidationError(`Validation Error`, resource, validationErrors)
         }
-        return resource as any
+        return new OneResource(resource as any, resourceDocument)
       }
     }
 
@@ -373,9 +375,20 @@ const assertFilter = (
 }
 
 // Impl.
-type Result<T, U> = Success<T> | Failure<U>
-type Success<T> = [T, readonly []]
-type Failure<T> = [any, ReadonlyArray<T>]
+type Result<T, U> = readonly [T, ReadonlyArray<U>]
+type Success<T> = Result<T, never>
+type Failure<T> = Result<any, T>
+
+const success = <T = any>(value: T): Success<T> => [value, EMPTY_ARRAY as any]
+const failure = <T = any>(errors: Array<T>, value: unknown = NOTHING): Failure<T> => [value, errors]
+
+const validationFailure = (
+  value: any,
+  title: string,
+  detail: string,
+  pointer: ReadonlyArray<string>,
+): Failure<ResourceValidationErrorObject> =>
+  failure([createValidationError(title, detail, pointer)], value)
 
 /**
  * Get the combined (filtered) fieldNames from one or more ResourceFormatters.
@@ -463,20 +476,20 @@ const decodeResourceObject = (
       )
       if (fieldName in includeFilter && !relationshipErrors.length) {
         if (isArray(value)) {
-          data[fieldName] = []
-          value.forEach((identifier: any) => {
+          // To-Many
+          const relatedResources: Array<any> = []
+          value.forEach((identifier, index) => {
             const includedRelatedResource = included.find(
-              (item: unknown) =>
-                (isObject as Predicate<any>)(item) &&
-                item.type === identifier.type &&
-                item.id === identifier.id,
+              (item) =>
+                isObject(item) && item.type === identifier.type && item.id === identifier.id,
             )
             if (!includedRelatedResource) {
+              relatedResources.push(includedRelatedResource)
               errors.push(
                 createValidationError(
                   'Included Resource Not Found',
-                  `Resource with type "${identifier.type}" and id "${identifier.id}" is not included`,
-                  pointer.concat([fieldName]),
+                  `Resource with type "${identifier.type}" and id "${identifier.id}" is not included.`,
+                  pointer.concat([fieldName, String(index)]),
                 ),
               )
             } else {
@@ -487,24 +500,24 @@ const decodeResourceObject = (
                 included,
                 fieldsFilter,
                 includeFilter[fieldName] || ({} as any),
-                pointer.concat([fieldName]),
+                pointer.concat([fieldName, String(index)]),
               )
-              data[fieldName].push(relatedResource)
+              relatedResources.push(relatedResource)
               relatedResourceErrors.forEach((error) => errors.push(error))
             }
           })
+          data[fieldName] = relatedResources
         } else if (value) {
+          // To-One
           const includedRelatedResource = included.find(
-            (item: unknown) =>
-              (isObject as Predicate<any>)(item) &&
-              item.type === value.type &&
-              item.id === value.id,
+            (item) => isObject(item) && item.type === value.type && item.id === value.id,
           )
           if (!includedRelatedResource) {
+            data[fieldName] = includedRelatedResource
             errors.push(
               createValidationError(
                 'Included Resource Not Found',
-                `Resource with type "${value.type}" and id "${value.id}" is not included`,
+                `Resource with type "${value.type}" and id "${value.id}" is not included.`,
                 pointer.concat([fieldName]),
               ),
             )
@@ -548,18 +561,6 @@ const createValidationError = (
   }
 }
 
-const result = <T = any, U = any>(value: T, errors: Array<U> | []): Result<T, U> => [value, errors]
-const success = <T = any>(value: T): Result<T, never> => [value, EMPTY_ARRAY as any]
-const failure = <T = any>(errors: Array<T>, value: unknown = NOTHING): Failure<T> => [value, errors]
-
-const validationFailure = (
-  value: any,
-  title: string,
-  detail: string,
-  pointer: ReadonlyArray<string>,
-): Failure<ResourceValidationErrorObject> =>
-  failure([createValidationError(title, detail, pointer)], value)
-
 const NOTHING = null
 const EMPTY_OBJECT = Object.freeze(Object.create(null)) as Record<any, unknown>
 const EMPTY_ARRAY = Object.freeze([]) as ReadonlyArray<any>
@@ -580,9 +581,9 @@ const getAttributeResult = (
 ): Result<any, ResourceValidationErrorObject> => {
   const value = (resourceObject.attributes || EMPTY_OBJECT)[fieldName]
   if (isSome(value)) {
+    // console.log('xoxo', fieldName, value)
     const validationErrors = field.validate(value)
     if (validationErrors.length) {
-      console.log(fieldName, field.validate, validationErrors)
       const attributeFieldPointer = pointer.concat([fieldName])
       return failure(
         validationErrors.map((detail) =>
@@ -598,7 +599,7 @@ const getAttributeResult = (
     : validationFailure(
         value,
         `Required Attribute Not Found`,
-        `Attribute value "${fieldName}" on resource of type ${resourceObject.type} is required.`,
+        `Attribute "${fieldName}" on resource of type ${resourceObject.type} is required.`,
         pointer.concat([fieldName]),
       )
 }
@@ -608,10 +609,12 @@ const getRelationshipResult = (
   fieldName: string,
   resourceObject: JSONAPIResourceObject<any>,
   pointer: ReadonlyArray<string>,
-): Result<any, any> => {
+): Result<
+  ResourceIdentifier<any> | Array<ResourceIdentifier<any>>,
+  ResourceValidationErrorObject
+> => {
   const value = (resourceObject.relationships || EMPTY_OBJECT)[fieldName]
   const data = ((value as any) || EMPTY_OBJECT).data
-
   const relatedResourceFormatters: ReadonlyArray<ResourceFormatter<any, any>> = field.getResources()
 
   const parseResourceIdentifier = (

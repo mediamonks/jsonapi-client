@@ -141,7 +141,7 @@ export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
 export type ExperimentalResourceQuery<
   T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsQuery<T>,
-  V extends ResourceIncludeQuery<T, U>
+  V extends ResourceIncludeQuery<T>
 > = {
   [P in 'fields']?: U
 } &
@@ -209,7 +209,7 @@ export type ResourceFieldsQuery<T extends ResourceFormatter<any, any>> = Interse
   BaseResourcesFieldsQuery<ResourceRelatedResources<T>>
 >
 
-export type ResourceIncludeQuery<
+type ExperimentalResourceIncludeQuery<
   T extends ResourceFormatter<any, any> = any,
   U extends ResourceFieldsQuery<T> | {} = {}
 > = {
@@ -225,12 +225,27 @@ export type ResourceIncludeQuery<
     : T['fields'][P] extends RelationshipField<infer R, any, any>
     ? T['type'] extends keyof U
       ? P extends U[T['type']][number]
-        ? ResourceIncludeQuery<R, U> | null
+        ? ExperimentalResourceIncludeQuery<R, U> | null
         : JSONAPIClient.IllegalField<
             'Field must be present in ResourceIncludeQuery',
             { [P in T['type']]: U[T['type']] }
           >
-      : ResourceIncludeQuery<R, U> | null
+      : ExperimentalResourceIncludeQuery<R, U> | null
+    : JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
+}
+
+export type ResourceIncludeQuery<T extends ResourceFormatter<any, any> = any> = {
+  [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<
+    any,
+    any,
+    ResourceFieldFlag.NeverGet
+  >
+    ? JSONAPIClient.IllegalField<
+        'Field with NeverGet flag must be omitted from ResourceIncludeQuery',
+        T[P]
+      >
+    : T['fields'][P] extends RelationshipField<infer R, any, any>
+    ? ResourceIncludeQuery<R> | null
     : JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
 }
 

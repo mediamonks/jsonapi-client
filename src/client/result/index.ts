@@ -3,6 +3,7 @@ import {
   JSONAPIPaginationLinks,
   JSONAPIMetaObject,
   Resource,
+  JSONAPIDocument,
 } from '../../types'
 
 export default class ResourceResult<
@@ -21,28 +22,34 @@ export default class ResourceResult<
 }
 
 export class OneResource<T extends Resource<any>> extends ResourceResult<T, JSONAPIResourceLinks> {
-  constructor(data: T, meta: JSONAPIMetaObject, links: JSONAPIResourceLinks) {
-    super(data, meta, links)
+  constructor(data: T, resourceDocument: JSONAPIDocument) {
+    super(data, resourceDocument.meta || {}, resourceDocument.links || {})
   }
+}
+
+const PAGINATION_LINKS_IDENTITY: Required<JSONAPIPaginationLinks> = {
+  first: null,
+  prev: null,
+  next: null,
+  last: null,
 }
 
 export class ManyResource<T extends Resource<any>> extends ResourceResult<
   Array<T>,
   JSONAPIResourceLinks & Required<JSONAPIPaginationLinks>
 > {
-  constructor(
-    data: Array<T>,
-    meta: JSONAPIMetaObject,
-    links: JSONAPIResourceLinks & Required<JSONAPIPaginationLinks>,
-  ) {
-    super(data, meta, links)
+  constructor(data: Array<T>, resourceDocument: JSONAPIDocument) {
+    super(data, resourceDocument.meta || {}, {
+      ...PAGINATION_LINKS_IDENTITY,
+      ...resourceDocument.links,
+    })
   }
 
   hasNextPage(): this is { links: { pagination: { next: string } } } {
-    return this.links.next != null
+    return this.links.next !== null
   }
 
   hasPrevPage(): this is { links: { pagination: { prev: string } } } {
-    return this.links.prev != null
+    return this.links.prev !== null
   }
 }

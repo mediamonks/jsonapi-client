@@ -34,18 +34,15 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     console.log('Create', data)
     const body = this.formatter.createResourcePostObject(data)
     const url = createURL(this.client.url, [this.path])
-    return this.client.request(url, 'POST', body as any).then((data) => {
-      console.log('response data', data)
-      return new OneResource(data as any, {}, {})
-    })
+    return this.client
+      .request(url, 'POST', body as any)
+      .then((data) => this.formatter.decode(data as any, {} as any) as any)
   }
 
   async update(id: ResourceId, data: ResourcePatchData<U>): Promise<void> {
     console.log('Patch', data)
     const url = createURL(this.client.url, [this.path, id])
-    await this.client.request(url, 'PATCH', data).then((data) => {
-      return new OneResource(data as any, {}, {})
-    })
+    await this.client.request(url, 'PATCH', data)
   }
 
   async delete(id: ResourceId): Promise<void> {
@@ -114,13 +111,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     resourceFilter?: V,
   ): Promise<OneResource<FilteredResource<U, V>>> {
     const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
-    return this.client.request(url, 'GET').then((data) => {
-      if (data === null) {
-        throw new TypeError(`Data must be a JSON:API Resource Document`)
-      }
-      const resource = this.formatter.decode(data as any, resourceFilter as any)
-      return new OneResource(resource as any, data.meta ?? {}, data.links ?? {})
-    })
+    return this.client
+      .request(url, 'GET')
+      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
   async getMany<V extends ResourceFilter<U>>(
@@ -128,12 +121,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     resourceFilter?: V,
   ): Promise<ManyResource<FilteredResource<U, V>>> {
     const url = createURL(this.client.url, [this.path], resourceFilter as any, searchParams || {})
-
-    return this.client.request(url, 'GET').then((data) => {
-      console.log('data', data)
-      const resource = this.formatter.decode(data as any, resourceFilter as any)
-      return new ManyResource(resource as any, data?.meta || {}, data?.links || ({} as any))
-    })
+    return this.client
+      .request(url, 'GET')
+      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
   async getOneRelationship<
@@ -155,13 +145,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
       resourceFilter as any,
     )
 
-    return this.client.request(url, 'GET').then((data) => {
-      if (data === null) {
-        throw new TypeError(`Data must be a JSON:API Resource Document`)
-      }
-      const resource = this.formatter.decode(data as any, resourceFilter as any)
-      return new OneResource(resource as any, data.meta ?? {}, {})
-    })
+    return this.client
+      .request(url, 'GET')
+      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
   async getManyRelationship<
@@ -185,18 +171,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
       searchParams as any,
     )
 
-    return this.client.request(url, 'GET').then((data) => {
-      if (data === null) {
-        throw new TypeError(`Data must be a JSON:API Resource Document`)
-      }
-      const resource = this.formatter.decode(data as any, resourceFilter as any)
-      return new ManyResource(resource as any, data.meta ?? {}, {
-        first: null,
-        prev: null,
-        next: null,
-        last: null,
-      })
-    })
+    return this.client
+      .request(url, 'GET')
+      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
   one<V extends ResourceFilter<U>>(resourceFilter?: V) {
