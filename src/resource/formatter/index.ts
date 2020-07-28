@@ -71,7 +71,7 @@ export class ResourceFormatter<T extends ResourceType, U extends ResourceFields>
     return new ResourceIdentifier(this.type, id)
   }
 
-  filter<V extends ResourceFieldsQuery<this>, W extends ResourceIncludeQuery<this, V>>(
+  filter<V extends ResourceFieldsQuery<this>, W extends ResourceIncludeQuery<this>>(
     fields: V,
     include: W,
   ): { fields: V; include: W } {
@@ -423,7 +423,7 @@ const decodeResourceObject = (
   resourceObject: JSONAPIResourceObject,
   included: Array<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery<any>,
-  includeFilter: ResourceIncludeQuery<any, any>,
+  includeFilter: ResourceIncludeQuery<any>,
   pointer: ReadonlyArray<string>,
 ): Result<FilteredResource<any, any>, ResourceValidationErrorObject> => {
   if (!resourceObjectType.predicate(resourceObject)) {
@@ -581,7 +581,6 @@ const getAttributeResult = (
 ): Result<any, ResourceValidationErrorObject> => {
   const value = (resourceObject.attributes || EMPTY_OBJECT)[fieldName]
   if (isSome(value)) {
-    // console.log('xoxo', fieldName, value)
     const validationErrors = field.validate(value)
     if (validationErrors.length) {
       const attributeFieldPointer = pointer.concat([fieldName])
