@@ -88,7 +88,7 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
   ): Promise<JSONAPIDocument<any> | null> {
     return this.beforeRequest(url, method, body)
       .then(this.setup.fetchAdapter)
-      .then(this.afterRequest)
+      .then((response) => this.afterRequest(response))
   }
 
   private async beforeRequest(

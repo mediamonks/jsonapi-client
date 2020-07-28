@@ -14,6 +14,7 @@ import { ResourceFormatter } from './resource/formatter'
 import { ResourceIdentifier } from './resource/identifier'
 
 // Util
+
 /** @hidden */
 export type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
 
@@ -78,15 +79,15 @@ export type ResourceConstructorData<T extends ResourceType, U extends ResourceFi
   ResourceFormatter<T, U>
 >
 
-export type ResourceCreateData<T extends ResourceFormatter<any, any>> = Partial<
-  ResourceIdentifier<T['type']>
-> &
-  {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.AlwaysPost
-    >]: ResourceFieldCreateValue<T['fields'][P]>
-  } &
+type MonoResourceCreateData<T extends ResourceFormatter<any, any>> = {
+  id?: ResourceId
+  type: T['type']
+} & {
+  [P in ResourceFieldNameWithFlag<
+    T['fields'],
+    ResourceFieldFlag.AlwaysPost
+  >]: ResourceFieldCreateValue<T['fields'][P]>
+} &
   {
     [P in ResourceFieldNameWithFlag<
       T['fields'],
@@ -103,7 +104,14 @@ export type ResourceCreateData<T extends ResourceFormatter<any, any>> = Partial<
     >
   }
 
-export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
+export type ResourceCreateData<T extends ResourceFormatter<any, any>> = {
+  [P in T['type']]: MonoResourceCreateData<Extract<T, { type: P }>>
+}[T['type']]
+
+type MonoResourcePatchData<T extends ResourceFormatter<any, any>> = {
+  id?: ResourceId
+  type: T['type']
+} & {
   [P in ResourceFieldNameWithFlag<
     T['fields'],
     ResourceFieldFlag.AlwaysPatch
@@ -124,6 +132,10 @@ export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
       T['fields'][P]
     >
   }
+
+export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
+  [P in T['type']]: MonoResourcePatchData<Extract<T, { type: P }>>
+}[keyof T]
 
 //
 export type ExperimentalResourceQuery<
@@ -355,12 +367,9 @@ export type AttributeFieldFromFactory<
   V extends AttributeFieldFactory
 > = ReturnType<V> extends AttributeField<any, any, infer R> ? AttributeField<U, T, R> : never
 
-// Attribute Validator
-type Validator = (value: unknown) => ReadonlyArray<string>
-
 export type AttributeFieldValidator<T> = {
   predicate: Predicate<T>
-  validate: Validator
+  validate: (value: unknown) => ReadonlyArray<string>
 }
 
 // Relationships
@@ -526,10 +535,22 @@ export type JSONAPIDocument<
               ? T[number]
               : never
           >
+          included?: Array<
+            JSONAPIResourceObject<
+              ResourceRelatedResources<
+                T extends ResourceFormatter<any, any>
+                  ? T
+                  : T extends Array<ResourceFormatter<any, any>>
+                  ? T[number]
+                  : never
+              >
+            >
+          >
           errors?: never
         }
       | {
           data?: never
+          included?: never
           errors: Array<JSONAPIErrorObject>
         }
     ) & {
@@ -543,25 +564,26 @@ export type JSONAPIDocument<
     version?: JSONAPIVersion
   }
   links?: JSONAPILinksObject
-  included?: Array<
-    JSONAPIResourceObject<
-      ResourceRelatedResources<
-        T extends ResourceFormatter<any, any>
-          ? T
-          : T extends Array<ResourceFormatter<any, any>>
-          ? T[number]
-          : never
-      >
-    >
-  >
 }
 
 /**
  * {@link https://jsonapi.org/format/#document-resource-objects|JSON:API Reference}
  */
-export type JSONAPIResourceObject<T extends ResourceFormatter<any, any> = any> = ResourceIdentifier<
-  T['type']
-> & {
+export type JSONAPIResourceObject<T extends ResourceFormatter<any, any> = any> = {
+  type: T['type']
+  id: ResourceId
+  attributes?: JSONAPIResourceObjectAttributes<T['fields']>
+  relationships?: JSONAPIResourceObjectRelationships<T['fields']>
+  links?: JSONAPILinksObject
+  meta?: JSONAPIMetaObject
+}
+
+/**
+ * {@link https://jsonapi.org/format/#crud-creating|JSON:API Reference}
+ */
+export type JSONAPIResourceCreateObject<T extends ResourceFormatter<any, any> = any> = {
+  type: T['type']
+  id?: ResourceId
   attributes?: JSONAPIResourceObjectAttributes<T['fields']>
   relationships?: JSONAPIResourceObjectRelationships<T['fields']>
   links?: JSONAPILinksObject

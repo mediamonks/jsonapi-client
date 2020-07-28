@@ -20,6 +20,7 @@ export type TypePointer = ReadonlyArray<PropertyKey>
 
 export type TypeMeta = {
   code: string | null
+  label: string | null
   description: string
   pointer: TypePointer
 }
@@ -31,7 +32,7 @@ export type TypeErrorDetails = {
 }
 
 enum TypeAssertionMode {
-  Intersection,
+  Intersect,
   Union,
 }
 
@@ -42,6 +43,7 @@ export class Type<T> implements TypeMeta {
   readonly predicate: Predicate<T>
   readonly rules: Array<Type<T>> = []
   readonly code: string | null
+  readonly label: string | null
   readonly description: string
   readonly pointer: TypePointer
 
@@ -55,6 +57,7 @@ export class Type<T> implements TypeMeta {
     this.rules = rules
     this.mode = mode
     this.code = meta.code
+    this.label = meta.label
     this.description = meta.description
     this.pointer = meta.pointer
   }
@@ -81,10 +84,15 @@ export class Type<T> implements TypeMeta {
       case TypeAssertionMode.Union: {
         return this.predicate(value) ? [] : [String(this)]
       }
-      case TypeAssertionMode.Intersection: {
+      case TypeAssertionMode.Intersect: {
         return this.rules
           .filter((rule) => !rule.predicate(value))
           .flatMap((rule) => rule.validate(value))
+      }
+      // TODO: Should never happen
+      default: {
+        // console.error(`Invalid Type mode for type "${this.description}": ${this.mode}`)
+        return this.predicate(value) ? [] : [String(this)]
       }
     }
   }
@@ -97,6 +105,10 @@ export class Type<T> implements TypeMeta {
     return this.with({ code })
   }
 
+  withLabel(label: string | null): Type<T> {
+    return this.with({ label })
+  }
+
   withDescription(description: string): Type<T> {
     return this.with({ description })
   }
@@ -106,8 +118,9 @@ export class Type<T> implements TypeMeta {
   }
 
   toString(): string {
+    const label = this.label || 'Value'
     const pointer = this.pointer.join('/')
-    return `Value${pointer ? ` at ${pointer} ` : ` `}must be ${this.description}${
+    return `${label}${pointer ? ` at ${pointer} ` : ` `}must be ${this.description}${
       this.code ? ` (${this.code})` : ''
     }`
   }
@@ -120,8 +133,9 @@ export class Type<T> implements TypeMeta {
   static is<T>(description: string, predicate: Predicate<T>): Type<T> {
     return new Type(predicate, [], TypeAssertionMode.Union, {
       description,
-      pointer: [],
+      label: null,
       code: null,
+      pointer: [],
     })
   }
 
@@ -147,8 +161,9 @@ export class Type<T> implements TypeMeta {
     const rules = type.rules.map((type) => Type.at(key, type))
     return new Type(at(key, type.predicate) as any, rules, type.mode, {
       description: type.description,
-      pointer: type.pointer.concat([key]),
+      label: null,
       code: type.code,
+      pointer: type.pointer.concat([key]),
     })
   }
 
@@ -156,8 +171,9 @@ export class Type<T> implements TypeMeta {
     const rules = [Type.object, ...Object.keys(types).map((key) => Type.at(key, types[key]))]
     const predicate = (value: unknown) => rules.every((type) => type.predicate(value))
 
-    return new Type(predicate as any, rules, TypeAssertionMode.Intersection, {
+    return new Type(predicate as any, rules, TypeAssertionMode.Intersect, {
       description,
+      label: null,
       code: null,
       pointer: [],
     }) as any
@@ -167,8 +183,9 @@ export class Type<T> implements TypeMeta {
     const rules = type.rules.map((type) => array(type.predicate))
     return new Type(array(type.predicate), [], TypeAssertionMode.Union, {
       description: `an Array where each element is ${type.description}`,
-      pointer: [],
+      label: null,
       code: null,
+      pointer: [],
     })
   }
 
@@ -182,10 +199,11 @@ export class Type<T> implements TypeMeta {
       default: {
         const predicate = (value: unknown): value is T =>
           rules.every((rule) => rule.predicate(value))
-        return new Type(predicate, rules, TypeAssertionMode.Intersection, {
-          description: typeDescriptionFormatter(rules, TypeAssertionMode.Intersection),
-          pointer: [],
+        return new Type(predicate, rules, TypeAssertionMode.Intersect, {
+          description: typeDescriptionFormatter(rules, TypeAssertionMode.Intersect),
+          label: null,
           code: null,
+          pointer: [],
         })
       }
     }
@@ -203,8 +221,9 @@ export class Type<T> implements TypeMeta {
           rules.some((type) => type.predicate(value))
         return new Type(predicate, types, TypeAssertionMode.Union, {
           description: typeDescriptionFormatter(rules, TypeAssertionMode.Union),
-          pointer: [],
+          label: null,
           code: null,
+          pointer: [],
         })
       }
     }
@@ -242,7 +261,7 @@ const typeDescriptionFormatter = (types: Array<Type<any>>, mode: TypeAssertionMo
 
 const flattenAndRules = (types: Array<Type<any>>, result: Array<Type<any>> = []) => {
   types.forEach((type) => {
-    if ((type as any).mode === TypeAssertionMode.Intersection && type.rules.length) {
+    if ((type as any).mode === 'intersect' && type.rules.length) {
       flattenAndRules(type.rules, result)
     } else if (!result.includes(type)) {
       result.push(type)
@@ -253,7 +272,7 @@ const flattenAndRules = (types: Array<Type<any>>, result: Array<Type<any>> = [])
 
 const flattenOrRules = (types: Array<Type<any>>, result: Array<Type<any>> = []) => {
   types.forEach((type) => {
-    if ((type as any).mode === TypeAssertionMode.Union && type.rules.length) {
+    if ((type as any).mode === 'union' && type.rules.length) {
       flattenOrRules(type.rules, result)
     } else if (!result.includes(type)) {
       result.push(type)

@@ -15,7 +15,6 @@ An fully type safe and (real-time) type annotated JSON:API client with sparse fi
 
 ## TODO
 
-- Explore replacing AttributeField type predicate with type validator for more detailed error messages.
 - Add support for polymorphic endpoints
 - Write specs
 - Implement everything...

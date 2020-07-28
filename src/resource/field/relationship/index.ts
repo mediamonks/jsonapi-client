@@ -32,7 +32,8 @@ export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFacto
   | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
 > => {
   const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
-  return new RelationshipField(maskRules as any, RelationshipFieldType.ToOne, getResources)
+  const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
+  return new RelationshipField(flag as any, RelationshipFieldType.ToOne, getResources)
 }
 
 export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
@@ -47,7 +48,8 @@ export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFact
   | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
 > => {
   const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
-  return new RelationshipField(maskRules as any, RelationshipFieldType.ToMany, getResources)
+  const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
+  return new RelationshipField(flag as any, RelationshipFieldType.ToMany, getResources)
 }
 
 export class RelationshipField<
@@ -119,7 +121,7 @@ export namespace Relationship {
   > = ToManyRelationshipFieldFromFactory<T, typeof toManyRequired>
 
   export const toManyReadOnly = createToManyRelationshipFieldFactory(
-    ResourceFieldRule.Always,
+    ResourceFieldRule.Maybe,
     ResourceFieldRule.Never,
     ResourceFieldRule.Never,
   )

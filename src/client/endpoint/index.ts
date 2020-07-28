@@ -22,18 +22,20 @@ import { ResourceFieldFlag } from '../../resource/field'
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, any>> {
   readonly client: T
   readonly path: ResourcePath
-  readonly resource: U
+  readonly formatter: U
 
-  constructor(client: T, path: ResourcePath, resource: U) {
+  constructor(client: T, path: ResourcePath, formatter: U) {
     this.client = client
     this.path = path
-    this.resource = resource
+    this.formatter = formatter
   }
 
   async create(data: ResourceCreateData<U>): Promise<OneResource<FilteredResource<U, {}>>> {
     console.log('Create', data)
+    const body = this.formatter.createResourcePostObject(data)
     const url = createURL(this.client.url, [this.path])
-    return this.client.request(url, 'POST', data).then((data) => {
+    return this.client.request(url, 'POST', body as any).then((data) => {
+      console.log('response data', data)
       return new OneResource(data as any, {}, {})
     })
   }
@@ -52,20 +54,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     await this.client.request(url, 'DELETE')
   }
 
-  async updateRelationship<
-    V extends RelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
-    >
-  >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
-    console.log(`Update ${fieldName}`, data)
-    const field = this.resource.fields[fieldName]
-    const url = createURL(this.client.url, [this.resource.type, id, field.root, fieldName])
-    await this.client.request(url, 'PATCH', data as any).then((data) => {
-      return new OneResource(data as any, {}, {})
-    })
-  }
-
   async addRelationships<
     V extends ToManyRelationshipFieldNameWithFlag<
       U['fields'],
@@ -77,39 +65,61 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
     console.log(`Add some ${fieldName}`, data)
-    const field = this.resource.fields[fieldName]
-    const url = createURL(this.client.url, [this.resource.type, id, field.root, fieldName])
+    const field = this.formatter.getField(fieldName)
+    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
 
-  async deleteRelationships<
-    U extends ResourceFormatter<any, any>,
+  async removeRelationships<
     V extends ToManyRelationshipFieldNameWithFlag<
       U['fields'],
       ResourceFieldFlag.AlwaysPatch | ResourceFieldFlag.MaybePatch
     >
   >(
     id: ResourceId,
-    fieldName: string,
+    fieldName: V,
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
-    console.log(`Delete some ${fieldName}`, data)
-    const field = this.resource.fields[fieldName]
-    const url = createURL(this.client.url, [this.resource.type, id, field.root, fieldName])
+    console.log(`Remove some ${fieldName}`, data)
+    const field = this.formatter.getField(fieldName)
+    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
     await this.client.request(url, 'DELETE')
+  }
+
+  async updateRelationship<
+    V extends RelationshipFieldNameWithFlag<
+      U['fields'],
+      ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
+    >
+  >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
+    console.log(`Update ${fieldName}`, data)
+    const field = this.formatter.getField(fieldName)
+    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
+    await this.client.request(url, 'PATCH', data as any)
+  }
+
+  async clearRelationship<
+    V extends RelationshipFieldNameWithFlag<
+      U['fields'],
+      ResourceFieldFlag.AlwaysPatch | ResourceFieldFlag.MaybePatch
+    >
+  >(id: ResourceId, fieldName: V): Promise<void> {
+    const field = this.formatter.getField(fieldName)
+    const url = createURL(this.client.url, [this.formatter.type, id, field.root, fieldName])
+    await this.client.request(url, 'PATCH', {})
   }
 
   async getOne<V extends ResourceFilter<U>>(
     id: ResourceId,
     resourceFilter?: V,
   ): Promise<OneResource<FilteredResource<U, V>>> {
-    const url = createURL(this.client.url, [this.resource.type, id], resourceFilter as any)
+    const url = createURL(this.client.url, [this.formatter.type, id], resourceFilter as any)
     return this.client.request(url, 'GET').then((data) => {
       if (data === null) {
         throw new TypeError(`Data must be a JSON:API Resource Document`)
       }
-      const resource = this.resource.decode(data as any)
-      return new OneResource(resource as any, data.meta ?? {}, {})
+      const resource = this.formatter.decode(data as any, resourceFilter as any)
+      return new OneResource(resource as any, data.meta ?? {}, data.links ?? {})
     })
   }
 
@@ -123,9 +133,12 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
       if (data === null) {
         throw new TypeError(`Data must be a JSON:API Resource Document`)
       }
-      const resource = this.resource.decode(data as any, resourceFilter as any)
+      const resource = this.formatter.decode(data as any, resourceFilter as any)
       return new ManyResource(resource as any, data.meta ?? {}, {
-        pagination: {},
+        first: null,
+        prev: null,
+        next: null,
+        last: null,
       })
     })
   }
@@ -145,7 +158,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   > {
     const url = createURL(
       this.client.url,
-      [this.resource.type, id, fieldName],
+      [this.formatter.type, id, fieldName],
       resourceFilter as any,
     )
 
@@ -153,7 +166,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
       if (data === null) {
         throw new TypeError(`Data must be a JSON:API Resource Document`)
       }
-      const resource = this.resource.decode(data as any, resourceFilter as any)
+      const resource = this.formatter.decode(data as any, resourceFilter as any)
       return new OneResource(resource as any, data.meta ?? {}, {})
     })
   }
@@ -174,7 +187,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   > {
     const url = createURL(
       this.client.url,
-      [this.resource.type, id, fieldName],
+      [this.formatter.type, id, fieldName],
       resourceFilter as any,
       searchParams as any,
     )
@@ -183,14 +196,12 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
       if (data === null) {
         throw new TypeError(`Data must be a JSON:API Resource Document`)
       }
-      const resource = this.resource.decode(data as any, resourceFilter as any)
+      const resource = this.formatter.decode(data as any, resourceFilter as any)
       return new ManyResource(resource as any, data.meta ?? {}, {
-        pagination: {
-          first: null,
-          prev: null,
-          next: null,
-          last: null,
-        },
+        first: null,
+        prev: null,
+        next: null,
+        last: null,
       })
     })
   }

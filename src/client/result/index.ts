@@ -39,10 +39,10 @@ export class ManyResource<T extends Resource<any>> extends ResourceResult<
   }
 
   hasNextPage(): this is { links: { pagination: { next: string } } } {
-    return this.links.pagination.next != null
+    return this.links.next != null
   }
 
   hasPrevPage(): this is { links: { pagination: { prev: string } } } {
-    return this.links.pagination.prev != null
+    return this.links.prev != null
   }
 }

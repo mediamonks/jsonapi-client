@@ -40,8 +40,8 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
   | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
   | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
 > => {
-  const ruleMasks = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
-  const flag = ruleMasks.reduce((flag, mask) => flag | mask, 0)
+  const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
+  const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
   return new AttributeField(flag as any, validator, formatter)
 }
 
@@ -50,7 +50,7 @@ export class AttributeField<
   U extends AttributeValue,
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Attributes, V> {
-  readonly validate: (value: unknown) => ReadonlyArray<any>
+  readonly validate: (value: unknown) => ReadonlyArray<string>
   readonly predicate: Predicate<U>
   readonly serialize: (value: T) => U
   readonly deserialize: (value: U) => T

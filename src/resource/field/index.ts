@@ -1,29 +1,26 @@
+import type { AttributeField } from './attribute'
+import type { RelationshipField, RelationshipFieldType } from './relationship'
+
 export enum ResourceFieldRoot {
   Attributes = 'attributes',
   Relationships = 'relationships',
 }
 
-/*
- * @private
- */
+/** @hidden */
 export enum ResourceFieldRule {
   Never,
   Maybe,
   Always,
 }
 
-/*
- * @private
- */
+/** @hidden */
 export enum ResourceFieldMethod {
   Get,
   Post,
   Patch,
 }
 
-/*
- * @private
- */
+/** @hidden */
 export enum ResourceFieldFlag {
   NeverGet = 1, // 1 << 0
   MaybeGet = 2, // 1 << 1
@@ -36,14 +33,10 @@ export enum ResourceFieldFlag {
   AlwaysPatch = 256, // 1 << 8
 }
 
-/*
- * @private
- */
+/** @hidden */
 export type ResourceFieldMaskIndex = typeof resourceFieldMaskIndex
 
-/*
- * @private
- */
+/** @hidden */
 export const resourceFieldMaskIndex = [
   [ResourceFieldFlag.NeverGet, ResourceFieldFlag.MaybeGet, ResourceFieldFlag.AlwaysGet],
   [ResourceFieldFlag.NeverPost, ResourceFieldFlag.MaybePost, ResourceFieldFlag.AlwaysPost],
@@ -51,9 +44,7 @@ export const resourceFieldMaskIndex = [
 ] as const
 
 // ResourceField
-/*
- * @private
- */
+/** @hidden */
 export class ResourceField<T extends ResourceFieldRoot, U extends ResourceFieldFlag> {
   readonly root: T
   readonly flag: U
@@ -65,5 +56,21 @@ export class ResourceField<T extends ResourceFieldRoot, U extends ResourceFieldF
 
   matches(mask: ResourceFieldFlag): boolean {
     return Boolean(this.flag & mask)
+  }
+
+  isAttributeField(): this is AttributeField<any, any, any> {
+    return this.root === ResourceFieldRoot.Attributes
+  }
+
+  isRelationshipField(): this is RelationshipField<any, any, any> {
+    return this.root === ResourceFieldRoot.Relationships
+  }
+
+  isToOneRelationshipField(): this is RelationshipField<any, RelationshipFieldType.ToOne, any> {
+    return this.isRelationshipField() && this.relationshipType === 'to-one'
+  }
+
+  isToManyRelationshipField(): this is RelationshipField<any, RelationshipFieldType.ToMany, any> {
+    return this.isRelationshipField() && this.relationshipType === 'to-many'
   }
 }
