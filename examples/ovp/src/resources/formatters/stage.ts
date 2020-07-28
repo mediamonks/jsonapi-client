@@ -15,8 +15,8 @@ export type StageResource = ResourceFormatter<
     stageType: Attribute.Required<StageType>
     externalId: Attribute.Optional<string>
     title: Attribute.Required<string>
-    startDate: Attribute.Required<string, Date>
-    endDate: Attribute.Required<string, Date>
+    startDate: Attribute.Optional<string, Date>
+    endDate: Attribute.Optional<string, Date>
     brackets: Attribute.Optional<StageBrackets>
     event: Relationship.ToOne<typeof event>
     phases: Relationship.ToMany<typeof phase>
@@ -29,8 +29,8 @@ export const stage: StageResource = jsonapi.formatter('Stage', {
   stageType: Attribute.required(stageType),
   externalId: Attribute.optional(string),
   title: Attribute.required(string),
-  startDate: Attribute.required(isoDateString, isoDateStringFormatter),
-  endDate: Attribute.required(isoDateString, isoDateStringFormatter),
+  startDate: Attribute.optional(isoDateString, isoDateStringFormatter),
+  endDate: Attribute.optional(isoDateString, isoDateStringFormatter),
   brackets: Attribute.optional(stageBrackets),
   event: Relationship.toOne(() => [event]),
   phases: Relationship.toMany(() => [phase]),

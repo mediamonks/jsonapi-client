@@ -7,7 +7,7 @@ import { tag } from './tag'
 export type AssetResource = ResourceFormatter<
   'Asset',
   {
-    assetType: Attribute.Required<string>
+    assetType: Attribute.Optional<string>
     name: Attribute.Required<string>
     source: Attribute.Required<string>
     alt: Attribute.Optional<string>
@@ -17,7 +17,7 @@ export type AssetResource = ResourceFormatter<
 >
 
 export const asset: AssetResource = jsonapi.formatter('Asset', {
-  assetType: Attribute.required(string),
+  assetType: Attribute.optional(string),
   name: Attribute.required(string),
   source: Attribute.required(string),
   alt: Attribute.optional(string),

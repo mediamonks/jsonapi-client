@@ -1,8 +1,9 @@
+import { isNumber } from 'isntnt'
 import { Type } from '../../../../../src'
 
 export const isoDateString: Type<string> = Type.is(
   'a date string',
-  (value: unknown): value is string => new Date(String(value)).toISOString() === value,
+  (value: unknown): value is string => isNumber(new Date(String(value)).getTime()),
 )
 
 export const isoDateStringFormatter = {

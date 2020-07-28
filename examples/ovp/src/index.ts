@@ -3,6 +3,7 @@ import jsonapi from '../../../src'
 
 import {
   competitor,
+  discipline,
   event,
   stage,
   phase,
@@ -70,6 +71,11 @@ const eventFilter = event.filter(
           },
         },
       },
+      phases: {
+        eventUnits: {
+          competitors: null,
+        },
+      },
     },
     competitors: {
       results: null,
@@ -85,15 +91,26 @@ const eventFilter = event.filter(
   },
 )
 
-// eventEndpoint.getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilter).then((eventResource) => {
-//   console.log(eventResource)
-// })
+eventEndpoint
+  .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilter)
+  .then((eventResource) => {
+    console.log(eventResource)
+  })
+  .catch(console.dir)
+
+const eventFilterDiscipline = event.filter(
+  {
+    [event.type]: ['stages'],
+    [stage.type]: ['phases', 'startDate', 'endDate'],
+  },
+  {
+    stages: null,
+  },
+)
 
 eventEndpoint
-  .getMany()
+  .getMany(null, eventFilterDiscipline)
   .then((manyEvents) => {
     console.log(manyEvents)
   })
-  .catch((error) => {
-    console.dir(error)
-  })
+  .catch(console.dir)

@@ -1,6 +1,7 @@
 import { Type } from '../../../../../src'
 
 export enum EventUnitScheduleStatus {
+  None = '',
   Canceled = 'CANCELLED',
   Delayed = 'DELAYED',
   Finished = 'FINISHED',

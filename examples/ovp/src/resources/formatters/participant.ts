@@ -16,8 +16,8 @@ export type ParticipantResource = ResourceFormatter<
     name: Attribute.Required<string>
     statistics: Attribute.Optional<MedalStatistics>
     individual: Relationship.ToOneRequired<typeof individual>
-    discipline: Relationship.ToOneRequired<typeof discipline>
-    organisation: Relationship.ToOneRequired<typeof organisation>
+    discipline: Relationship.ToOne<typeof discipline>
+    organisation: Relationship.ToOne<typeof organisation>
     country: Relationship.ToOne<typeof country>
     scheduleSessions: Relationship.ToMany<typeof scheduleSession>
     participants: Relationship.ToMany<typeof participant>
@@ -29,8 +29,8 @@ export const participant: ParticipantResource = jsonapi.formatter('Participant',
   name: Attribute.required(string),
   statistics: Attribute.optional(medalStatistics),
   individual: Relationship.toOneRequired(() => [individual]),
-  discipline: Relationship.toOneRequired(() => [discipline]),
-  organisation: Relationship.toOneRequired(() => [organisation]),
+  discipline: Relationship.toOne(() => [discipline]),
+  organisation: Relationship.toOne(() => [organisation]),
   country: Relationship.toOne(() => [country]),
   scheduleSessions: Relationship.toMany(() => [scheduleSession]),
   participants: Relationship.toMany(() => [participant]),
