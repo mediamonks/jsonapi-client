@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
@@ -15,7 +15,7 @@ type ChapterResource = ResourceFormatter<
   }
 >
 
-export const chapter: ChapterResource = JSONAPI.resource('chapters', {
+export const chapter: ChapterResource = jsonapi.formatter('chapters', {
   title: Attribute.required(string),
   ordering: Attribute.required(uint),
   photos: Relationship.toMany(() => [photo]),

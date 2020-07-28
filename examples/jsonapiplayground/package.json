@@ -5,12 +5,16 @@
   "author": "Nathan Uphoff",
   "license": "MIT",
   "scripts": {
-    "start": ""
+    "start": "yarn && yarn watch",
+    "watch": "parcel index.html --open",
+    "build": "rimraf dist && tsc -d --skipLibCheck"
   },
   "dependencies": {
-    "jsonapi-client": "../../"
+    "isntnt": "^1.4.0"
   },
   "devDependencies": {
-    "typescript": "^3.9.6"
+    "parcel": "^1.12.4",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.9.7"
   }
 }

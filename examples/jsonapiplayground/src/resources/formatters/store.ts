@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
@@ -20,7 +20,7 @@ type StoreFields = {
 
 type StoreResource = ResourceFormatter<StoreType, StoreFields>
 
-export const store: StoreResource = JSONAPI.resource('stores', {
+export const store: StoreResource = jsonapi.formatter('stores', {
   name: Attribute.required(string),
   address: Attribute.requiredStatic(string),
   created_by: Attribute.requiredReadonly(uint),

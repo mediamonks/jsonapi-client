@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/string'
 
@@ -9,6 +9,6 @@ type CountryResource = ResourceFormatter<
   }
 >
 
-export const country: CountryResource = JSONAPI.resource('countries', {
+export const country: CountryResource = jsonapi.formatter('countries', {
   name: Attribute.required(string),
 })

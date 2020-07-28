@@ -1,9 +1,10 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/string'
 import { book } from './book'
 import { photo } from './photo'
+import { isString } from 'isntnt'
 
 type AuthorResource = ResourceFormatter<
   'authors',
@@ -17,7 +18,7 @@ type AuthorResource = ResourceFormatter<
   }
 >
 
-export const author: AuthorResource = JSONAPI.resource('authors', {
+export const author: AuthorResource = jsonapi.formatter('authors', {
   name: Attribute.required(string),
   birthplace: Attribute.required(string),
   date_of_birth: Attribute.required(dateString, dateStringFormatter),

@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/string'
 import { book } from './book'
@@ -13,7 +13,7 @@ type SeriesResource = ResourceFormatter<
   }
 >
 
-export const series: SeriesResource = JSONAPI.resource('series', {
+export const series: SeriesResource = jsonapi.formatter('series', {
   title: Attribute.required(string),
   photos: Relationship.toMany(() => [photo]),
   books: Relationship.toMany(() => [book]),

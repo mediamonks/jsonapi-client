@@ -1,4 +1,4 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from 'jsonapi-client'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/string'
@@ -23,7 +23,7 @@ type BookResource = ResourceFormatter<
   }
 >
 
-export const book: BookResource = JSONAPI.resource('books', {
+export const book: BookResource = jsonapi.formatter('books', {
   title: Attribute.required(string),
   date_published: Attribute.required(dateString, dateStringFormatter),
   isbn: Attribute.required(uint),

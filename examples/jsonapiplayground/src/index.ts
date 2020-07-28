@@ -1,33 +1,36 @@
-import JSONAPI, { ImplicitRelationshipData, AbsolutePathRoot } from 'jsonapi-client'
+import 'regenerator-runtime/runtime'
+import jsonapi, { ImplicitRelationshipData, AbsolutePathRoot } from '../../../src'
 
-import { author } from './resources'
+import { author, book } from './resources'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
-const client = JSONAPI.client(url, {
+const client = jsonapi.client(url, {
   absolutePathRoot: AbsolutePathRoot.Client,
   implicitRelationshipData: ImplicitRelationshipData.ResourceIdentifiers,
 })
 
 const authorEndpoint = client.endpoint('authors', author)
 
-authorEndpoint
-  .create({
-    name: 'Hans',
-    date_of_birth: new Date(1970, 0, 1),
-    birthplace: 'Netherlands',
-  })
-  .then((oneAuthor) => {
-    console.log(oneAuthor.data)
-  })
+// authorEndpoint
+//   .create({
+//     type: 'authors',
+//     name: 'Hans',
+//     date_of_birth: new Date(1970, 0, 1),
+//     birthplace: 'Netherlands',
+//   })
+//   .then((oneAuthor) => {
+//     console.log(oneAuthor.data)
+//   })
 
 const authorFilter = author.filter(
   {
-    [author.type]: ['name', 'books'],
+    [author.type]: ['name', 'books', 'photos'],
+    [book.type]: ['title', 'chapters'],
   },
-  { books: null },
+  { books: null, photos: null },
 )
 
-authorEndpoint.getOne('2', authorFilter).then((oneAuthor) => {
-  console.log(oneAuthor.data)
+authorEndpoint.getOne('1', authorFilter).then((oneAuthor) => {
+  console.log('getOne author', oneAuthor.data)
 })
