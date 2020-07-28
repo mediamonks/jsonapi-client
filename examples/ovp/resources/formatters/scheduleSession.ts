@@ -62,7 +62,7 @@ export type ScheduleSessionResource = ResourceFormatter<
   }
 >
 
-export const scheduleSession: ScheduleSessionResource = jsonapi.resource('ScheduleSession', {
+export const scheduleSession: ScheduleSessionResource = jsonapi.formatter('ScheduleSession', {
   externalId: Attribute.required(string),
   code: Attribute.required(string),
   title: Attribute.required(string),

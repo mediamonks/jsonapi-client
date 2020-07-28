@@ -25,7 +25,7 @@ export type StageResource = ResourceFormatter<
   }
 >
 
-export const stage: StageResource = jsonapi.resource('Stage', {
+export const stage: StageResource = jsonapi.formatter('Stage', {
   stageType: Attribute.required(stageType),
   externalId: Attribute.optional(string),
   title: Attribute.required(string),

@@ -31,7 +31,7 @@ export type CompetitorResource = ResourceFormatter<
   }
 >
 
-export const competitor: CompetitorResource = jsonapi.resource('Competitor', {
+export const competitor: CompetitorResource = jsonapi.formatter('Competitor', {
   externalId: Attribute.required(string),
   order: Attribute.optional(number),
   extendedInfo: Attribute.optional(competitorExtendedInfo),

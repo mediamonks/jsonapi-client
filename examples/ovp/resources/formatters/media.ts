@@ -14,7 +14,7 @@ export type MediaResource = ResourceFormatter<
   }
 >
 
-export const media: MediaResource = jsonapi.resource('Media', {
+export const media: MediaResource = jsonapi.formatter('Media', {
   typeMedia: Attribute.required(string),
   title: Attribute.required(string),
   stage: Relationship.toOne(() => [stage]),

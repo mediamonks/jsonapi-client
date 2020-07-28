@@ -16,7 +16,7 @@ export type AssetResource = ResourceFormatter<
   }
 >
 
-export const asset: AssetResource = jsonapi.resource('Asset', {
+export const asset: AssetResource = jsonapi.formatter('Asset', {
   assetType: Attribute.required(string),
   name: Attribute.required(string),
   source: Attribute.required(string),

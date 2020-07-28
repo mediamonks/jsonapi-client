@@ -22,7 +22,7 @@ export type PhaseResource = ResourceFormatter<
   }
 >
 
-export const phase: PhaseResource = jsonapi.resource('Phase', {
+export const phase: PhaseResource = jsonapi.formatter('Phase', {
   externalId: Attribute.optional(string),
   title: Attribute.required(string),
   startDate: Attribute.optional(isoDateString, isoDateStringFormatter),

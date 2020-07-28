@@ -13,7 +13,7 @@ export type WidgetResource = ResourceFormatter<
   }
 >
 
-export const widget: WidgetResource = jsonapi.resource('Widget', {
+export const widget: WidgetResource = jsonapi.formatter('Widget', {
   widgetType: Attribute.required(string),
   title: Attribute.required(string),
   slug: Attribute.required(string),

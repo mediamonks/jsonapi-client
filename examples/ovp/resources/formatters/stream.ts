@@ -16,7 +16,7 @@ export type StreamResource = ResourceFormatter<
   }
 >
 
-export const stream: StreamResource = jsonapi.resource('Stream', {
+export const stream: StreamResource = jsonapi.formatter('Stream', {
   streamType: Attribute.required(string),
   stream: Attribute.optional(string),
   start: Attribute.optional(isoDateString, isoDateStringFormatter),

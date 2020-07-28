@@ -24,7 +24,7 @@ export type ParticipantResource = ResourceFormatter<
   }
 >
 
-export const participant: ParticipantResource = jsonapi.resource('Participant', {
+export const participant: ParticipantResource = jsonapi.formatter('Participant', {
   participantType: Attribute.required(participantType),
   name: Attribute.required(string),
   statistics: Attribute.optional(medalStatistics),

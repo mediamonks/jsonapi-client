@@ -19,7 +19,7 @@ export type TagResource = ResourceFormatter<
   }
 >
 
-export const tag: TagResource = jsonapi.resource('Tag', {
+export const tag: TagResource = jsonapi.formatter('Tag', {
   tagType: Attribute.required(tagType),
   value: Attribute.required(string),
   discipline: Relationship.toOne(() => [discipline]),

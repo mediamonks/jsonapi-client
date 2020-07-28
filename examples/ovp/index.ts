@@ -1,4 +1,4 @@
-import JSONAPI from 'jsonapi-client'
+import jsonapi from 'jsonapi-client'
 
 import {
   competitor,
@@ -17,7 +17,7 @@ import {
 
 const url = new URL('https://example.com/api/v1')
 
-const client = JSONAPI.client(url)
+const client = jsonapi.client(url)
 
 const eventEndpoint = client.endpoint('event', event)
 

@@ -13,7 +13,7 @@ export type RenditionResource = ResourceFormatter<
   }
 >
 
-export const rendition: RenditionResource = jsonapi.resource('Rendition', {
+export const rendition: RenditionResource = jsonapi.formatter('Rendition', {
   renditionType: Attribute.required(string),
   name: Attribute.required(string),
   source: Attribute.required(string),

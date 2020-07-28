@@ -29,7 +29,7 @@ export type VODResource = ResourceFormatter<
   }
 >
 
-export const vod: VODResource = jsonapi.resource('VOD', {
+export const vod: VODResource = jsonapi.formatter('VOD', {
   videoType: Attribute.required(vodVideoType),
   title: Attribute.required(string),
   start: Attribute.optional(isoDateString, isoDateStringFormatter),

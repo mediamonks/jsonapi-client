@@ -26,7 +26,7 @@ export type MedalResource = ResourceFormatter<
   }
 >
 
-export const medal: MedalResource = jsonapi.resource('Medal', {
+export const medal: MedalResource = jsonapi.formatter('Medal', {
   externalId: Attribute.optional(string),
   medalType: Attribute.required(medalType),
   description: Attribute.required(string),

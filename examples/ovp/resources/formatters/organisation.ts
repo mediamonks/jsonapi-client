@@ -23,7 +23,7 @@ export type OrganisationResource = ResourceFormatter<
   }
 >
 
-export const organisation: OrganisationResource = jsonapi.resource('Organisation', {
+export const organisation: OrganisationResource = jsonapi.formatter('Organisation', {
   externalId: Attribute.required(string),
   name: Attribute.required(string),
   description: Attribute.optional(string),

@@ -9,6 +9,6 @@ export type PlaybackSessionResource = ResourceFormatter<
   }
 >
 
-export const playbackSession: PlaybackSessionResource = jsonapi.resource('PlaybackSession', {
+export const playbackSession: PlaybackSessionResource = jsonapi.formatter('PlaybackSession', {
   url: Attribute.required(string),
 })

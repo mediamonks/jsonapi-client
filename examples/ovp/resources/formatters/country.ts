@@ -25,7 +25,7 @@ export type CountryResource = ResourceFormatter<
   }
 >
 
-export const country: CountryResource = jsonapi.resource('Country', {
+export const country: CountryResource = jsonapi.formatter('Country', {
   iso2Code: Attribute.optional(string),
   iso3Code: Attribute.required(string),
   iocCode: Attribute.required(string),

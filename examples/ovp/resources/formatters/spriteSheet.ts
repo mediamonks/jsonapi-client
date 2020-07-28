@@ -20,7 +20,7 @@ export type SpriteSheetResource = ResourceFormatter<
   }
 >
 
-export const spriteSheet: SpriteSheetResource = jsonapi.resource('SpriteSheet', {
+export const spriteSheet: SpriteSheetResource = jsonapi.formatter('SpriteSheet', {
   rows: Attribute.required(uint),
   columns: Attribute.required(uint),
   width: Attribute.required(uint),

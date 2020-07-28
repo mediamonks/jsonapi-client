@@ -27,7 +27,7 @@ export type TimelineMarkerResource = ResourceFormatter<
   }
 >
 
-export const timelineMarker: TimelineMarkerResource = jsonapi.resource('TimelineMarker', {
+export const timelineMarker: TimelineMarkerResource = jsonapi.formatter('TimelineMarker', {
   timelineMarkerType: Attribute.optional(timelineMarkerType),
   title: Attribute.optional(string),
   description: Attribute.optional(string),

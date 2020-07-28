@@ -14,7 +14,7 @@ export type CommentaryResource = ResourceFormatter<
   }
 >
 
-export const commentary: CommentaryResource = jsonapi.resource('Commentary', {
+export const commentary: CommentaryResource = jsonapi.formatter('Commentary', {
   title: Attribute.required(string),
   name: Attribute.required(string),
   language: Attribute.required(string),

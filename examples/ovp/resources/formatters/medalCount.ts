@@ -20,7 +20,7 @@ export type MedalCountResource = ResourceFormatter<
   }
 >
 
-export const medalCount: MedalCountResource = jsonapi.resource('MedalCount', {
+export const medalCount: MedalCountResource = jsonapi.formatter('MedalCount', {
   bronze: Attribute.required(uint),
   silver: Attribute.required(uint),
   gold: Attribute.required(uint),

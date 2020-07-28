@@ -17,7 +17,7 @@ type AggregateResource = ResourceFormatter<
   }
 >
 
-export const aggregate: AggregateResource = jsonapi.resource('Aggregate', {
+export const aggregate: AggregateResource = jsonapi.formatter('Aggregate', {
   key: Attribute.required(string),
   aggregateType: Attribute.required(aggregateType),
   value: Attribute.required(aggregateValue),

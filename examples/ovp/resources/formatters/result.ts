@@ -45,7 +45,7 @@ export type ResultResource = ResourceFormatter<
   }
 >
 
-export const result: ResultResource = jsonapi.resource('Result', {
+export const result: ResultResource = jsonapi.formatter('Result', {
   resultType: Attribute.optional(string),
   externalId: Attribute.required(string),
   irm: Attribute.optional(string),

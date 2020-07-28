@@ -15,7 +15,7 @@ export type PageResource = ResourceFormatter<
   }
 >
 
-export const page: PageResource = jsonapi.resource('Page', {
+export const page: PageResource = jsonapi.formatter('Page', {
   title: Attribute.required(string),
   slug: Attribute.required(pageSlug),
   path: Attribute.required(string),

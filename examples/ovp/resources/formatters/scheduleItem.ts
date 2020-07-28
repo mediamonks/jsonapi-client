@@ -26,7 +26,7 @@ export type ScheduleItemResource = ResourceFormatter<
   }
 >
 
-export const scheduleItem: ScheduleItemResource = jsonapi.resource('ScheduleItem', {
+export const scheduleItem: ScheduleItemResource = jsonapi.formatter('ScheduleItem', {
   title: Attribute.required(string),
   start: Attribute.required(isoDateString, isoDateStringFormatter),
   end: Attribute.optional(isoDateString, isoDateStringFormatter),

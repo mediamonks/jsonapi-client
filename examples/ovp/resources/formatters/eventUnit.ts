@@ -32,7 +32,7 @@ export type EventUnitResource = ResourceFormatter<
   }
 >
 
-export const eventUnit: EventUnitResource = jsonapi.resource('EventUnit', {
+export const eventUnit: EventUnitResource = jsonapi.formatter('EventUnit', {
   externalId: Attribute.optional(string),
   title: Attribute.required(string),
   scheduleStatus: Attribute.optional(eventUnitScheduleStatus),

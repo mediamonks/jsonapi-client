@@ -20,7 +20,7 @@ export type PhotoResource = ResourceFormatter<
   }
 >
 
-export const photo: PhotoResource = jsonapi.resource('Photo', {
+export const photo: PhotoResource = jsonapi.formatter('Photo', {
   description: Attribute.optional(string),
   copyright: Attribute.optional(string),
   created: Attribute.optional(isoDateString, isoDateStringFormatter),

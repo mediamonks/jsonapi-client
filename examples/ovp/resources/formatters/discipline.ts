@@ -27,7 +27,7 @@ export type DisciplineResource = ResourceFormatter<
   }
 >
 
-export const discipline: DisciplineResource = jsonapi.resource('Discipline', {
+export const discipline: DisciplineResource = jsonapi.formatter('Discipline', {
   externalId: Attribute.required(string),
   name: Attribute.required(string),
   description: Attribute.optional(string),

@@ -11,7 +11,7 @@ export type ConfigurationResource = ResourceFormatter<
   }
 >
 
-export const configuration: ConfigurationResource = jsonapi.resource('Configuration', {
+export const configuration: ConfigurationResource = jsonapi.formatter('Configuration', {
   key: Attribute.required(configurationKey),
   value: Attribute.required(configurationValue),
 })

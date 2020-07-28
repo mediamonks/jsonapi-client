@@ -36,7 +36,7 @@ export type IndividualResource = ResourceFormatter<
   }
 >
 
-export const individual: IndividualResource = jsonapi.resource('Individual', {
+export const individual: IndividualResource = jsonapi.formatter('Individual', {
   individualType: Attribute.required(string),
   externalId: Attribute.required(string),
   ambition: Attribute.optional(string),

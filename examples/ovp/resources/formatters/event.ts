@@ -22,7 +22,7 @@ export type EventResource = ResourceFormatter<
   }
 >
 
-export const event: EventResource = jsonapi.resource('Event', {
+export const event: EventResource = jsonapi.formatter('Event', {
   externalId: Attribute.optional(string),
   name: Attribute.required(string),
   rsc: Attribute.required(rsc),
