@@ -3,6 +3,7 @@
 .cache
 .vscode
 .idea
+.env
 logs
 node_modules
 dist

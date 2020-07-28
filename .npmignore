@@ -9,6 +9,7 @@
 .nvmrc
 .prettierrc
 .travis.yml
+.env
 jest.config.js
 /logs
 /coverage
