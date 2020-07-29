@@ -16,7 +16,7 @@ import {
 import { resourceType, parseResourceFields } from '../../util/types'
 import { ResourceIdentifier } from '../identifier'
 import { decodeDocument } from './decodeDocument'
-import { assertResourceFilter } from './assertResourceFilter'
+import { parseResourceFilter } from './parseResourceFilter'
 
 export const formatter = <T extends ResourceType, U extends ResourceFields>(type: T, fields: U) =>
   new ResourceFormatter(type, fields)
@@ -38,8 +38,7 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
     fields: V,
     include: W,
   ): { fields: V; include: W } {
-    assertResourceFilter([this], fields as any, include, [])
-    return { fields, include }
+    return parseResourceFilter([this], { fields: fields as any, include }) as any
   }
 
   decode<V extends ResourceFilter<ResourceFormatter<T, U>>>(

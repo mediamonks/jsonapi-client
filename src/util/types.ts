@@ -23,7 +23,8 @@ export const resourceType = Type.is(
   test(/^(?! _-)[a-zA-Z0-9][^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^`{|}~]+(\1)$/),
 )
 
-const resourceIdentifierKey: Type<ResourceIdentifierKey> = Type.is(
+/** @hidden */
+export const resourceIdentifierKey: Type<ResourceIdentifierKey> = Type.is(
   'a resource identifier key',
   either('type', 'id'),
 )

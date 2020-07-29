@@ -7,8 +7,8 @@ import {
 import { JSONAPIDocument, ResourceFilter } from '../../types'
 import { jsonapiDocument } from '../../util/types'
 import { decodeResourceObject } from './decodeResourceObject'
+import { parseResourceFilter } from './parseResourceFilter'
 import type { ResourceFormatter } from '.'
-import { assertResourceFilter } from './assertResourceFilter'
 
 export const decodeDocument = (
   formatters: ReadonlyArray<ResourceFormatter>,
@@ -28,12 +28,7 @@ export const decodeDocument = (
   }
 
   if ('data' in resourceDocument) {
-    assertResourceFilter(
-      formatters,
-      resourceFilter?.fields || {},
-      resourceFilter?.include || {},
-      [],
-    )
+    parseResourceFilter(formatters, resourceFilter || {})
 
     const included = resourceDocument.included
       ? resourceDocument.included.concat(resourceDocument.data)
