@@ -1,6 +1,22 @@
 # JSON:API-Client
 
-An fully type safe and (real-time) type annotated JSON:API client with sparse fieldset and compound document support.
+JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe sparse fieldsets and compound documents.
+
+> info: This is an experimental branch, its implementation is not completed, not tested, and not production ready.
+
+## JSON:API Support
+
+- [x] Sparse fieldsets
+- [x] Compound documents
+- [x] Search params (filter, page, sort)
+- [x] CRUD operations on a resource
+- [x] CRUD operations on a relationship
+- [x] Polymorphic relationships
+- [ ] Polymorphic endpoints
+- [x] JSON:API document meta and links
+- [ ] Resource object meta and links
+- [ ] Resource relationship links
+- [ ] Resource identifier meta
 
 ## Design Goals
 
@@ -13,21 +29,11 @@ An fully type safe and (real-time) type annotated JSON:API client with sparse fi
 - Resource query values should no longer be required to be cast `as const`.
 - Resource include query values should only allow relationships that are present in its fields query.
 
-## TODO
+## Road Map
 
-- Add support for polymorphic endpoints
+- Add support for polymorphic endpoints (maybe)
 - Write specs
 - Implement everything...
-
-# JSON:API Support
-
-- [x] Sparse fieldsets
-- [x] Compound documents
-- [x] Search params (filter, page, sort)
-- [x] CRUD operations on a resource
-- [x] CRUD operations on a relationship
-- [x] Polymorphic relationships
-- [ ] Polymorphic endpoints
 
 # Getting Started
 
