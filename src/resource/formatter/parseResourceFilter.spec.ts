@@ -57,6 +57,7 @@ describe('parseResourceFilter', () => {
         Bar: ['foo'],
       },
       include: {
+        foo: null,
         bars: {
           foo: null,
         },
