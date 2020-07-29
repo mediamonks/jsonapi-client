@@ -2,7 +2,7 @@
 
 JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe sparse fieldsets and compound documents.
 
-> info: This is an experimental branch, its implementation is not completed, not tested, and not production ready.
+> ⚠️ This is an experimental branch, its implementation is not completed, not tested, and not production ready.
 
 ## JSON:API Support
 

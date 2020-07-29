@@ -4,7 +4,7 @@ import { JSONAPIErrorObject, JSONAPIMetaObject } from '../types'
 const isContent = or(isNumber, isString)
 
 // Client Response Error
-type ErrorObjectPointer = ReadonlyArray<string>
+export type ErrorObjectPointer = ReadonlyArray<string>
 
 export type ClientResponseErrorObject = {
   id: string | null
@@ -26,13 +26,13 @@ export class ClientResponseError extends Error {
   constructor(message: string, value: unknown, errors: ReadonlyArray<JSONAPIErrorObject>) {
     super(message)
     this.actual = value
-    this.details = errors.map(toClientResponseErrorObject)
+    this.details = errors.map(createClientResponseErrorObject)
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /** @hidden */
-export const toClientResponseErrorObject = (
+export const createClientResponseErrorObject = (
   error: JSONAPIErrorObject,
 ): ClientResponseErrorObject => {
   return {
@@ -53,7 +53,7 @@ export type ResourceValidationErrorObject = {
   title: string
   detail: string
   source: {
-    pointer: ReadonlyArray<string>
+    pointer: ErrorObjectPointer
   }
 }
 

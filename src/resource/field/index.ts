@@ -45,7 +45,7 @@ export const resourceFieldMaskIndex = [
 
 // ResourceField
 /** @hidden */
-export class ResourceField<T extends ResourceFieldRoot, U extends ResourceFieldFlag> {
+export class ResourceField<T extends ResourceFieldRoot = any, U extends ResourceFieldFlag = any> {
   readonly root: T
   readonly flag: U
 

@@ -17,8 +17,8 @@ export enum AbsolutePathRoot {
 export enum ImplicitRelationshipData {
   None = 'none',
   All = 'all',
-  PrimaryRelationships = 'primary-relationships',
   ResourceIdentifiers = 'resource-identifiers',
+  PrimaryRelationships = 'primary-relationships',
 }
 
 export type DefaultClientSetup = ClientSetup & {

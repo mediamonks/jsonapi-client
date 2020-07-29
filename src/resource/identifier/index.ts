@@ -1,8 +1,7 @@
-import { isString, test } from 'isntnt'
 import { ResourceId, ResourceType } from '../../types'
-import { resourceType, resourceId } from '../../util/types'
+import { resourceId, resourceType } from '../../util/types'
 
-export class ResourceIdentifier<T extends ResourceType> {
+export class ResourceIdentifier<T extends ResourceType = any> {
   readonly type: T
   readonly id: ResourceId
 

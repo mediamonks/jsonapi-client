@@ -24,6 +24,8 @@ export type ResourceId = string
 
 export type ResourcePath = string
 
+export type ResourceFieldName = string
+
 export type ResourceIdentifierKey = keyof ResourceIdentifier<any>
 
 export type Resource<T extends ResourceFormatter<any, any>> = ResourceIdentifier<T['type']> &
@@ -45,8 +47,8 @@ type FilteredResourceFieldName<
 > = T['type'] extends keyof U['fields'] ? U['fields'][T['type']][number] : keyof T['fields']
 
 export type FilteredResource<
-  T extends ResourceFormatter<any, any>,
-  U extends ResourceFilter<T> = {}
+  T extends ResourceFormatter<any, any> = any,
+  U extends ResourceFilter<T> = any
 > = ResourceIdentifier<T['type']> &
   {
     [P in FilteredResourceFieldName<T, U>]: T['fields'][P] extends RelationshipField<
@@ -205,7 +207,7 @@ type BaseResourcesFieldsQuery<T> = T extends ResourceFormatter<any, any>
     }
   : never
 
-export type ResourceFieldsQuery<T extends ResourceFormatter<any, any>> = Intersect<
+export type ResourceFieldsQuery<T extends ResourceFormatter<any, any> = any> = Intersect<
   BaseResourcesFieldsQuery<ResourceRelatedResources<T>>
 >
 
