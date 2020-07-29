@@ -1,5 +1,4 @@
 import { ResourceFieldsQuery, ResourceFieldName } from '../../types'
-import { assertResourceFilter } from './assertResourceFilter'
 import { isReadableField } from './isReadableField'
 import type { ResourceFormatter } from '.'
 
@@ -12,9 +11,7 @@ import type { ResourceFormatter } from '.'
 export const getFilteredFieldNames = (
   formatters: ReadonlyArray<ResourceFormatter>,
   fieldsFilter: ResourceFieldsQuery,
-  pointer: ReadonlyArray<string>,
 ): ReadonlyArray<ResourceFieldName> => {
-  assertResourceFilter(formatters, fieldsFilter, {}, pointer)
   return [
     // TODO: De-duplication may be optimized
     ...new Set(

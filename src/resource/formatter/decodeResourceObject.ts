@@ -51,7 +51,7 @@ export const decodeResourceObject = (
     )
   }
 
-  const fieldNames = getFilteredFieldNames(formatters, fieldsFilter, pointer)
+  const fieldNames = getFilteredFieldNames(formatters, fieldsFilter)
     // Only use fieldNames that are relevant to the ResourceFormatter that matches the actual data type
     .filter((fieldName) =>
       formatter.type in fieldsFilter
