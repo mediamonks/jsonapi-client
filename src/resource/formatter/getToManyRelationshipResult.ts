@@ -38,7 +38,7 @@ export const getToManyRelationshipResult = (
           data,
           `Required To-Many Relationship Not Found`,
           `To-Many relationship "${fieldName}" on resource of type ${resourceObject.type} is required.`,
-          pointer.concat([fieldName]),
+          pointer,
         )
   }
 
@@ -47,7 +47,7 @@ export const getToManyRelationshipResult = (
       data,
       `Invalid To-Many Relationship Data`,
       `To-Many relationship "${fieldName}" on resource of type ${resourceObject.type} must be an Array.`,
-      pointer.concat([fieldName]),
+      pointer,
     )
   }
 

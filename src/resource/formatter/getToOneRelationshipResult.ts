@@ -33,11 +33,7 @@ export const getToOneRelationshipResult = (
   const data: ResourceIdentifier | null = (value || EMPTY_OBJECT).data
 
   if (isSome(data)) {
-    const resourceIdentifierResult = parseResourceIdentifier(
-      resourceFormatters,
-      data,
-      pointer.concat([fieldName]),
-    )
+    const resourceIdentifierResult = parseResourceIdentifier(resourceFormatters, data, pointer)
 
     const [resourceIdentifier, validationErrors] = resourceIdentifierResult
     if (fieldName in includeFilter && !validationErrors.length) {
@@ -48,7 +44,7 @@ export const getToOneRelationshipResult = (
         included,
         fieldsFilter,
         includeFilter,
-        pointer.concat([fieldName]),
+        pointer,
       )
     }
     return resourceIdentifierResult

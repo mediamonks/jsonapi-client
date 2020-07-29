@@ -1,4 +1,10 @@
 import { ResourceField, ResourceFieldFlag } from '../field'
 
-// A field with a NeverGet flag may not be included in a ResourceFilter
-export const isReadableField = (field: ResourceField) => !field.matches(ResourceFieldFlag.NeverGet)
+/**
+ * Returns true if `field` does not match a NeverGet flag
+ * @hidden
+ * @param field A ResourceField
+ * @returns boolean
+ */
+export const isReadableField = (field: ResourceField): boolean =>
+  !field.matches(ResourceFieldFlag.NeverGet)

@@ -27,11 +27,10 @@ export const getAttributeResult = (
   if (isSome(value)) {
     const validationErrors = field.validate(value)
     if (validationErrors.length) {
-      const attributeFieldPointer = pointer.concat([fieldName])
       return result(
         value,
         validationErrors.map((detail) =>
-          createValidationErrorObject('Invalid Attribute Value', detail, attributeFieldPointer),
+          createValidationErrorObject('Invalid Attribute Value', detail, pointer),
         ),
       )
     }
@@ -43,6 +42,6 @@ export const getAttributeResult = (
         value,
         `Required Attribute Not Found`,
         `Attribute "${fieldName}" on resource of type ${resourceObject.type} is required.`,
-        pointer.concat([fieldName]),
+        pointer,
       )
 }

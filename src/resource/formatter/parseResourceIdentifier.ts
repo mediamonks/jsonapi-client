@@ -4,6 +4,14 @@ import { ResourceIdentifier } from '../identifier'
 import { validationFailure, Result, success, failure } from './result'
 import type { ResourceFormatter } from '.'
 
+/**
+ * Returns a Result with a ResourceIdentifier if `value` is a valid resource identifer for any of the `formatters`
+ * @hidden
+ * @param formatters A ResourceFormatter[]
+ * @param value A ResourceIdentifier
+ * @param pointer A string[] representing the path to the `value`
+ * @returns Result<ResourceIdentifier, ResourceValidationErrorObject>
+ */
 export const parseResourceIdentifier = (
   formatters: ReadonlyArray<ResourceFormatter>,
   value: ResourceIdentifier,

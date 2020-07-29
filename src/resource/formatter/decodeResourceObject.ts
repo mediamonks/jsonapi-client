@@ -73,7 +73,7 @@ export const decodeResourceObject = (
         field,
         fieldName,
         resourceObject,
-        pointer,
+        pointer.concat([fieldName]),
       )
       data[fieldName] = attributeValue
       validationErrors.forEach((error) => errors.push(error))
@@ -85,7 +85,7 @@ export const decodeResourceObject = (
         included,
         fieldsFilter,
         includeFilter,
-        pointer,
+        pointer.concat([fieldName]),
       )
       data[fieldName] = relatedResourceData
       validationErrors.forEach((error) => errors.push(error))
