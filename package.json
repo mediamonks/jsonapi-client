@@ -9,7 +9,7 @@
     "start": "yarn && yarn watch",
     "watch": "tsc -w -d --skipLibCheck",
     "build": "rimraf dist && tsc -d --skipLibCheck",
-    "test": "NODE_ENV=development jest --watch --coverage",
+    "test": "NODE_ENV=development jest --no-cache --watch --coverage",
     "test:ci": "NODE_ENV=development jest",
     "prepublishOnly": "yarn build"
   },

@@ -11,7 +11,7 @@ import { ResourceFieldFlag } from '../field'
 import { RelationshipField, RelationshipFieldType } from '../field/relationship'
 import { ResourceIdentifier } from '../identifier'
 import { decodeIncludedRelationshipData } from './decodeIncludedRelationshipData'
-import { parseResourceIdentifier } from './parseResourceIdentifier'
+import { getResourceIdentifierResult } from './getResourceIdentifierResult'
 import { success, validationFailure, Result } from './result'
 import type { ResourceFormatter } from '.'
 
@@ -33,7 +33,7 @@ export const getToOneRelationshipResult = (
   const data: ResourceIdentifier | null = (value || EMPTY_OBJECT).data
 
   if (isSome(data)) {
-    const resourceIdentifierResult = parseResourceIdentifier(resourceFormatters, data, pointer)
+    const resourceIdentifierResult = getResourceIdentifierResult(resourceFormatters, data, pointer)
 
     const [resourceIdentifier, validationErrors] = resourceIdentifierResult
     if (fieldName in includeFilter && !validationErrors.length) {

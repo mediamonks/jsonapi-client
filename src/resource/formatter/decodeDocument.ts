@@ -51,7 +51,7 @@ export const decodeDocument = (
         validationErrors.forEach((error) => errors.push(error))
       })
       if (errors.length) {
-        throw new ResourceValidationError(`Validation Error`, resources, errors)
+        throw new ResourceValidationError(`Validation Failed`, resources, errors)
       }
       return new ManyResource(resources as any, resourceDocument)
     } else {
@@ -64,7 +64,7 @@ export const decodeDocument = (
         [],
       )
       if (validationErrors.length) {
-        throw new ResourceValidationError(`Validation Error`, resource, validationErrors)
+        throw new ResourceValidationError(`Validation Failed`, resource, validationErrors)
       }
       return new OneResource(resource as any, resourceDocument)
     }

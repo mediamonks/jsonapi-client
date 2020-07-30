@@ -1,10 +1,10 @@
-import { isArray, isString } from 'isntnt'
+import { isArray, isString, isNull } from 'isntnt'
 
 import { ResourceFieldsQuery, ResourceIncludeQuery, ResourceFilter } from '../../types'
 import { resourceIdentifierKey } from '../../util/types'
 import { getCombinedFilterResourceFields } from './getCombinedResourceFields'
 import { isReadableField } from './isReadableField'
-import { ResourceFormatter, formatter } from '.'
+import { ResourceFormatter } from '.'
 
 /**
  * Parse a ResourceFilter against a ResourceFormatter[]
@@ -73,9 +73,12 @@ export const assertFieldsFilter = (
 export const assertIncludeFilterAndGetNestedFormatters = (
   formatters: ReadonlyArray<ResourceFormatter>,
   fieldsFilter: ResourceFieldsQuery,
-  includeFilter: ResourceIncludeQuery,
+  includeFilter: ResourceIncludeQuery | null,
   pointer: ReadonlyArray<string>,
-): Array<ResourceFormatter> => {
+): ReadonlyArray<ResourceFormatter> => {
+  if (isNull(includeFilter)) {
+    return formatters
+  }
   const combinedRelationshipFieldNames = getCombinedFilterResourceFields(
     formatters,
     fieldsFilter,

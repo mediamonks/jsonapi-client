@@ -12,7 +12,7 @@ import type { ResourceFormatter } from '.'
  * @param pointer A string[] representing the path to the `value`
  * @returns Result<ResourceIdentifier, ResourceValidationErrorObject>
  */
-export const parseResourceIdentifier = (
+export const getResourceIdentifierResult = (
   formatters: ReadonlyArray<ResourceFormatter>,
   value: ResourceIdentifier,
   pointer: ReadonlyArray<string>,

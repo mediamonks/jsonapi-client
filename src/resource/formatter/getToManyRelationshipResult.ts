@@ -10,7 +10,7 @@ import {
 import { ResourceFieldFlag } from '../field'
 import { RelationshipField, RelationshipFieldType } from '../field/relationship'
 import { ResourceIdentifier } from '../identifier'
-import { parseResourceIdentifier } from './parseResourceIdentifier'
+import { getResourceIdentifierResult } from './getResourceIdentifierResult'
 import { success, validationFailure, Result } from './result'
 import type { ResourceFormatter } from '.'
 import { decodeIncludedRelationshipData } from './decodeIncludedRelationshipData'
@@ -63,7 +63,7 @@ export const getToManyRelationshipResult = (
   if (fieldName in includeFilter) {
     return data.reduce((result, item, index) => {
       const [resources, errors] = result
-      const [resourceIdentifier, validationErrors] = parseResourceIdentifier(
+      const [resourceIdentifier, validationErrors] = getResourceIdentifierResult(
         resourceFormatters,
         item,
         pointer.concat([String(index)]),
@@ -92,7 +92,7 @@ export const getToManyRelationshipResult = (
 
   return data.reduce((result, item, index) => {
     const [resourceIdentifiers, errors] = result
-    const [resourceIdentifier, validationErrors] = parseResourceIdentifier(
+    const [resourceIdentifier, validationErrors] = getResourceIdentifierResult(
       resourceFormatters,
       item,
       pointer.concat([String(index)]),
