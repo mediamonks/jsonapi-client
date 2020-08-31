@@ -1,28 +1,22 @@
 import { None, Predicate } from 'isntnt'
 
 import {
+  ResourceFieldRule,
+  ResourceFieldFlag,
+  ResourceFieldRoot,
+  ResourceFieldMethod,
+} from '../../enum'
+import {
   AttributeFieldFromFactory,
   AttributeValue,
   AttributeValueFormatter,
   ResourceFieldFactoryRules,
   AttributeFieldValidator,
 } from '../../types'
-import {
-  ResourceField,
-  ResourceFieldRule,
-  ResourceFieldFlag,
-  ResourceFieldRoot,
-  ResourceFieldMethod,
-  resourceFieldMaskIndex,
-  ResourceFieldMaskIndex,
-} from '../field'
+import { reflect } from '../../util/helpers'
+import { resourceFieldMaskIndex, ResourceField, ResourceFieldMaskIndex } from '../field'
 
-const reflect = <T>(value: T): T => value
-
-/*
- * @private
- */
-export const defaultAttributeFormatter: AttributeValueFormatter<any, any> = {
+const defaultAttributeFormatter: AttributeValueFormatter<any, any> = {
   serialize: reflect,
   deserialize: reflect,
 }
@@ -49,7 +43,7 @@ export class AttributeField<
   T,
   U extends AttributeValue,
   V extends ResourceFieldFlag
-  > extends ResourceField<ResourceFieldRoot.Attributes, V> {
+> extends ResourceField<ResourceFieldRoot.Attributes, V> {
   readonly validate: (value: unknown) => ReadonlyArray<string>
   readonly predicate: Predicate<U>
   readonly serialize: (value: T) => U
@@ -61,10 +55,10 @@ export class AttributeField<
     formatter: AttributeValueFormatter<U, T>,
   ) {
     super(ResourceFieldRoot.Attributes, flag)
-    this.serialize = formatter.serialize.bind(formatter)
-    this.deserialize = formatter.deserialize.bind(formatter)
     this.predicate = validator.predicate.bind(validator)
     this.validate = validator.validate.bind(validator)
+    this.serialize = formatter.serialize.bind(formatter)
+    this.deserialize = formatter.deserialize.bind(formatter)
   }
 }
 
@@ -90,7 +84,7 @@ export namespace Attribute {
   export type OptionalReadonly<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof optionalReadonly>
+  > = AttributeFieldFromFactory<T, U, typeof optionalReadonly>
 
   export const optionalGenerated = createAttributeFieldFactory(
     ResourceFieldRule.Maybe,
@@ -101,7 +95,7 @@ export namespace Attribute {
   export type OptionalGenerated<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof optionalGenerated>
+  > = AttributeFieldFromFactory<T, U, typeof optionalGenerated>
 
   export const optionalStatic = createAttributeFieldFactory(
     ResourceFieldRule.Maybe,
@@ -112,7 +106,7 @@ export namespace Attribute {
   export type OptionalStatic<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof optionalStatic>
+  > = AttributeFieldFromFactory<T, U, typeof optionalStatic>
 
   export const optionalWriteOnce = createAttributeFieldFactory(
     ResourceFieldRule.Never,
@@ -123,7 +117,7 @@ export namespace Attribute {
   export type OptionalWriteOnce<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof optionalWriteOnce>
+  > = AttributeFieldFromFactory<T, U, typeof optionalWriteOnce>
 
   export const optionalWriteOnly = createAttributeFieldFactory(
     ResourceFieldRule.Never,
@@ -134,7 +128,7 @@ export namespace Attribute {
   export type OptionalWriteOnly<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof optionalWriteOnly>
+  > = AttributeFieldFromFactory<T, U, typeof optionalWriteOnly>
 
   export const required = createAttributeFieldFactory(
     ResourceFieldRule.Always,
@@ -157,7 +151,7 @@ export namespace Attribute {
   export type RequiredReadonly<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof requiredReadonly>
+  > = AttributeFieldFromFactory<T, U, typeof requiredReadonly>
 
   export const requiredGenerated = createAttributeFieldFactory(
     ResourceFieldRule.Always,
@@ -168,7 +162,7 @@ export namespace Attribute {
   export type RequiredGenerated<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof requiredGenerated>
+  > = AttributeFieldFromFactory<T, U, typeof requiredGenerated>
 
   export const requiredStatic = createAttributeFieldFactory(
     ResourceFieldRule.Always,
@@ -179,7 +173,7 @@ export namespace Attribute {
   export type RequiredStatic<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof requiredStatic>
+  > = AttributeFieldFromFactory<T, U, typeof requiredStatic>
 
   export const requiredWriteOnce = createAttributeFieldFactory(
     ResourceFieldRule.Never,
@@ -190,7 +184,7 @@ export namespace Attribute {
   export type RequiredWriteOnce<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof requiredWriteOnce>
+  > = AttributeFieldFromFactory<T, U, typeof requiredWriteOnce>
 
   export const requiredWriteOnly = createAttributeFieldFactory(
     ResourceFieldRule.Never,
@@ -201,5 +195,5 @@ export namespace Attribute {
   export type RequiredWriteOnly<
     T extends Exclude<AttributeValue, None>,
     U = T
-    > = AttributeFieldFromFactory<T, U, typeof requiredWriteOnly>
+  > = AttributeFieldFromFactory<T, U, typeof requiredWriteOnly>
 }

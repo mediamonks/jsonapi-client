@@ -1,37 +1,6 @@
 import type { AttributeField } from './field/attribute'
-import type { RelationshipField, RelationshipFieldType } from './field/relationship'
-
-export enum ResourceFieldRoot {
-  Attributes = 'attributes',
-  Relationships = 'relationships',
-}
-
-/** @hidden */
-export enum ResourceFieldRule {
-  Never,
-  Maybe,
-  Always,
-}
-
-/** @hidden */
-export enum ResourceFieldMethod {
-  Get,
-  Post,
-  Patch,
-}
-
-/** @hidden */
-export enum ResourceFieldFlag {
-  NeverGet = 1, // 1 << 0
-  MaybeGet = 2, // 1 << 1
-  AlwaysGet = 4, // 1 << 2
-  NeverPost = 8, // 1 << 3
-  MaybePost = 16, // 1 << 4
-  AlwaysPost = 32, // 1 << 5
-  NeverPatch = 64, // 1 << 6
-  MaybePatch = 128, // 1 << 7
-  AlwaysPatch = 256, // 1 << 8
-}
+import type { RelationshipField } from './field/relationship'
+import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRoot } from '../enum'
 
 /** @hidden */
 export type ResourceFieldMaskIndex = typeof resourceFieldMaskIndex
@@ -67,10 +36,10 @@ export class ResourceField<T extends ResourceFieldRoot = any, U extends Resource
   }
 
   isToOneRelationshipField(): this is RelationshipField<any, RelationshipFieldType.ToOne, any> {
-    return this.isRelationshipField() && this.relationshipType === 'to-one'
+    return this.isRelationshipField() && this.relationshipType === RelationshipFieldType.ToOne
   }
 
   isToManyRelationshipField(): this is RelationshipField<any, RelationshipFieldType.ToMany, any> {
-    return this.isRelationshipField() && this.relationshipType === 'to-many'
+    return this.isRelationshipField() && this.relationshipType === RelationshipFieldType.ToMany
   }
 }

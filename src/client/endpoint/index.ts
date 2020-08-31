@@ -1,3 +1,4 @@
+import { ResourceFieldFlag } from '../../enum'
 import { ResourceFormatter } from '../../resource/formatter'
 import {
   ResourcePath,
@@ -14,10 +15,9 @@ import {
   ToOneRelationshipFieldNameWithFlag,
   JSONAPISearchParams,
 } from '../../types'
-import { Client } from '..'
-import { OneResource, ManyResource } from '../result'
 import { createURL } from '../../util/url'
-import { ResourceFieldFlag } from '../../resource/field'
+import { OneResource, ManyResource } from '../result'
+import { Client } from '..'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, any>> {
   readonly client: T

@@ -1,4 +1,5 @@
-import { ResourceField, ResourceFieldFlag } from '../field'
+import { ResourceFieldFlag } from '../../enum'
+import type { ResourceField } from '../field'
 
 /**
  * Returns true if `field` does not match a NeverGet flag

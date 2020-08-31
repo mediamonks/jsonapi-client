@@ -7,9 +7,10 @@ import {
   Predicate,
 } from 'isntnt'
 
-import { ResourceField, ResourceFieldFlag, ResourceFieldRule } from './resource/field'
+import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from './enum'
+import { ResourceField } from './resource/field'
 import { AttributeField } from './resource/field/attribute'
-import { RelationshipField, RelationshipFieldType } from './resource/field/relationship'
+import { RelationshipField } from './resource/field/relationship'
 import { ResourceFormatter } from './resource/formatter'
 import { ResourceIdentifier } from './resource/identifier'
 

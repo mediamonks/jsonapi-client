@@ -1,5 +1,6 @@
 import { isArray, isUndefined } from 'isntnt'
 
+import { RelationshipFieldType, ResourceFieldFlag } from '../../enum'
 import { ResourceValidationErrorObject } from '../../error'
 import {
   JSONAPIResourceObject,
@@ -7,13 +8,12 @@ import {
   ResourceIncludeQuery,
   FilteredResource,
 } from '../../types'
-import { ResourceFieldFlag } from '../field'
-import { RelationshipField, RelationshipFieldType } from '../field/relationship'
+import { RelationshipField } from '../field/relationship'
 import { ResourceIdentifier } from '../identifier'
+import { decodeIncludedRelationshipData } from './decodeIncludedRelationshipData'
 import { getResourceIdentifierResult } from './getResourceIdentifierResult'
 import { success, validationFailure, Result } from './result'
 import type { ResourceFormatter } from '.'
-import { decodeIncludedRelationshipData } from './decodeIncludedRelationshipData'
 
 const EMPTY_OBJECT = Object.freeze({}) as Record<any, any>
 

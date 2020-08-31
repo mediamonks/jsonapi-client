@@ -1,10 +1,10 @@
 import { isSome } from 'isntnt'
 
+import { ResourceFieldFlag } from '../../enum'
 import { createValidationErrorObject, ResourceValidationErrorObject } from '../../error'
+import type { JSONAPIResourceObject, ResourceFieldName } from '../../types'
 import type { AttributeField } from '../field/attribute'
-import { JSONAPIResourceObject, ResourceFieldName } from '../../types'
-import { ResourceFieldFlag } from '../field'
-import { failure, success, validationFailure, Result, result } from './result'
+import { success, validationFailure, result, Result } from './result'
 
 const EMPTY_OBJECT = Object.freeze({}) as Record<any, any> // Frozen to catch accidental mutations.
 

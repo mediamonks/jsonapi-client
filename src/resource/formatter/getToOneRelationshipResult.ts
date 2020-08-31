@@ -1,5 +1,6 @@
 import { isSome } from 'isntnt'
 
+import { RelationshipFieldType, ResourceFieldFlag } from '../../enum'
 import { ResourceValidationErrorObject } from '../../error'
 import {
   JSONAPIResourceObject,
@@ -7,8 +8,7 @@ import {
   ResourceIncludeQuery,
   FilteredResource,
 } from '../../types'
-import { ResourceFieldFlag } from '../field'
-import { RelationshipField, RelationshipFieldType } from '../field/relationship'
+import { RelationshipField } from '../field/relationship'
 import { ResourceIdentifier } from '../identifier'
 import { decodeIncludedRelationshipData } from './decodeIncludedRelationshipData'
 import { getResourceIdentifierResult } from './getResourceIdentifierResult'

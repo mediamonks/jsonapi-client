@@ -5,46 +5,15 @@ import { JSONAPIDocument, JSONAPIRequestMethod, ResourcePath } from '../types'
 import { Endpoint } from './endpoint'
 import { Type } from '../type'
 import { urlString, url } from '../util/type-validation'
+import { reflect } from '../util/helpers'
+import { AbsolutePathRoot, ImplicitIncludes } from '../enum'
 
 const JSON_API_MIME_TYPE = 'application/vnd.api+json'
-
-// Whether a relative path that starts with '/' will start from the client url or the url domain
-export enum AbsolutePathRoot {
-  Domain = 'domain',
-  Client = 'client',
-}
-
-// To what degree relationship data is included by default
-export enum ImplicitIncludes {
-  None = 'none',
-  All = 'all',
-  PrimaryRelationships = 'primary-relationships',
-}
-
-export enum InitialRelationshipFieldValue {
-  Data, // { data }
-  DataWithLinks, // { data, links: { self, related } }
-  DataWithSelfLink, // { data, links: { self } }
-  DataWithRelatedLink,
-  Links,
-  SelfLink,
-  RelatedLink,
-}
-
-export enum RelationshipMeta {
-  None,
-  Data,
-  DataAndLinks,
-  DataAndSelfLink,
-  DataAndMetaLink,
-}
 
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
   implicitRelationshipData: ImplicitIncludes.None
 }
-
-const reflect = <T>(value: T) => value
 
 /**
  * @private
@@ -124,14 +93,14 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
             url.href,
             body != null
               ? {
-                method,
-                headers,
-                body: JSON.stringify(body),
-              }
+                  method,
+                  headers,
+                  body: JSON.stringify(body),
+                }
               : {
-                method,
-                headers,
-              },
+                  method,
+                  headers,
+                },
           ),
         ),
       )

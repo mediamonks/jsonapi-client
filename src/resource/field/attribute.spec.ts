@@ -1,26 +1,64 @@
-import { isString, Predicate } from 'isntnt'
+import { isString } from 'isntnt'
 
-import { ResourceFieldFlag } from '../field'
-import { Attribute } from './attribute'
+import { ResourceFieldFlag, ResourceFieldRoot } from '../../enum'
+import { Type } from '../../type'
+import { Attribute, AttributeField } from './attribute'
 
-const createValidator = <T>(description: string, predicate: Predicate<T>) => {
-  return {
-    predicate,
-    validate(value: unknown): ReadonlyArray<string> {
-      return predicate(value) ? [] : [`value must be ${description}`]
-    },
-  }
+const ATTRIBUTE_FIELD_FLAG =
+  ResourceFieldFlag.AlwaysGet | ResourceFieldFlag.AlwaysPatch | ResourceFieldFlag.AlwaysPost
+
+const STRING_VALIDATOR = Type.is('a string', isString)
+const FORMATTER = {
+  deserialize: (value: any) => value,
+  serialize: (value: any) => value,
 }
 
-const string = createValidator('a string', isString)
-
 describe('AttributeField', () => {
-  it.todo('is an AttributeField constructor')
-
-  it.todo('extends ResourceField')
+  it('is an AttributeField constructor that', () => {
+    const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+    expect(attributeField).toBeInstanceOf(AttributeField)
+  })
 
   describe('#root', () => {
-    it.todo('equals ResourceFieldRoot.Attributes')
+    it('equals ResourceFieldRoot.Attributes', () => {
+      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+      expect(attributeField.root).toBe(ResourceFieldRoot.Attributes)
+    })
+  })
+
+  describe('#flag', () => {
+    it('equals its flag parameter', () => {
+      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+      expect(attributeField.flag).toBe(ATTRIBUTE_FIELD_FLAG)
+    })
+  })
+
+  describe('#predicate', () => {
+    it('equals the its validator parameter predicate property', () => {
+      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+      expect(attributeField.predicate).toBe(STRING_VALIDATOR.predicate)
+    })
+  })
+
+  describe('#validate', () => {
+    it('equals the its validator parameter validate property', () => {
+      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+      expect(attributeField.validate).toBe(STRING_VALIDATOR.validate)
+    })
+  })
+
+  describe('#deserialize', () => {
+    it('equals the its formatter parameter deserialize property', () => {
+      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+      expect(attributeField.deserialize).toBe(FORMATTER.deserialize)
+    })
+  })
+
+  describe('#serialize', () => {
+    it('equals the its formatter parameter serialize property', () => {
+      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+      expect(attributeField.serialize).toBe(FORMATTER.serialize)
+    })
   })
 })
 
@@ -33,27 +71,27 @@ describe('createAttributeFieldFactory', () => {
 describe('Attribute', () => {
   describe('optional', () => {
     it('creates an optional AttributeField', () => {
-      const optionalAttributeField = Attribute.optional(string)
+      const optionalAttributeField = Attribute.optional(STRING_VALIDATOR)
 
       expect(optionalAttributeField.flag).toBe(
         ResourceFieldFlag.MaybeGet | ResourceFieldFlag.MaybePost | ResourceFieldFlag.MaybePatch,
       )
 
       expect(optionalAttributeField.validate('abc')).toEqual([])
-      expect(optionalAttributeField.validate(null)).toEqual(['value must be a string'])
+      expect(optionalAttributeField.validate(null)).toEqual(['Value must be a string'])
     })
   })
 
   describe('required', () => {
     it('creates a required AttributeField', () => {
-      const requiredAttributeField = Attribute.required(string)
+      const requiredAttributeField = Attribute.required(STRING_VALIDATOR)
 
       expect(requiredAttributeField.flag).toBe(
         ResourceFieldFlag.AlwaysGet | ResourceFieldFlag.AlwaysPost | ResourceFieldFlag.MaybePatch,
       )
 
       expect(requiredAttributeField.validate('abc')).toEqual([])
-      expect(requiredAttributeField.validate(null)).toEqual(['value must be a string'])
+      expect(requiredAttributeField.validate(null)).toEqual(['Value must be a string'])
     })
   })
 })
