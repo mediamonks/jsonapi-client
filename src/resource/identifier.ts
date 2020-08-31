@@ -1,5 +1,5 @@
-import { ResourceId, ResourceType } from '../../types'
-import { resourceId, resourceType } from '../../util/types'
+import { ResourceId, ResourceType } from '../types'
+import { resourceId, resourceType } from '../util/type-validation'
 
 export class ResourceIdentifier<T extends ResourceType = any> {
   readonly type: T

@@ -1,5 +1,5 @@
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../../error'
-import { resourceIdentifier } from '../../util/types'
+import { resourceIdentifier } from '../../util/type-validation'
 import { ResourceIdentifier } from '../identifier'
 import { validationFailure, Result, success, failure } from './result'
 import type { ResourceFormatter } from '.'

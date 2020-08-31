@@ -1,9 +1,10 @@
-import { Serializable, SerializableObject, isString, and, instance, isAny, isObject } from 'isntnt'
+import { Serializable, SerializableObject, isString, isAny, isObject } from 'isntnt'
 
 import { ResourceFormatter } from '../resource/formatter'
 import { JSONAPIDocument, JSONAPIRequestMethod, ResourcePath } from '../types'
 import { Endpoint } from './endpoint'
 import { Type } from '../type'
+import { urlString, url } from '../util/type-validation'
 
 const JSON_API_MIME_TYPE = 'application/vnd.api+json'
 
@@ -14,16 +15,33 @@ export enum AbsolutePathRoot {
 }
 
 // To what degree relationship data is included by default
-export enum ImplicitRelationshipData {
+export enum ImplicitIncludes {
   None = 'none',
   All = 'all',
-  ResourceIdentifiers = 'resource-identifiers',
   PrimaryRelationships = 'primary-relationships',
+}
+
+export enum InitialRelationshipFieldValue {
+  Data, // { data }
+  DataWithLinks, // { data, links: { self, related } }
+  DataWithSelfLink, // { data, links: { self } }
+  DataWithRelatedLink,
+  Links,
+  SelfLink,
+  RelatedLink,
+}
+
+export enum RelationshipMeta {
+  None,
+  Data,
+  DataAndLinks,
+  DataAndSelfLink,
+  DataAndMetaLink,
 }
 
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
-  implicitRelationshipData: ImplicitRelationshipData.None
+  implicitRelationshipData: ImplicitIncludes.None
 }
 
 const reflect = <T>(value: T) => value
@@ -33,7 +51,7 @@ const reflect = <T>(value: T) => value
  */
 export const defaultClientSetup: DefaultClientSetup = {
   absolutePathRoot: AbsolutePathRoot.Domain,
-  implicitRelationshipData: ImplicitRelationshipData.None,
+  implicitRelationshipData: ImplicitIncludes.None,
   transformRelationshipPath: reflect,
   beforeRequestURL: reflect,
   beforeRequestHeaders: reflect,
@@ -44,7 +62,7 @@ export const defaultClientSetup: DefaultClientSetup = {
 
 export type ClientSetup = {
   absolutePathRoot: AbsolutePathRoot
-  implicitRelationshipData: ImplicitRelationshipData
+  implicitRelationshipData: ImplicitIncludes
   transformRelationshipPath(path: string): string
   beforeRequest(request: Request): Request | Promise<Request>
   beforeRequestURL(url: URL): URL | Promise<URL>
@@ -106,14 +124,14 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
             url.href,
             body != null
               ? {
-                  method,
-                  headers,
-                  body: JSON.stringify(body),
-                }
+                method,
+                headers,
+                body: JSON.stringify(body),
+              }
               : {
-                  method,
-                  headers,
-                },
+                method,
+                headers,
+              },
           ),
         ),
       )
@@ -137,21 +155,7 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
   }
 }
 
-const urlString: Type<string> = Type.is(
-  'a valid url string',
-  and(isString, (value: unknown): value is string => {
-    try {
-      new URL(value as any)
-      return true
-    } catch (_) {
-      return false
-    }
-  }),
-)
-
-// Types
-const url: Type<URL> = Type.is('a URL', instance(URL))
-
+// Experimental
 const createJSONAPITypeCode = (code: number): string => `jsonapi-client:${code}`
 
 const parseClientURL = (value: unknown): URL =>
@@ -166,7 +170,7 @@ const clientSetup: Type<ClientSetup> = Type.shape('a valid client setup object',
   absolutePathRoot: Type.either(...Object.values(AbsolutePathRoot)).withCode(
     createJSONAPITypeCode(150),
   ),
-  implicitRelationshipData: Type.either(...Object.values(ImplicitRelationshipData)).withCode(
+  implicitRelationshipData: Type.either(...Object.values(ImplicitIncludes)).withCode(
     createJSONAPITypeCode(131),
   ),
   transformRelationshipPath: Type.function.withCode(createJSONAPITypeCode(25)),

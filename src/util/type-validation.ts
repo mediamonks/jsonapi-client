@@ -1,4 +1,4 @@
-import { either, isString, test, at, min, isAny, isObject, optional, isArray } from 'isntnt'
+import { either, isString, test, at, min, isAny, isObject, optional, isArray, and, instance } from 'isntnt'
 
 import { ResourceField } from '../resource/field'
 import { Type } from '../type'
@@ -16,6 +16,23 @@ export const nonEmptyStringArray: Type<Array<string>> = Type.and([
   Type.array(string),
   notEmpty,
 ]) as any
+
+/** @hidden */
+export const urlString: Type<string> = Type.is(
+  'a valid url string',
+  and(isString, (value: unknown): value is string => {
+    try {
+      new URL(value as any)
+      return true
+    } catch (_) {
+      return false
+    }
+  }),
+)
+
+/** @hidden */
+export const url: Type<URL> = Type.is('a URL', instance(URL))
+
 
 /** @hidden */
 export const resourceType = Type.is(

@@ -1,7 +1,7 @@
 import { isString, Predicate } from 'isntnt'
 
-import { ResourceFieldFlag } from '..'
-import { Attribute } from '.'
+import { ResourceFieldFlag } from '../field'
+import { Attribute } from './attribute'
 
 const createValidator = <T>(description: string, predicate: Predicate<T>) => {
   return {

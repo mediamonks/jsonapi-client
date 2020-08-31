@@ -5,7 +5,7 @@ import {
   ResourceFieldsQuery,
   ResourceIncludeQuery,
 } from '../../types'
-import { resourceObject as resourceObjectType } from '../../util/types'
+import { resourceObject as resourceObjectType } from '../../util/type-validation'
 import { ResourceField } from '../field'
 import { getAttributeResult } from './getAttributeResult'
 import { getFilteredFieldNames } from './getFilteredFieldNames'

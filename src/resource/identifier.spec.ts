@@ -1,4 +1,4 @@
-import { ResourceIdentifier } from '.'
+import { ResourceIdentifier } from './identifier'
 
 describe('ResourceIdentifier', () => {
   describe('#constructor', () => {

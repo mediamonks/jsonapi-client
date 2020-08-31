@@ -1,4 +1,4 @@
-import { OneResource, ManyResource } from '../../client/result'
+import { OneResource, ManyResource } from '../client/result'
 import {
   ResourceFields,
   ResourceFieldsQuery,
@@ -12,11 +12,11 @@ import {
   JSONAPIResourceObject,
   ResourcePatchData,
   JSONAPIResourceCreateObject,
-} from '../../types'
-import { resourceType, parseResourceFields } from '../../util/types'
-import { ResourceIdentifier } from '../identifier'
-import { decodeDocument } from './decodeDocument'
-import { parseResourceFilter } from './parseResourceFilter'
+} from '../types'
+import { resourceType, parseResourceFields } from '../util/type-validation'
+import { decodeDocument } from './formatter/decodeDocument'
+import { parseResourceFilter } from './formatter/parseResourceFilter'
+import { ResourceIdentifier } from './identifier'
 
 export const formatter = <T extends ResourceType, U extends ResourceFields>(type: T, fields: U) =>
   new ResourceFormatter(type, fields)

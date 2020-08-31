@@ -1,7 +1,7 @@
 import { isArray, isString, isNull } from 'isntnt'
 
 import { ResourceFieldsQuery, ResourceIncludeQuery, ResourceFilter } from '../../types'
-import { resourceIdentifierKey } from '../../util/types'
+import { resourceIdentifierKey } from '../../util/type-validation'
 import { getCombinedFilterResourceFields } from './getCombinedResourceFields'
 import { isReadableField } from './isReadableField'
 import { ResourceFormatter } from '.'

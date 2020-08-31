@@ -1,5 +1,5 @@
-import type { AttributeField } from './attribute'
-import type { RelationshipField, RelationshipFieldType } from './relationship'
+import type { AttributeField } from './field/attribute'
+import type { RelationshipField, RelationshipFieldType } from './field/relationship'
 
 export enum ResourceFieldRoot {
   Attributes = 'attributes',

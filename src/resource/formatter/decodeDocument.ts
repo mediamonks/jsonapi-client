@@ -5,7 +5,7 @@ import {
   ResourceValidationErrorObject,
 } from '../../error'
 import { JSONAPIDocument, ResourceFilter } from '../../types'
-import { jsonapiDocument } from '../../util/types'
+import { jsonapiDocument } from '../../util/type-validation'
 import { decodeResourceObject } from './decodeResourceObject'
 import { parseResourceFilter } from './parseResourceFilter'
 import type { ResourceFormatter } from '.'

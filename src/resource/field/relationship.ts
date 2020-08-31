@@ -3,8 +3,8 @@ import {
   ToManyRelationshipFieldFromFactory,
   ResourceFieldFactoryRules,
   NonEmptyReadonlyArray,
-} from '../../../types'
-import { ResourceFormatter } from '../../formatter'
+} from '../../types'
+import { ResourceFormatter } from '../formatter'
 import {
   ResourceField,
   ResourceFieldRule,
@@ -13,7 +13,7 @@ import {
   ResourceFieldMaskIndex,
   ResourceFieldMethod,
   resourceFieldMaskIndex,
-} from '..'
+} from '../field'
 
 export enum RelationshipFieldType {
   ToOne = 'to-one',
@@ -24,39 +24,39 @@ export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFacto
   ...rules: T
 ) => <U extends ResourceFormatter<any, any>>(
   getResources: () => NonEmptyReadonlyArray<U>,
-): RelationshipField<
-  U,
-  RelationshipFieldType.ToOne,
-  | ResourceFieldMaskIndex[ResourceFieldMethod.Get][T[ResourceFieldMethod.Get]]
-  | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
-  | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
-> => {
-  const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
-  const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
-  return new RelationshipField(flag as any, RelationshipFieldType.ToOne, getResources)
-}
+  ): RelationshipField<
+    U,
+    RelationshipFieldType.ToOne,
+    | ResourceFieldMaskIndex[ResourceFieldMethod.Get][T[ResourceFieldMethod.Get]]
+    | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
+    | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
+  > => {
+    const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
+    const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
+    return new RelationshipField(flag as any, RelationshipFieldType.ToOne, getResources)
+  }
 
 export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
 ) => <U extends ResourceFormatter<any, any>>(
   getResources: () => NonEmptyReadonlyArray<U>,
-): RelationshipField<
-  U,
-  RelationshipFieldType.ToMany,
-  | ResourceFieldMaskIndex[ResourceFieldMethod.Get][T[ResourceFieldMethod.Get]]
-  | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
-  | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
-> => {
-  const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
-  const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
-  return new RelationshipField(flag as any, RelationshipFieldType.ToMany, getResources)
-}
+  ): RelationshipField<
+    U,
+    RelationshipFieldType.ToMany,
+    | ResourceFieldMaskIndex[ResourceFieldMethod.Get][T[ResourceFieldMethod.Get]]
+    | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
+    | ResourceFieldMaskIndex[ResourceFieldMethod.Patch][T[ResourceFieldMethod.Patch]]
+  > => {
+    const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
+    const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
+    return new RelationshipField(flag as any, RelationshipFieldType.ToMany, getResources)
+  }
 
 export class RelationshipField<
   T extends ResourceFormatter<any, any>,
   U extends RelationshipFieldType,
   V extends ResourceFieldFlag
-> extends ResourceField<ResourceFieldRoot.Relationships, V> {
+  > extends ResourceField<ResourceFieldRoot.Relationships, V> {
   relationshipType: U
   getResources: () => NonEmptyReadonlyArray<T>
 
@@ -87,7 +87,7 @@ export namespace Relationship {
 
   export type ToOneRequired<
     T extends ResourceFormatter<any, any>
-  > = ToOneRelationshipFieldFromFactory<T, typeof toOneRequired>
+    > = ToOneRelationshipFieldFromFactory<T, typeof toOneRequired>
 
   export const toOneReadOnly = createToOneRelationshipFieldFactory(
     ResourceFieldRule.Maybe,
@@ -97,7 +97,7 @@ export namespace Relationship {
 
   export type ToOneReadOnly<
     T extends ResourceFormatter<any, any>
-  > = ToOneRelationshipFieldFromFactory<T, typeof toOneReadOnly>
+    > = ToOneRelationshipFieldFromFactory<T, typeof toOneReadOnly>
 
   export const toMany = createToManyRelationshipFieldFactory(
     ResourceFieldRule.Maybe,
@@ -118,7 +118,7 @@ export namespace Relationship {
 
   export type ToManyRequired<
     T extends ResourceFormatter<any, any>
-  > = ToManyRelationshipFieldFromFactory<T, typeof toManyRequired>
+    > = ToManyRelationshipFieldFromFactory<T, typeof toManyRequired>
 
   export const toManyReadOnly = createToManyRelationshipFieldFactory(
     ResourceFieldRule.Maybe,
@@ -128,5 +128,5 @@ export namespace Relationship {
 
   export type ToManyReadOnly<
     T extends ResourceFormatter<any, any>
-  > = ToManyRelationshipFieldFromFactory<T, typeof toManyReadOnly>
+    > = ToManyRelationshipFieldFromFactory<T, typeof toManyReadOnly>
 }
