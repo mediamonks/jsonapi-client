@@ -1,5 +1,6 @@
 import { isArray, isObject, isSome, or, isSerializableNumber, and, isString } from 'isntnt'
 
+import { EMPTY_ARRAY } from '../util/constants'
 import {
   ResourceFilter,
   JSONAPISearchParams,
@@ -9,8 +10,6 @@ import {
 } from '../types'
 
 type URLSearchParamEntry = [string, string]
-
-const EMPTY_ARRAY: ReadonlyArray<any> = []
 
 const isPrimitiveParameterValue = or(
   isSerializableNumber,
