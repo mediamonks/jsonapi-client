@@ -3,10 +3,9 @@ import { isSome } from 'isntnt'
 import { ResourceFieldFlag } from '../../enum'
 import { createValidationErrorObject, ResourceValidationErrorObject } from '../../error'
 import type { JSONAPIResourceObject, ResourceFieldName } from '../../types'
+import { EMPTY_OBJECT } from '../../util/constants'
 import type { AttributeField } from '../field/attribute'
 import { success, validationFailure, result, Result } from './result'
-
-const EMPTY_OBJECT = Object.freeze({}) as Record<any, any> // Frozen to catch accidental mutations.
 
 /**
  * Get an attribute field Result from a JSONAPIResourceObject.

@@ -138,7 +138,7 @@ type MonoResourcePatchData<T extends ResourceFormatter<any, any>> = {
 
 export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
   [P in T['type']]: MonoResourcePatchData<Extract<T, { type: P }>>
-}[keyof T]
+}[T['type']]
 
 //
 export type ExperimentalResourceQuery<
@@ -537,51 +537,87 @@ export type ToManyRelationshipFieldFromFactory<
  */
 export type JSONAPIVersion = '1.0'
 
-/**
- * {@link https://jsonapi.org/format/#document-structure|JSON:API Reference}
- */
-export type JSONAPIDocument<
-  T extends ResourceFormatter<any, any> | Array<ResourceFormatter<any, any>> = any
-> = (
-  | ((
-      | {
-          // data and errors are mutually exclusive
-          data: JSONAPIResourceObject<
-            T extends ResourceFormatter<any, any>
-              ? T
-              : T extends Array<ResourceFormatter<any, any>>
-              ? T[number]
-              : never
-          >
-          included?: Array<
-            JSONAPIResourceObject<
-              ResourceRelatedResources<
-                T extends ResourceFormatter<any, any>
-                  ? T
-                  : T extends Array<ResourceFormatter<any, any>>
-                  ? T[number]
-                  : never
-              >
-            >
-          >
-          errors?: never
-        }
-      | {
-          data?: never
-          included?: never
-          errors: Array<JSONAPIErrorObject>
-        }
-    ) & {
-      meta?: JSONAPIMetaObject
-    })
-  | {
-      meta: JSONAPIMetaObject
-    }
-) & {
+type BaseJSONAPIDocument = {
+  meta?: JSONAPIMetaObject
+  links?: JSONAPILinksObject
   jsonapi?: {
     version?: JSONAPIVersion
   }
-  links?: JSONAPILinksObject
+}
+
+/**
+ * {@link https://jsonapi.org/format/#document-structure|JSON:API Reference}
+ */
+export type JSONAPIDocument<T extends ResourceFormatter | Array<ResourceFormatter> = any> =
+  | JSONAPISuccessDocument<T>
+  | JSONAPIFailureDocument
+// (
+//   | ((
+//       | {
+//           // data and errors are mutually exclusive
+//           data: JSONAPIResourceObject<
+//             T extends ResourceFormatter<any, any>
+//               ? T
+//               : T extends Array<ResourceFormatter<any, any>>
+//               ? T[number]
+//               : never
+//           >
+//           included?: Array<
+//             JSONAPIResourceObject<
+//               ResourceRelatedResources<
+//                 T extends ResourceFormatter<any, any>
+//                   ? T
+//                   : T extends Array<ResourceFormatter<any, any>>
+//                   ? T[number]
+//                   : never
+//               >
+//             >
+//           >
+//           errors?: never
+//         }
+//       | {
+//           data?: never
+//           included?: never
+//           errors: Array<JSONAPIErrorObject>
+//         }
+//     ) & {
+//       meta?: JSONAPIMetaObject
+//     })
+//   | {
+//       meta: JSONAPIMetaObject
+//     }
+// ) & {
+//   jsonapi?: {
+//     version?: JSONAPIVersion
+//   }
+//   links?: JSONAPILinksObject
+// }
+
+export type JSONAPISuccessDocument<
+  T extends ResourceFormatter | Array<ResourceFormatter> = any
+> = BaseJSONAPIDocument & {
+  data: JSONAPIResourceObject<
+    T extends ResourceFormatter<any, any>
+      ? T
+      : T extends Array<ResourceFormatter<any, any>>
+      ? T[number]
+      : never
+  >
+  included?: Array<
+    JSONAPIResourceObject<
+      ResourceRelatedResources<
+        T extends ResourceFormatter<any, any>
+          ? T
+          : T extends Array<ResourceFormatter<any, any>>
+          ? T[number]
+          : never
+      >
+    >
+  >
+}
+
+export type JSONAPIFailureDocument = BaseJSONAPIDocument & {
+  errors: Array<JSONAPIErrorObject>
 }
 
 /**
@@ -724,7 +760,7 @@ export type JSONAPIPageParams =
 /**
  * {@link https://jsonapi.org/format/#fetching-sorting|JSON:API Reference}
  */
-export type JSONAPISortParams = NonEmptyReadonlyArray<string>
+export type JSONAPISortParams = ReadonlyArray<string>
 
 /**
  * {@link https://jsonapi.org/format/#fetching-filtering|JSON:API Reference}

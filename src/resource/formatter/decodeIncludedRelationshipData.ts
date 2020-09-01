@@ -15,7 +15,7 @@ export const decodeIncludedRelationshipData = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
   resourceIdentifier: ResourceIdentifier,
-  included: Array<JSONAPIResourceObject>,
+  included: ReadonlyArray<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any>,
   pointer: ReadonlyArray<string>,

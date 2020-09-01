@@ -5,10 +5,11 @@ import {
   ResourceValidationErrorObject,
 } from '../../error'
 import { JSONAPIDocument, ResourceFilter } from '../../types'
-import { jsonapiDocument } from '../../util/type-validation'
+import { jsonapiDocument } from '../../util/validators'
 import { decodeResourceObject } from './decodeResourceObject'
 import { parseResourceFilter } from './parseResourceFilter'
 import type { ResourceFormatter } from '.'
+import { EMPTY_OBJECT, EMPTY_ARRAY } from '../../util/constants'
 
 export const decodeDocument = (
   formatters: ReadonlyArray<ResourceFormatter>,
@@ -28,11 +29,11 @@ export const decodeDocument = (
   }
 
   if ('data' in resourceDocument) {
-    parseResourceFilter(formatters, resourceFilter || {})
+    parseResourceFilter(formatters, resourceFilter || EMPTY_OBJECT)
 
     const included = resourceDocument.included
       ? resourceDocument.included.concat(resourceDocument.data)
-      : []
+      : EMPTY_ARRAY
 
     if (Array.isArray(resourceDocument.data)) {
       const errors: Array<ResourceValidationErrorObject> = []
@@ -43,8 +44,8 @@ export const decodeDocument = (
           formatters,
           resourceObject,
           included,
-          resourceFilter?.fields || ({} as any),
-          resourceFilter?.include || {},
+          resourceFilter?.fields || EMPTY_OBJECT,
+          resourceFilter?.include || EMPTY_OBJECT,
           [String(index)],
         )
         resources.push(resource)

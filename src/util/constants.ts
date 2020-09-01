@@ -13,3 +13,20 @@ export const EMPTY_OBJECT: ReadonlyRecord<any, any> = Object.freeze({})
  * @hidden
  */
 export const EMPTY_ARRAY: ReadonlyArray<any> = Object.freeze([])
+
+// Experimental
+export enum InternalErrorCode {
+  None,
+  DeprecatedFunctionality,
+  InvalidClientSetupType,
+  InvalidClientSetupAbsolutePathRootType,
+  InvalidClientSetupImplicitIncludesType,
+  InvalidClientSetupInitialRelationshipDataType,
+  InvalidClientSetupRelationshipLinksType,
+  InvalidClientSetupTransformRelationshipPathType,
+  InvalidClientSetupBeforeRequestType,
+  InvalidClientSetupBeforeRequestURLType,
+  InvalidClientSetupBeforeRequestHeadersType,
+  InvalidClientSetupAfterRequestType,
+  InvalidClientSetupFetchAdapterType,
+}

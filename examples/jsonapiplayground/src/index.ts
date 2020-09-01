@@ -1,27 +1,43 @@
 import 'regenerator-runtime/runtime'
-import jsonapi, { ImplicitRelationshipData, AbsolutePathRoot } from '../../../src'
+import JSONAPI, { AbsolutePathRoot, InitialRelationshipData, ResourcePatchData } from '../../../src'
 
-import { author, book } from './resources'
+import { author, book, chapter, photo } from './resources'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
-const client = jsonapi.client(url, {
+const client = JSONAPI.client(url, {
   absolutePathRoot: AbsolutePathRoot.Client,
-  implicitRelationshipData: ImplicitRelationshipData.ResourceIdentifiers,
+  initialRelationshipData: InitialRelationshipData.ResourceIdentifiers,
 })
 
-const authorEndpoint = client.endpoint('authors', author)
+const authors = client.endpoint('authors', author)
+const photos = client.endpoint('photos', photo)
+const chapters = client.endpoint('chapters', chapter)
 
-// authorEndpoint
-//   .create({
-//     type: 'authors',
-//     name: 'Hans',
-//     date_of_birth: new Date(1970, 0, 1),
-//     birthplace: 'Netherlands',
-//   })
-//   .then((oneAuthor) => {
-//     console.log(oneAuthor.data)
-//   })
+0 &&
+  authors
+    .create({
+      type: 'authors',
+      name: 'John',
+      date_of_birth: new Date(1970, 0, 1),
+      birthplace: 'New Guinea',
+      photos: [],
+      books: [],
+    })
+    .then((oneAuthor) => {
+      console.log('Created', oneAuthor.data)
+    })
+
+1 &&
+  authors
+    .update('1', {
+      type: 'authors',
+      name: 'Jane',
+      // books: [{ type: 'books', id: '4' }],
+    })
+    .then(() => {
+      console.log('Updated Author')
+    })
 
 const authorFilter = author.filter(
   {
@@ -31,6 +47,29 @@ const authorFilter = author.filter(
   { books: null, photos: null },
 )
 
-authorEndpoint.getOne('1', authorFilter).then((oneAuthor) => {
-  console.log('getOne author', oneAuthor.data)
+// authors.getOne('4', authorFilter).then((oneAuthor) => {
+//   console.log('One Author', oneAuthor.data)
+// })
+
+const chapterQuery = {
+  page: {
+    size: 20,
+  },
+}
+
+const chapterFilter = chapter.filter(
+  {
+    [chapter.type]: ['book'],
+    [book.type]: ['title', 'author'],
+    [author.type]: ['name'],
+  },
+  {
+    book: {
+      author: null,
+    },
+  },
+)
+
+chapters.getMany(chapterQuery, chapterFilter).then((chapters) => {
+  console.log('Many Chapters', chapters.data)
 })

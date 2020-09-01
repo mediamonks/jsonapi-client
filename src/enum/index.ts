@@ -11,23 +11,17 @@ export enum ImplicitIncludes {
   PrimaryRelationships = 'primary-relationships',
 }
 
-// export enum InitialRelationshipFieldValue {
-//   Data, // { data }
-//   DataWithLinks, // { data, links: { self, related } }
-//   DataWithSelfLink, // { data, links: { self } }
-//   DataWithRelatedLink,
-//   Links,
-//   SelfLink,
-//   RelatedLink,
-// }
+export enum InitialRelationshipData {
+  None = 'none',
+  ResourceIdentifiers = 'resource-identifiers',
+}
 
-// export enum RelationshipMeta {
-//   None,
-//   Data,
-//   DataAndLinks,
-//   DataAndSelfLink,
-//   DataAndMetaLink,
-// }
+export enum RelationshipFieldLinks {
+  None = 'none',
+  Links = 'links',
+  SelfLink = 'self-links',
+  MetaLink = 'meta-links',
+}
 
 export enum ResourceFieldRoot {
   Attributes = 'attributes',

@@ -1,44 +1,29 @@
-import { either, isString, test, at, min, isAny, isObject, optional, isArray, and, instance } from 'isntnt'
+import { either, isString, isObject, isArray, and, instance } from 'isntnt'
 
 import { ResourceField } from '../resource/field'
 import { Type } from '../type'
-import { ResourceFields, ResourceIdentifierKey } from '../types'
+import { ResourceIdentifierKey } from '../types'
+import { isURLString, isNotEmpty, isResourceType, isResourceIdentifierKey } from './predicates'
 
 const array = Type.is('an array', isArray)
 const object = Type.is('an object', isObject)
 
 const string = Type.is('a string', isString)
 
-const notEmpty = Type.is('not empty', at('length', min(1)))
-
 /** @hidden */
 export const nonEmptyStringArray: Type<Array<string>> = Type.and([
   Type.array(string),
-  notEmpty,
+  Type.is('not empty', isNotEmpty),
 ]) as any
 
 /** @hidden */
-export const urlString: Type<string> = Type.is(
-  'a valid url string',
-  and(isString, (value: unknown): value is string => {
-    try {
-      new URL(value as any)
-      return true
-    } catch (_) {
-      return false
-    }
-  }),
-)
+export const urlString: Type<string> = Type.is('a valid url string', and(isString, isURLString))
 
 /** @hidden */
 export const url: Type<URL> = Type.is('a URL', instance(URL))
 
-
 /** @hidden */
-export const resourceType = Type.is(
-  'a valid resource type',
-  test(/^(?! _-)[a-zA-Z0-9][^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^`{|}~]+(\1)$/),
-)
+export const resourceType = Type.is('a valid resource type', isResourceType)
 
 /** @hidden */
 export const resourceIdentifierKey: Type<ResourceIdentifierKey> = Type.is(
@@ -46,13 +31,14 @@ export const resourceIdentifierKey: Type<ResourceIdentifierKey> = Type.is(
   either('type', 'id'),
 )
 
-const legalFieldName: Type<string> = Type.is(
-  `a string other than "type" or "id"`,
-  (value: unknown): value is string => !resourceIdentifierKey.predicate(value),
-)
-
 /** @hidden */
-export const resourceFieldName: Type<string> = Type.is('any', isAny)
+export const resourceFieldName: Type<string> = Type.and([
+  resourceType,
+  Type.is(
+    `a string other than "type" or "id"`,
+    (value: unknown): value is string => !isResourceIdentifierKey(value),
+  ),
+])
 
 /** @hidden */
 export const resourceId: Type<string> = string.withDescription('a resource id')
@@ -61,13 +47,6 @@ export const resourceId: Type<string> = string.withDescription('a resource id')
 export const resourceField: Type<ResourceField<any, any>> = Type.instance(ResourceField)
 
 /** @hidden */
-export const parseResourceFields = <T extends ResourceFields>(fields: T): T =>
-  Object.keys(fields).reduce((pureFields, key) => {
-    const fieldName = resourceFieldName.withPointer([key]).parse(key)
-    pureFields[fieldName] = resourceField.withPointer([key]).parse(fields[fieldName])
-    return pureFields
-  }, Object.create(null))
-
 export const resourceIdentifier = Type.shape('a resource identifier', {
   type: resourceType,
   id: string,
@@ -77,7 +56,8 @@ const jsonapiObject = Type.shape('a jsonapi object', {
   version: Type.optional(Type.either('1.0')),
 })
 
-const jsonapiSuccessDocument = Type.shape('a success resource document', {
+/** @hidden */
+export const jsonapiSuccessDocument = Type.shape('a success resource document', {
   data: object,
   errors: Type.undefined,
   included: Type.optional(array),
@@ -86,7 +66,8 @@ const jsonapiSuccessDocument = Type.shape('a success resource document', {
   jsonapi: Type.optional(jsonapiObject),
 })
 
-const jsonapiFailureDocument = Type.shape('a failure resource document', {
+/** @hidden */
+export const jsonapiFailureDocument = Type.shape('a failure resource document', {
   data: Type.undefined,
   errors: array,
   meta: Type.optional(object),
@@ -97,6 +78,7 @@ const jsonapiFailureDocument = Type.shape('a failure resource document', {
 /** @hidden */
 export const jsonapiDocument = Type.or([jsonapiSuccessDocument, jsonapiFailureDocument])
 
+/** @hidden */
 export const resourceObject = Type.shape('a resource object', {
   type: resourceType,
   id: string,

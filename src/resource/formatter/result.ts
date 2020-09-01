@@ -16,10 +16,10 @@ export const result = <T = any, U = any>(value: T, errors: Array<U>): Result<T, 
 ]
 
 /** @hidden */
-export const success = <T = any>(value: T): Success<T> => [value, []]
+export const success = <T = any>(value: T): Success<T> => result(value, [])
 
 /** @hidden */
-export const failure = <T = any>(errors: Array<T>): Failure<T> => [null, errors]
+export const failure = <T = any>(errors: Array<T>): Failure<T> => result(null, errors)
 
 /** @hidden */
 export const validationFailure = (

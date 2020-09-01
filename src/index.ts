@@ -10,9 +10,7 @@ export * from './resource/field/relationship'
 export * from './type'
 export * from './types'
 
-const jsonapi = {
+export default {
   client,
   formatter,
 }
-
-export default jsonapi

@@ -18,6 +18,7 @@ import {
 import { createURL } from '../../util/url'
 import { OneResource, ManyResource } from '../result'
 import { Client } from '..'
+import { EMPTY_OBJECT } from '../../util/constants'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, any>> {
   readonly client: T
@@ -31,22 +32,20 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   }
 
   async create(data: ResourceCreateData<U>): Promise<OneResource<FilteredResource<U, {}>>> {
-    console.log('Create', data)
-    const body = this.formatter.createResourcePostObject(data)
     const url = createURL(this.client.url, [this.path])
+    const body = this.formatter.createResourcePostObject(data)
     return this.client
       .request(url, 'POST', body as any)
-      .then((data) => this.formatter.decode(data as any, {} as any) as any)
+      .then((data) => this.formatter.decode(data!, EMPTY_OBJECT) as any)
   }
 
   async update(id: ResourceId, data: ResourcePatchData<U>): Promise<void> {
-    console.log('Patch', data)
     const url = createURL(this.client.url, [this.path, id])
-    await this.client.request(url, 'PATCH', data)
+    const body = this.formatter.createResourcePatchObject(id, data)
+    await this.client.request(url, 'PATCH', body as any)
   }
 
   async delete(id: ResourceId): Promise<void> {
-    console.log('Delete', id)
     const url = createURL(this.client.url, [this.path, id])
     await this.client.request(url, 'DELETE')
   }
@@ -61,7 +60,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     fieldName: V,
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
-    console.log(`Add some ${fieldName}`, data)
     const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
@@ -77,7 +75,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     fieldName: V,
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
-    console.log(`Remove some ${fieldName}`, data)
     const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'DELETE')
@@ -89,7 +86,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
       ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
     >
   >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
-    console.log(`Update ${fieldName}`, data)
     const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
@@ -112,7 +108,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   ): Promise<OneResource<FilteredResource<U, V>>> {
     const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
     return this.client
-      .request(url, 'GET')
+      .request(url)
       .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
@@ -122,7 +118,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   ): Promise<ManyResource<FilteredResource<U, V>>> {
     const url = createURL(this.client.url, [this.path], resourceFilter as any, searchParams || {})
     return this.client
-      .request(url, 'GET')
+      .request(url)
       .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
@@ -146,7 +142,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     )
 
     return this.client
-      .request(url, 'GET')
+      .request(url)
       .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 
@@ -172,7 +168,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
     )
 
     return this.client
-      .request(url, 'GET')
+      .request(url)
       .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
   }
 

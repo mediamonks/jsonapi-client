@@ -22,7 +22,7 @@ export const getToOneRelationshipResult = (
   field: RelationshipField<any, RelationshipFieldType.ToOne, any>,
   fieldName: string,
   resourceObject: JSONAPIResourceObject<any>,
-  included: Array<JSONAPIResourceObject>,
+  included: ReadonlyArray<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,

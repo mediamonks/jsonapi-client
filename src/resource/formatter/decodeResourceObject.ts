@@ -5,7 +5,7 @@ import {
   ResourceFieldsQuery,
   ResourceIncludeQuery,
 } from '../../types'
-import { resourceObject as resourceObjectType } from '../../util/type-validation'
+import { resourceObject as resourceObjectType } from '../../util/validators'
 import { ResourceField } from '../field'
 import { getAttributeResult } from './getAttributeResult'
 import { getFilteredFieldNames } from './getFilteredFieldNames'
@@ -27,7 +27,7 @@ import type { ResourceFormatter } from '.'
 export const decodeResourceObject = (
   formatters: ReadonlyArray<ResourceFormatter>,
   resourceObject: JSONAPIResourceObject,
-  included: Array<JSONAPIResourceObject>,
+  included: ReadonlyArray<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,

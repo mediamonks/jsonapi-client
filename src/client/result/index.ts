@@ -21,6 +21,24 @@ export default class ResourceResult<
   }
 }
 
+// const META_SYMBOL = Symbol.for('meta')
+// const LINKS_SYMBOL = Symbol.for('links')
+// const JSONAPI_SYMBOL = Symbol.for('jsonapi')
+// const PAGINATION_SYMBOL = Symbol.for('pagination')
+
+// type OneResourceX<T> = T & {
+//   [META_SYMBOL]: 1
+//   [LINKS_SYMBOL]: 2
+//   [JSONAPI_SYMBOL]: 3
+// }
+
+// type ManyResourceX<T> = ReadonlyArray<T> & {
+//   [META_SYMBOL]: 1
+//   [LINKS_SYMBOL]: 2
+//   [JSONAPI_SYMBOL]: 3
+//   [PAGINATION_SYMBOL]: 4
+// }
+
 export class OneResource<T extends Resource<any>> extends ResourceResult<T, JSONAPIResourceLinks> {
   constructor(data: T, resourceDocument: JSONAPIDocument) {
     super(data, resourceDocument.meta || {}, resourceDocument.links || {})

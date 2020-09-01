@@ -32,12 +32,8 @@ describe('Client', () => {
 
     it('throws an Error if its second param (clientSetup) is not a valid client setup object', () => {
       expect(() => new Client(exampleHref, { absolutePathRoot: null as any })).toThrowError()
-      expect(
-        () => new Client(exampleHref, { implicitRelationshipData: null as any }),
-      ).toThrowError()
-      expect(
-        () => new Client(exampleHref, { implicitRelationshipData: null as any }),
-      ).toThrowError()
+      expect(() => new Client(exampleHref, { implicitIncludes: null as any })).toThrowError()
+      expect(() => new Client(exampleHref, { implicitIncludes: null as any })).toThrowError()
     })
 
     it('assigns defaultValues to Client#setup if no second param (clientSetup) is provided', () => {
