@@ -1,5 +1,5 @@
+import { ResourceFieldFlag } from '../../enum'
 import { ResourceFieldName } from '../../types'
-import { isReadableField } from './isReadableField'
 import type { ResourceFormatter } from '.'
 
 /**
@@ -16,10 +16,12 @@ export const parseResourceFieldsQuery = (
 ): ReadonlyArray<ResourceFieldName> => {
   fieldNames.forEach((fieldName) => {
     if (!formatter.hasField(fieldName)) {
-      throw new Error(`Field "${fieldName}" does not exist on resource of type "${formatter}"`)
+      throw new TypeError(`Field "${fieldName}" does not exist on resource of type "${formatter}"`)
     }
-    if (!isReadableField(formatter.fields[fieldName])) {
-      throw new Error(`Field "${fieldName}" may not be queried on resource of type "${formatter}"`)
+    if (formatter.getField(fieldName).matches(ResourceFieldFlag.NeverGet)) {
+      throw new TypeError(
+        `Field "${fieldName}" may not be queried on resource of type "${formatter}"`,
+      )
     }
   })
   return fieldNames

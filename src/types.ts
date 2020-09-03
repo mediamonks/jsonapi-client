@@ -111,15 +111,13 @@ export type ResourceCreateData<T extends ResourceFormatter<any, any>> = {
   [P in T['type']]: MonoResourceCreateData<Extract<T, { type: P }>>
 }[T['type']]
 
-type MonoResourcePatchData<T extends ResourceFormatter<any, any>> = {
-  id?: ResourceId
-  type: T['type']
-} & {
-  [P in ResourceFieldNameWithFlag<
-    T['fields'],
-    ResourceFieldFlag.AlwaysPatch
-  >]: ResourceFieldPatchValue<T['fields'][P]>
-} &
+type MonoResourcePatchData<T extends ResourceFormatter<any, any>> = ResourceIdentifier<T['type']> &
+  {
+    [P in ResourceFieldNameWithFlag<
+      T['fields'],
+      ResourceFieldFlag.AlwaysPatch
+    >]: ResourceFieldPatchValue<T['fields'][P]>
+  } &
   {
     [P in ResourceFieldNameWithFlag<
       T['fields'],

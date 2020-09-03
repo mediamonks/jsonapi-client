@@ -1,6 +1,6 @@
 import { isArray, isObject, isSome, or, isSerializableNumber, and, isString } from 'isntnt'
 
-import { EMPTY_ARRAY } from '../util/constants'
+import { EMPTY_ARRAY, EMPTY_OBJECT } from '../util/constants'
 import {
   ResourceFilter,
   JSONAPISearchParams,
@@ -20,8 +20,8 @@ const isPrimitiveParameterValue = or(
 export const createURL = (
   baseUrl: URL,
   path: ReadonlyArray<string>,
-  resourceQuery: ResourceFilter<any> = {},
-  searchQuery: JSONAPISearchParams = {},
+  resourceQuery: ResourceFilter<any> = EMPTY_OBJECT,
+  searchQuery: JSONAPISearchParams = EMPTY_OBJECT,
 ): URL =>
   parseSearchParams({ ...searchQuery, ...resourceQuery }).reduce((url, [name, value]) => {
     url.searchParams.append(name, value)

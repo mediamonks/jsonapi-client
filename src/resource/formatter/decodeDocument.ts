@@ -1,75 +1,87 @@
-import { OneResource, ManyResource } from '../../client/result'
+import { isArray } from 'isntnt'
+
+import { ValidationErrorMessage, ErrorMessage } from '../../enum'
 import {
-  ResourceValidationError,
-  ClientResponseError,
+  ResourceDocumentError,
   ResourceValidationErrorObject,
+  ResourceValidationError,
 } from '../../error'
-import { JSONAPIDocument, ResourceFilter } from '../../types'
-import { jsonapiDocument } from '../../util/validators'
+import {
+  JSONAPIDocument,
+  ResourceFilter,
+  FilteredResource,
+  JSONAPIResourceObject,
+} from '../../types'
+import { EMPTY_OBJECT, EMPTY_ARRAY } from '../../util/constants'
 import { decodeResourceObject } from './decodeResourceObject'
 import { parseResourceFilter } from './parseResourceFilter'
 import type { ResourceFormatter } from '.'
-import { EMPTY_OBJECT, EMPTY_ARRAY } from '../../util/constants'
+import { jsonapiDocument } from '../../util/validators'
 
 export const decodeDocument = (
   formatters: ReadonlyArray<ResourceFormatter>,
-  resourceDocument: JSONAPIDocument<any>,
+  document: JSONAPIDocument,
   resourceFilter?: ResourceFilter<any>,
-): OneResource<any> | ManyResource<any> => {
-  if (!jsonapiDocument.predicate(resourceDocument)) {
-    throw new ResourceValidationError(`Invalid JSONAPIDocument`, resourceDocument, [])
+): FilteredResource | Array<FilteredResource> => {
+  if (!jsonapiDocument.predicate(document)) {
+    throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceDocument, document, [])
   }
 
-  if ('errors' in resourceDocument) {
-    throw new ClientResponseError(
-      `JSONAPIDocument Has Errors`,
-      resourceDocument,
-      resourceDocument.errors!,
+  if ('errors' in document) {
+    throw new ResourceDocumentError(
+      ValidationErrorMessage.JSONAPIDocumentWithErrors,
+      document,
+      document.errors,
     )
   }
 
-  if ('data' in resourceDocument) {
+  if ('data' in document) {
     parseResourceFilter(formatters, resourceFilter || EMPTY_OBJECT)
 
-    const included = resourceDocument.included
-      ? resourceDocument.included.concat(resourceDocument.data)
-      : EMPTY_ARRAY
+    const included = (document.included || []).concat(document.data)
+    if (isArray(document.data)) {
+      const resources: Array<FilteredResource> = []
+      const validationErrors: Array<ResourceValidationErrorObject> = []
 
-    if (Array.isArray(resourceDocument.data)) {
-      const errors: Array<ResourceValidationErrorObject> = []
-      const resources: Array<any> = []
-
-      resourceDocument.data.forEach((resourceObject, index) => {
-        const [resource, validationErrors] = decodeResourceObject(
+      document.data.forEach((resource) => {
+        const [value, validationErrors] = decodeResourceObject(
           formatters,
-          resourceObject,
+          resource as JSONAPIResourceObject,
           included,
           resourceFilter?.fields || EMPTY_OBJECT,
           resourceFilter?.include || EMPTY_OBJECT,
-          [String(index)],
+          EMPTY_ARRAY,
         )
-        resources.push(resource)
-        validationErrors.forEach((error) => errors.push(error))
+        resources.push(value)
+        validationErrors.forEach((error) => validationErrors.push(error))
       })
-      if (errors.length) {
-        throw new ResourceValidationError(`Validation Failed`, resources, errors)
+      if (validationErrors.length) {
+        throw new ResourceValidationError(
+          ValidationErrorMessage.InvalidResourceDocument,
+          document,
+          validationErrors,
+        )
       }
-      return new ManyResource(resources as any, resourceDocument)
+      return resources
     } else {
       const [resource, validationErrors] = decodeResourceObject(
         formatters,
-        resourceDocument.data,
+        document.data,
         included,
-        resourceFilter?.fields || ({} as any),
-        resourceFilter?.include || {},
+        resourceFilter?.fields || EMPTY_OBJECT,
+        resourceFilter?.include || EMPTY_OBJECT,
         [],
       )
       if (validationErrors.length) {
-        throw new ResourceValidationError(`Validation Failed`, resource, validationErrors)
+        throw new ResourceValidationError(
+          ValidationErrorMessage.InvalidResourceDocument,
+          document,
+          validationErrors,
+        )
       }
-      return new OneResource(resource as any, resourceDocument)
+      return resource
     }
   }
 
-  throw new Error(`Unexpected Error`)
+  throw new ResourceDocumentError(ErrorMessage.UnexpectedError, document, [])
 }

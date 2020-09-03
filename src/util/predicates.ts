@@ -1,4 +1,6 @@
-import { at, min, test, either } from 'isntnt'
+import { at, min, test, either, isString, isNumber, or } from 'isntnt'
+
+export const isContent = or(isString, isNumber)
 
 export const isNotEmpty = at('length', min(1))
 

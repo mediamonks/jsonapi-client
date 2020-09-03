@@ -1,7 +1,7 @@
 import 'regenerator-runtime/runtime'
-import JSONAPI, { AbsolutePathRoot, InitialRelationshipData, ResourcePatchData } from '../../../src'
+import JSONAPI, { AbsolutePathRoot, InitialRelationshipData } from '../../../src'
 
-import { author, book, chapter, photo } from './resources'
+import { author, book, chapter, series } from './resources'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
@@ -11,7 +11,7 @@ const client = JSONAPI.client(url, {
 })
 
 const authors = client.endpoint('authors', author)
-const photos = client.endpoint('photos', photo)
+const books = client.endpoint('books', book)
 const chapters = client.endpoint('chapters', chapter)
 
 0 &&
@@ -28,10 +28,11 @@ const chapters = client.endpoint('chapters', chapter)
       console.log('Created', oneAuthor.data)
     })
 
-1 &&
+0 &&
   authors
-    .update('1', {
+    .update({
       type: 'authors',
+      id: '1',
       name: 'Jane',
       // books: [{ type: 'books', id: '4' }],
     })
@@ -47,9 +48,25 @@ const authorFilter = author.filter(
   { books: null, photos: null },
 )
 
-// authors.getOne('4', authorFilter).then((oneAuthor) => {
-//   console.log('One Author', oneAuthor.data)
-// })
+0 &&
+  authors.getOne('4', authorFilter).then((data) => {
+    console.log('One Author', data)
+  })
+
+const bookFilter = book.filter(
+  {
+    [book.type]: ['title', 'chapters', 'series'],
+    [series.type]: ['title', 'books'],
+  },
+  {
+    series: null,
+  },
+)
+
+1 &&
+  books.getOne('28', bookFilter).then((data) => {
+    console.log('One Book', data)
+  })
 
 const chapterQuery = {
   page: {
@@ -70,6 +87,7 @@ const chapterFilter = chapter.filter(
   },
 )
 
-chapters.getMany(chapterQuery, chapterFilter).then((chapters) => {
-  console.log('Many Chapters', chapters.data)
-})
+0 &&
+  chapters.getMany(chapterQuery, chapterFilter).then((data) => {
+    console.log('Many Chapters', data[1].book)
+  })

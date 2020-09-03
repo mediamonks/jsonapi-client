@@ -1,7 +1,7 @@
 import { ResourceFieldsQuery } from '../../types'
-import { isReadableField } from './isReadableField'
 import { parseResourceFieldsQuery } from './parseResourceFieldsQuery'
 import type { ResourceFormatter } from '.'
+import { ResourceFieldFlag } from '../../enum'
 
 // Get the combined ResourceFilter fieldNames for a collection of (relationship) resources
 export const getCombinedFilterResourceFields = (
@@ -12,7 +12,7 @@ export const getCombinedFilterResourceFields = (
   resources.flatMap((resource) =>
     resource.type in fields
       ? parseResourceFieldsQuery(resource, (fields as any)[resource.type])
-      : Object.keys(resource.fields).filter((fieldName) =>
-          isReadableField(resource.fields[fieldName]),
+      : Object.keys(resource.fields).filter(
+          (fieldName) => !resource.fields[fieldName].matches(ResourceFieldFlag.NeverGet),
         ),
   )

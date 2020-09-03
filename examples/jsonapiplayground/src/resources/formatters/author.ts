@@ -4,7 +4,6 @@ import { dateString, dateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/string'
 import { book } from './book'
 import { photo } from './photo'
-import { isString } from 'isntnt'
 
 type AuthorResource = ResourceFormatter<
   'authors',

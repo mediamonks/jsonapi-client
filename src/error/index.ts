@@ -1,12 +1,11 @@
-import { or, isNumber, isString, isSome } from 'isntnt'
+import { isString, isSome } from 'isntnt'
+
 import { JSONAPIErrorObject, JSONAPIMetaObject } from '../types'
+import { isContent } from '../util/predicates'
 
-const isContent = or(isNumber, isString)
-
-// Client Response Error
 export type ErrorObjectPointer = ReadonlyArray<string>
 
-export type ClientResponseErrorObject = {
+export type ResourceDocumentErrorObject = {
   id: string | null
   code: string | null
   title: string | null
@@ -19,22 +18,22 @@ export type ClientResponseErrorObject = {
   meta: JSONAPIMetaObject
 }
 
-export class ClientResponseError extends Error {
+export class ResourceDocumentError extends Error {
   readonly actual: unknown
-  readonly details: ReadonlyArray<ClientResponseErrorObject>
+  readonly details: ReadonlyArray<ResourceDocumentErrorObject>
 
   constructor(message: string, value: unknown, errors: ReadonlyArray<JSONAPIErrorObject>) {
     super(message)
     this.actual = value
-    this.details = errors.map(createClientResponseErrorObject)
+    this.details = errors.map(createResourceDocumentErrorObject)
     Object.setPrototypeOf(this, new.target.prototype)
   }
 }
 
 /** @hidden */
-export const createClientResponseErrorObject = (
+export const createResourceDocumentErrorObject = (
   error: JSONAPIErrorObject,
-): ClientResponseErrorObject => {
+): ResourceDocumentErrorObject => {
   return {
     id: isContent(error.id) ? String(error.id) : null,
     code: isContent(error.code) ? String(error.code) : null,

@@ -1,10 +1,11 @@
 import { isArray, isString, isNull } from 'isntnt'
 
-import { ResourceFieldsQuery, ResourceIncludeQuery, ResourceFilter } from '../../types'
+import { ResourceFieldFlag } from '../../enum'
+import type { ResourceFieldsQuery, ResourceIncludeQuery, ResourceFilter } from '../../types'
+import { EMPTY_OBJECT } from '../../util/constants'
 import { resourceIdentifierKey } from '../../util/validators'
 import { getCombinedFilterResourceFields } from './getCombinedResourceFields'
-import { isReadableField } from './isReadableField'
-import { ResourceFormatter } from '.'
+import type { ResourceFormatter } from '.'
 
 /**
  * Parse a ResourceFilter against a ResourceFormatter[]
@@ -21,13 +22,13 @@ export const parseResourceFilter = (
   // First, assert the includeFilter and gather all (included) formatters...
   const includedFormatters = assertIncludeFilterAndGetNestedFormatters(
     formatters,
-    resourceFilter.fields || {},
-    resourceFilter.include || {},
+    resourceFilter.fields || EMPTY_OBJECT,
+    resourceFilter.include || EMPTY_OBJECT,
     [],
   )
 
   // ...then assert the fieldsFilter using each possible formatter included
-  assertFieldsFilter(includedFormatters, resourceFilter.fields || {})
+  assertFieldsFilter(includedFormatters, resourceFilter.fields || EMPTY_OBJECT)
 
   return resourceFilter
 }
@@ -39,31 +40,35 @@ export const assertFieldsFilter = (
   Object.keys(fieldsFilter).forEach((type) => {
     const formatter = formatters.find((formatter) => formatter.type === type)
     if (!formatter) {
-      throw new TypeError(`ResourceFormatter with type "${type}" not found`)
+      throw new TypeError(`Formatter for resource of type "${type}" not found`)
     }
     const formatterFilter = fieldsFilter[type]
     if (!isArray(formatterFilter)) {
-      throw new TypeError(`Value in ResourceFieldsQuery for "${type}" must be an Array`)
+      throw new TypeError(`Value in fields filter for resource of type "${type}" must be an Array`)
     }
     if (!formatterFilter.length) {
-      throw new TypeError(`Value in ResourceFieldsQuery for "${type}" must not be empty`)
+      throw new TypeError(`Value in fields filter for resource of type "${type}" must not be empty`)
     }
     formatterFilter.forEach((fieldName) => {
       if (!isString(fieldName)) {
-        throw new TypeError(`Value in ResourceFieldsQuery for "${type}" must be a string`)
+        throw new TypeError(
+          `Value in fields filter for resource of type "${type}" must be a string`,
+        )
       }
       if (resourceIdentifierKey.predicate(fieldName)) {
-        throw new TypeError(`Value in ResourceFieldsQuery for "${type}" may not be "type" or "id"`)
+        throw new TypeError(
+          `Value in fields filter for resource of type "${type}" may not be "type" or "id"`,
+        )
       }
       const field = formatter.fields[fieldName]
       if (!field) {
         throw new TypeError(
-          `Field "${fieldName}" in ResourceFieldsQuery for "${type}" does not exist`,
+          `Field "${fieldName}" in fields filter for resource of type "${type}" does not exist`,
         )
       }
-      if (!isReadableField(field)) {
+      if (field.matches(ResourceFieldFlag.NeverGet)) {
         throw new TypeError(
-          `Field "${fieldName}" in ResourceFieldsQuery for "${type}" has NeverGet flag`,
+          `Field "${fieldName}" in fields filter for resource of type "${type}" must be omitted`,
         )
       }
     })
@@ -87,7 +92,7 @@ export const assertIncludeFilterAndGetNestedFormatters = (
       (formatter) =>
         formatter.hasField(fieldName) &&
         formatter.fields[fieldName].isRelationshipField() &&
-        isReadableField(formatter.fields[fieldName]),
+        !formatter.fields[fieldName].matches(ResourceFieldFlag.NeverGet),
     ),
   )
 

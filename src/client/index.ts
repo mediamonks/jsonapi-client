@@ -3,8 +3,9 @@ import { Serializable, SerializableObject, isString, isObject, isSome, Predicate
 import {
   AbsolutePathRoot,
   ImplicitIncludes,
-  InitialRelationshipData,
+  RelationshipFieldData,
   RelationshipFieldLinks,
+  ErrorMessage,
 } from '../enum'
 import { ResourceFormatter } from '../resource/formatter'
 import {
@@ -17,18 +18,23 @@ import {
 import { Endpoint } from './endpoint'
 import { Type } from '../type'
 import { jsonapiFailureDocument, jsonapiSuccessDocument, urlString, url } from '../util/validators'
-import { reflect } from '../util/helpers'
-import { ClientResponseError } from '../error'
+import { reflect, windowFetch } from '../util/helpers'
+import { ResourceDocumentError } from '../error'
 import { InternalErrorCode } from '../util/constants'
 
 const JSON_API_MIME_TYPE = 'application/vnd.api+json'
 
-export { AbsolutePathRoot, ImplicitIncludes, InitialRelationshipData, RelationshipFieldLinks }
+export {
+  AbsolutePathRoot,
+  ImplicitIncludes,
+  RelationshipFieldData as InitialRelationshipData,
+  RelationshipFieldLinks,
+}
 
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
   implicitIncludes: ImplicitIncludes.None
-  initialRelationshipData: InitialRelationshipData.None
+  relationshipFieldData: RelationshipFieldData.None
   relationshipFieldLinks: RelationshipFieldLinks.None
 }
 
@@ -38,20 +44,20 @@ export type DefaultClientSetup = ClientSetup & {
 export const defaultClientSetup: DefaultClientSetup = {
   absolutePathRoot: AbsolutePathRoot.Domain,
   implicitIncludes: ImplicitIncludes.None,
-  initialRelationshipData: InitialRelationshipData.None,
+  relationshipFieldData: RelationshipFieldData.None,
   relationshipFieldLinks: RelationshipFieldLinks.None,
   transformRelationshipPath: reflect,
   beforeRequestURL: reflect,
   beforeRequestHeaders: reflect,
   beforeRequest: reflect,
   afterRequest: reflect,
-  fetchAdapter: window.fetch.bind(window),
+  fetchAdapter: windowFetch,
 }
 
 export type ClientSetup = {
   absolutePathRoot: AbsolutePathRoot
   implicitIncludes: ImplicitIncludes
-  initialRelationshipData: InitialRelationshipData
+  relationshipFieldData: RelationshipFieldData
   relationshipFieldLinks: RelationshipFieldLinks
   transformRelationshipPath(path: string): string
   beforeRequest(request: Request): Request | Promise<Request>
@@ -151,9 +157,9 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
           return response.json().then((data: Serializable) => {
             // console.log('FAILURE RESPONSE DATA', data)
             if (!(jsonapiFailureDocument.predicate as Predicate<JSONAPIFailureDocument>)(data)) {
-              throw new ClientResponseError(`Invalid JSON:API Document`, data, [])
+              throw new ResourceDocumentError(`Invalid JSON:API Document`, data, [])
             }
-            throw new ClientResponseError(response.statusText, data, data.errors)
+            throw new ResourceDocumentError(response.statusText, data, data.errors)
           })
         }
         if (request.method === 'GET' && response.status === 204) {
@@ -167,7 +173,7 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
       .then((data: Serializable) => {
         // console.log('SUCCESS RESPONSE DATA', data)
         if (!(jsonapiSuccessDocument.predicate as Predicate<JSONAPISuccessDocument>)(data)) {
-          throw new ClientResponseError(`Invalid JSON:API Document`, data, [])
+          throw new ResourceDocumentError(`Invalid JSON:API Document`, data, [])
         }
         return data
       })
@@ -192,7 +198,7 @@ const clientSetup: Type<ClientSetup> = Type.shape('a valid client setup object',
   implicitIncludes: Type.either(...Object.values(ImplicitIncludes)).withCode(
     createJSONAPIErrorCode(InternalErrorCode.InvalidClientSetupImplicitIncludesType),
   ),
-  initialRelationshipData: Type.either(...Object.values(InitialRelationshipData)).withCode(
+  relationshipFieldData: Type.either(...Object.values(RelationshipFieldData)).withCode(
     createJSONAPIErrorCode(InternalErrorCode.InvalidClientSetupInitialRelationshipDataType),
   ),
   relationshipFieldLinks: Type.either(...Object.values(RelationshipFieldLinks)).withCode(

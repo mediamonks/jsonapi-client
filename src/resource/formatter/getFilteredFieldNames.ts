@@ -1,6 +1,6 @@
 import { ResourceFieldsQuery, ResourceFieldName } from '../../types'
-import { isReadableField } from './isReadableField'
 import type { ResourceFormatter } from '.'
+import { ResourceFieldFlag } from '../../enum'
 
 /**
  * Get the combined (filtered) fieldNames from one or more ResourceFormatters.
@@ -20,8 +20,8 @@ export const getFilteredFieldNames = (
           // If ResourceFormatter#type is present in the ResourceFieldsQuery, use those fieldNames...
           fieldsFilter[formatter.type] ||
           // ...otherwise use all 'gettable' fieldNames from the ResourceFormatter
-          Object.keys(formatter.fields).filter((fieldName) =>
-            isReadableField(formatter.fields[fieldName]),
+          Object.keys(formatter.fields).filter(
+            (fieldName) => !formatter.getField(fieldName).matches(ResourceFieldFlag.NeverGet),
           ),
       ),
     ),

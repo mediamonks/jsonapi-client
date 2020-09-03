@@ -1,24 +1,23 @@
-import { ResourceValidationErrorObject } from '../../error'
+import { ErrorMessage, ValidationErrorMessage, ResourceFieldFlag } from '../../enum'
+import { ResourceValidationErrorObject, createValidationErrorObject } from '../../error'
 import {
   FilteredResource,
   JSONAPIResourceObject,
   ResourceFieldsQuery,
   ResourceIncludeQuery,
+  ResourceFields,
 } from '../../types'
-import { resourceObject as resourceObjectType } from '../../util/validators'
-import { ResourceField } from '../field'
-import { getAttributeResult } from './getAttributeResult'
-import { getFilteredFieldNames } from './getFilteredFieldNames'
-import { getRelationshipResult } from './getRelationshipResult'
-import { isReadableField } from './isReadableField'
-import { success, validationFailure, Result } from './result'
+import { failure, success, Validation } from '../../util/validation'
+import { resourceObject } from '../../util/validators'
+import { decodeAttribute } from './decodeAttribute'
+import { decodeRelationship } from './decodeRelationship'
 import type { ResourceFormatter } from '.'
 
 /**
  *
  * @hidden
  * @param formatters
- * @param resourceObject
+ * @param resource
  * @param included
  * @param fieldsFilter
  * @param includeFilter
@@ -26,71 +25,80 @@ import type { ResourceFormatter } from '.'
  */
 export const decodeResourceObject = (
   formatters: ReadonlyArray<ResourceFormatter>,
-  resourceObject: JSONAPIResourceObject,
+  resource: JSONAPIResourceObject,
   included: ReadonlyArray<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
-): Result<FilteredResource, ResourceValidationErrorObject> => {
-  if (!resourceObjectType.predicate(resourceObject)) {
-    return validationFailure(
-      resourceObject,
-      'Invalid JSONAPIResourceObject',
-      `The JSONAPIResourceObject data does not match its schema.`,
-      pointer,
+): Validation<FilteredResource, ResourceValidationErrorObject> => {
+  if (!resourceObject.predicate(resource)) {
+    return failure(
+      resourceObject
+        .validate(resource)
+        .map((detail) =>
+          createValidationErrorObject(
+            ValidationErrorMessage.InvalidResourceObject,
+            detail,
+            pointer,
+          ),
+        ),
     )
   }
 
-  const formatter = formatters.find((formatter) => formatter.type === resourceObject.type)
+  const formatter = formatters.find((formatter) => formatter.type === resource.type)
   if (!formatter) {
-    return validationFailure(
-      resourceObject,
-      'Invalid resource type',
-      `The data type does not match that of its formatters (${formatters}).`,
-      pointer.concat(['type']),
-    )
+    return failure([
+      createValidationErrorObject(
+        ValidationErrorMessage.InvalidResourceType,
+        `The resource type does not match that of its formatters (${formatters}).`, // TODO: Format formatters’ types
+        pointer.concat(['type']),
+      ),
+    ])
   }
 
-  const fieldNames = getFilteredFieldNames(formatters, fieldsFilter)
-    // Only use fieldNames that are relevant to the ResourceFormatter that matches the actual data type
-    .filter((fieldName) =>
-      formatter.type in fieldsFilter
-        ? fieldsFilter[formatter.type]!.includes(fieldName)
-        : fieldName in formatter.fields && isReadableField(formatter.fields[fieldName]),
-    )
-
-  const result: Result<FilteredResource, ResourceValidationErrorObject> = success({
-    type: resourceObject.type,
-    id: resourceObject.id,
+  const validation: Validation<FilteredResource, ResourceValidationErrorObject> = success({
+    type: resource.type,
+    id: resource.id,
   })
 
-  return fieldNames.reduce((result, fieldName) => {
-    const [data, errors] = result
-    const field: ResourceField = formatter.fields[fieldName]
+  const resourceFieldNames: ReadonlyArray<string> =
+    formatter.type in fieldsFilter
+      ? fieldsFilter[formatter.type]!
+      : Object.keys(formatter.fields).filter(
+          (field) => !formatter.fields[field].matches(ResourceFieldFlag.NeverGet),
+        )
 
-    if (field.isAttributeField()) {
-      const [attributeValue, validationErrors] = getAttributeResult(
-        field,
-        fieldName,
-        resourceObject,
-        pointer.concat([fieldName]),
-      )
-      data[fieldName] = attributeValue
-      validationErrors.forEach((error) => errors.push(error))
-    } else if (field.isRelationshipField()) {
-      const [relatedResourceData, validationErrors] = getRelationshipResult(
-        field,
-        fieldName,
-        resourceObject,
-        included,
-        fieldsFilter,
-        includeFilter,
-        pointer.concat([fieldName]),
-      )
-      data[fieldName] = relatedResourceData
-      validationErrors.forEach((error) => errors.push(error))
+  return resourceFieldNames.reduce((validation, fieldName) => {
+    const [data, errors] = validation
+    const field: ResourceFields[any] = formatter.fields[fieldName]
+
+    if (field.matches(ResourceFieldFlag.NeverGet)) {
+      throw new Error(ErrorMessage.ResourceFieldNotAllowed)
+    } else {
+      if (field.isAttributeField()) {
+        const [value, validationErrors] = decodeAttribute(
+          field,
+          fieldName,
+          resource,
+          pointer.concat(fieldName),
+        )
+        data[fieldName] = value
+        validationErrors.forEach((error) => errors.push(error))
+      } else if (field.isRelationshipField()) {
+        const [value, validationErrors] = decodeRelationship(
+          field,
+          fieldName,
+          resource,
+          included,
+          fieldsFilter,
+          includeFilter,
+          pointer.concat([fieldName]),
+        )
+        data[fieldName] = value
+        validationErrors.forEach((error) => errors.push(error))
+      }
     }
 
-    return result
-  }, result)
+    return validation
+  }, validation)
 }

@@ -3,7 +3,7 @@ import {
   assertIncludeFilterAndGetNestedFormatters,
   parseResourceFilter,
 } from './parseResourceFilter'
-import { ResourceFormatter } from '.'
+import { ResourceFormatter } from '../formatter'
 import { Relationship } from '../field/relationship'
 import { Attribute } from '../field/attribute'
 import { Type } from '../../type'
@@ -13,12 +13,12 @@ describe('parseResourceFilter', () => {
     expect(parseResourceFilter).toBeInstanceOf(Function)
   })
 
-  it('returns an empty ResourceFilter if there is none provided', () => {
+  it('returns an empty resource filter if there is none provided', () => {
     const foo = new ResourceFormatter('Foo', {})
     expect(parseResourceFilter([foo])).toEqual({})
   })
 
-  it('returns an unmodified ResourceFilter if its valid', () => {
+  it('returns an unmodified resource filter if its valid', () => {
     const foo = new ResourceFormatter('Foo', {})
     const bar = new ResourceFormatter('Bar', {
       foo: Relationship.toOne(() => [foo]),
@@ -42,7 +42,7 @@ describe('parseResourceFilter', () => {
     expect(parseResourceFilter([baz], filter)).toEqual(filter)
   })
 
-  it('returns an unmodified ResourceFilter if its valid for a polymorphic formatter', () => {
+  it('returns an unmodified resource filter if its valid for a polymorphic formatter', () => {
     const foo = new ResourceFormatter('Foo', {})
     const bar = new ResourceFormatter('Bar', {
       foo: Relationship.toOne(() => [foo]),
@@ -73,16 +73,16 @@ describe('assertFieldsFilter', () => {
     expect(assertFieldsFilter).toBeInstanceOf(Function)
   })
 
-  it('throws if a key of fieldsFilter does not equal the type of any formatter', () => {
+  it('throws if a key of fields filter does not equal the type of any formatter', () => {
     const fieldsFilter = {
       Foo: [],
     }
     expect(() => assertFieldsFilter([], fieldsFilter as any)).toThrow(
-      `ResourceFormatter with type "Foo" not found`,
+      `Formatter for resource of type "Foo" not found`,
     )
   })
 
-  it('throws if a fieldsFilter value is not an Array', () => {
+  it('throws if a fields filter value is not an Array', () => {
     const foo = new ResourceFormatter('Foo', {
       bar: Attribute.optional(Type.undefined as any),
     })
@@ -90,11 +90,11 @@ describe('assertFieldsFilter', () => {
       Foo: null as any,
     }
     expect(() => assertFieldsFilter([foo], fieldsFilter as any)).toThrow(
-      `Value in ResourceFieldsQuery for "Foo" must be an Array`,
+      `Value in fields filter for resource of type "Foo" must be an Array`,
     )
   })
 
-  it('throws if a fieldsFilter value is an empty Array', () => {
+  it('throws if a fields filter value is an empty Array', () => {
     const foo = new ResourceFormatter('Foo', {
       bar: Attribute.optional(Type.undefined as any),
     })
@@ -102,11 +102,11 @@ describe('assertFieldsFilter', () => {
       Foo: [],
     }
     expect(() => assertFieldsFilter([foo], fieldsFilter as any)).toThrow(
-      `Value in ResourceFieldsQuery for "Foo" must not be empty`,
+      `Value in fields filter for resource of type "Foo" must not be empty`,
     )
   })
 
-  it('throws if a fieldsFilter item is not a string', () => {
+  it('throws if a fields filter item is not a string', () => {
     const foo = new ResourceFormatter('Foo', {
       bar: Attribute.optional(Type.undefined as any),
     })
@@ -114,11 +114,11 @@ describe('assertFieldsFilter', () => {
       Foo: [12],
     }
     expect(() => assertFieldsFilter([foo], fieldsFilter as any)).toThrow(
-      `Value in ResourceFieldsQuery for "Foo" must be a string`,
+      `Value in fields filter for resource of type "Foo" must be a string`,
     )
   })
 
-  it('throws if a fieldsFilter item equals type or id', () => {
+  it('throws if a fields filter item equals type or id', () => {
     const foo = new ResourceFormatter('Foo', {
       bar: Attribute.optional(Type.undefined as any),
     })
@@ -126,17 +126,17 @@ describe('assertFieldsFilter', () => {
       Foo: ['type'],
     }
     expect(() => assertFieldsFilter([foo], fieldsTypeFilter as any)).toThrow(
-      `Value in ResourceFieldsQuery for "Foo" may not be "type" or "id"`,
+      `Value in fields filter for resource of type "Foo" may not be "type" or "id"`,
     )
     const fieldsIdFilter = {
       Foo: ['id'],
     }
     expect(() => assertFieldsFilter([foo], fieldsIdFilter as any)).toThrow(
-      `Value in ResourceFieldsQuery for "Foo" may not be "type" or "id"`,
+      `Value in fields filter for resource of type "Foo" may not be "type" or "id"`,
     )
   })
 
-  it('throws if a fieldsFilter item is not a formatter field name', () => {
+  it('throws if a fields filter item is not a formatter field name', () => {
     const foo = new ResourceFormatter('Foo', {
       bar: Attribute.optional(Type.undefined as any),
     })
@@ -144,11 +144,11 @@ describe('assertFieldsFilter', () => {
       Foo: ['baz'],
     }
     expect(() => assertFieldsFilter([foo], fieldsFilter as any)).toThrow(
-      `Field "baz" in ResourceFieldsQuery for "Foo" does not exist`,
+      `Field "baz" in fields filter for resource of type "Foo" does not exist`,
     )
   })
 
-  it('throws if a fieldsFilter item is not a readable field', () => {
+  it('throws if a fields filter item is not a readable field', () => {
     const foo = new ResourceFormatter('Foo', {
       bar: Attribute.optionalWriteOnly(Type.undefined as any),
     })
@@ -156,7 +156,7 @@ describe('assertFieldsFilter', () => {
       Foo: ['bar'],
     }
     expect(() => assertFieldsFilter([foo], fieldsFilter as any)).toThrow(
-      `Field "bar" in ResourceFieldsQuery for "Foo" has NeverGet flag`,
+      `Field "bar" in fields filter for resource of type "Foo" must be omitted`,
     )
   })
 })

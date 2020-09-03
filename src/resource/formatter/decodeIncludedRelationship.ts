@@ -1,3 +1,4 @@
+import { ValidationErrorMessage } from '../../enum'
 import { createValidationErrorObject, ResourceValidationErrorObject } from '../../error'
 import {
   FilteredResource,
@@ -9,9 +10,10 @@ import {
 import { RelationshipField } from '../field/relationship'
 import { ResourceIdentifier } from '../identifier'
 import { decodeResourceObject } from './decodeResourceObject'
-import { result, Result } from './result'
+import { failure, Validation } from '../../util/validation'
+import { EMPTY_OBJECT } from '../../util/constants'
 
-export const decodeIncludedRelationshipData = (
+export const decodeIncludedRelationship = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
   resourceIdentifier: ResourceIdentifier,
@@ -19,23 +21,23 @@ export const decodeIncludedRelationshipData = (
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any>,
   pointer: ReadonlyArray<string>,
-): Result<FilteredResource, ResourceValidationErrorObject> => {
+): Validation<FilteredResource, ResourceValidationErrorObject> => {
   const includedResourceObject = included.find(
     (item) => item.type === resourceIdentifier.type && item.id === resourceIdentifier.id,
   )
 
   if (!includedResourceObject) {
-    return result(includedResourceObject as any, [
+    return failure([
       createValidationErrorObject(
-        'Included Resource Not Found',
-        `JSONAPIResourceObject with type "${resourceIdentifier.type}" and id "${resourceIdentifier.id}" is not included.`,
+        ValidationErrorMessage.IncludedResourceNotFound,
+        `Resource object of type "${resourceIdentifier.type}" with id "${resourceIdentifier.id}" is not included.`,
         pointer,
       ),
     ])
   }
 
   const relatedResourceFormatters = field.getResources()
-  const childIncludeFilter = includeFilter[fieldName] || ({} as any)
+  const childIncludeFilter = includeFilter[fieldName] || EMPTY_OBJECT
   return decodeResourceObject(
     relatedResourceFormatters,
     includedResourceObject,

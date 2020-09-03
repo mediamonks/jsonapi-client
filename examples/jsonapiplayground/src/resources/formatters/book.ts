@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from '../../../../../src'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/string'

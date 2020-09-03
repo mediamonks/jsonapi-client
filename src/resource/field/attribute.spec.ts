@@ -33,33 +33,33 @@ describe('AttributeField', () => {
     })
   })
 
-  describe('#predicate', () => {
-    it('equals the its validator parameter predicate property', () => {
-      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
-      expect(attributeField.predicate).toBe(STRING_VALIDATOR.predicate)
-    })
-  })
+  // describe('#predicate', () => {
+  //   it('equals the its validator parameter predicate property', () => {
+  //     const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+  //     expect(attributeField.predicate).toBe(STRING_VALIDATOR.predicate)
+  //   })
+  // })
 
-  describe('#validate', () => {
-    it('equals the its validator parameter validate property', () => {
-      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
-      expect(attributeField.validate).toBe(STRING_VALIDATOR.validate)
-    })
-  })
+  // describe('#validate', () => {
+  //   it('equals the its validator parameter validate property', () => {
+  //     const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+  //     expect(attributeField.validate).toBe(STRING_VALIDATOR.validate)
+  //   })
+  // })
 
-  describe('#deserialize', () => {
-    it('equals the its formatter parameter deserialize property', () => {
-      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
-      expect(attributeField.deserialize).toBe(FORMATTER.deserialize)
-    })
-  })
+  // describe('#deserialize', () => {
+  //   it('equals the its formatter parameter deserialize property', () => {
+  //     const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+  //     expect(attributeField.deserialize).toBe(FORMATTER.deserialize)
+  //   })
+  // })
 
-  describe('#serialize', () => {
-    it('equals the its formatter parameter serialize property', () => {
-      const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
-      expect(attributeField.serialize).toBe(FORMATTER.serialize)
-    })
-  })
+  // describe('#serialize', () => {
+  //   it('equals the its formatter parameter serialize property', () => {
+  //     const attributeField = new AttributeField(ATTRIBUTE_FIELD_FLAG, STRING_VALIDATOR, FORMATTER)
+  //     expect(attributeField.serialize).toBe(FORMATTER.serialize)
+  //   })
+  // })
 })
 
 describe('createAttributeFieldFactory', () => {

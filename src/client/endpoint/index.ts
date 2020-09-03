@@ -14,6 +14,7 @@ import {
   RelationshipFieldResourceConstructor,
   ToOneRelationshipFieldNameWithFlag,
   JSONAPISearchParams,
+  JSONAPIDocument,
 } from '../../types'
 import { createURL } from '../../util/url'
 import { OneResource, ManyResource } from '../result'
@@ -33,15 +34,15 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
 
   async create(data: ResourceCreateData<U>): Promise<OneResource<FilteredResource<U, {}>>> {
     const url = createURL(this.client.url, [this.path])
-    const body = this.formatter.createResourcePostObject(data)
+    const body = this.formatter.createResourcePostDocument(data)
     return this.client
       .request(url, 'POST', body as any)
       .then((data) => this.formatter.decode(data!, EMPTY_OBJECT) as any)
   }
 
-  async update(id: ResourceId, data: ResourcePatchData<U>): Promise<void> {
-    const url = createURL(this.client.url, [this.path, id])
-    const body = this.formatter.createResourcePatchObject(id, data)
+  async update(data: ResourcePatchData<U>): Promise<void> {
+    const body = this.formatter.createResourcePatchDocument(data)
+    const url = createURL(this.client.url, [this.path, body.data.id])
     await this.client.request(url, 'PATCH', body as any)
   }
 
@@ -99,27 +100,43 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter<any, an
   >(id: ResourceId, fieldName: V): Promise<void> {
     const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
-    await this.client.request(url, 'PATCH', {})
+    await this.client.request(url, 'PATCH', EMPTY_OBJECT)
   }
 
   async getOne<V extends ResourceFilter<U>>(
     id: ResourceId,
-    resourceFilter?: V,
-  ): Promise<OneResource<FilteredResource<U, V>>> {
+    resourceFilter: V = EMPTY_OBJECT,
+  ): Promise<FilteredResource<U, V>> {
     const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
     return this.client
       .request(url)
-      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
+      .then(
+        (data) =>
+          this.formatter.decode(
+            data as JSONAPIDocument,
+            resourceFilter as ResourceFilter<any>,
+          ) as FilteredResource<U, V>,
+      )
   }
 
   async getMany<V extends ResourceFilter<U>>(
-    searchParams?: JSONAPISearchParams | null,
-    resourceFilter?: V,
-  ): Promise<ManyResource<FilteredResource<U, V>>> {
-    const url = createURL(this.client.url, [this.path], resourceFilter as any, searchParams || {})
+    searchParams: JSONAPISearchParams | null = null,
+    resourceFilter: V = EMPTY_OBJECT,
+  ): Promise<Array<FilteredResource<U, V>>> {
+    const url = createURL(
+      this.client.url,
+      [this.path],
+      resourceFilter as ResourceFilter<any>,
+      searchParams || EMPTY_OBJECT,
+    )
     return this.client
       .request(url)
-      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
+      .then(
+        (data) =>
+          this.formatter.decode(data as JSONAPIDocument, resourceFilter as any) as Array<
+            FilteredResource<U, V>
+          >,
+      )
   }
 
   async getOneRelationship<
