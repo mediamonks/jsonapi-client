@@ -71,7 +71,7 @@ describe('decodeAttribute', () => {
 
   it('returns a failure error array when a required attribute is null', () => {
     const validation = decodeAttribute(
-      optionalAttribute,
+      requiredAttribute,
       'foo',
       {
         type: '<TYPE>',
