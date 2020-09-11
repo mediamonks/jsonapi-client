@@ -1,11 +1,11 @@
-import { None, Predicate } from 'isntnt'
+import { Predicate } from 'isntnt'
 
 import {
   ResourceFieldRule,
   ResourceFieldFlag,
   ResourceFieldRoot,
   ResourceFieldMethod,
-} from '../../enum'
+} from '../../data/enum'
 import {
   AttributeFieldFromFactory,
   AttributeValue,
@@ -64,9 +64,9 @@ export class AttributeField<
 
 export namespace Attribute {
   export const optional = createAttributeFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
   )
 
   export type Optional<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -76,9 +76,9 @@ export namespace Attribute {
   >
 
   export const optionalReadonly = createAttributeFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Forbidden,
   )
 
   export type OptionalReadonly<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -88,9 +88,9 @@ export namespace Attribute {
   >
 
   export const optionalGenerated = createAttributeFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Optional,
   )
 
   export type OptionalGenerated<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -100,9 +100,9 @@ export namespace Attribute {
   >
 
   export const optionalStatic = createAttributeFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Forbidden,
   )
 
   export type OptionalStatic<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -112,9 +112,9 @@ export namespace Attribute {
   >
 
   export const optionalWriteOnce = createAttributeFieldFactory(
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Forbidden,
   )
 
   export type OptionalWriteOnce<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -124,9 +124,9 @@ export namespace Attribute {
   >
 
   export const optionalWriteOnly = createAttributeFieldFactory(
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
   )
 
   export type OptionalWriteOnly<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -136,9 +136,9 @@ export namespace Attribute {
   >
 
   export const required = createAttributeFieldFactory(
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Required,
   )
 
   export type Required<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -148,9 +148,9 @@ export namespace Attribute {
   >
 
   export const requiredReadonly = createAttributeFieldFactory(
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Forbidden,
   )
 
   export type RequiredReadonly<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -160,9 +160,9 @@ export namespace Attribute {
   >
 
   export const requiredGenerated = createAttributeFieldFactory(
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Optional,
   )
 
   export type RequiredGenerated<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -172,9 +172,9 @@ export namespace Attribute {
   >
 
   export const requiredStatic = createAttributeFieldFactory(
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Forbidden,
   )
 
   export type RequiredStatic<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -184,9 +184,9 @@ export namespace Attribute {
   >
 
   export const requiredWriteOnce = createAttributeFieldFactory(
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Forbidden,
   )
 
   export type RequiredWriteOnce<T extends AttributeValue, U = T> = AttributeFieldFromFactory<
@@ -196,9 +196,9 @@ export namespace Attribute {
   >
 
   export const requiredWriteOnly = createAttributeFieldFactory(
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Optional,
   )
 
   export type RequiredWriteOnly<T extends AttributeValue, U = T> = AttributeFieldFromFactory<

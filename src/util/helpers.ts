@@ -1,4 +1,5 @@
-import { ErrorMessage } from '../enum'
+import { ErrorMessage } from '../data/enum'
+import { JSONAPIRequestMethod } from '../types'
 
 /** @hidden */
 export const reflect = <T>(value: T) => value

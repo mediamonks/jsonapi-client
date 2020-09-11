@@ -7,17 +7,30 @@ import {
   Predicate,
 } from 'isntnt'
 
-import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from './enum'
+import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from './data/enum'
 import { ResourceField } from './resource/field'
 import { AttributeField } from './resource/field/attribute'
 import { RelationshipField } from './resource/field/relationship'
-import { ResourceFormatter } from './resource/formatter'
+import { ResourceFormatter } from './formatter'
 import { ResourceIdentifier } from './resource/identifier'
+import { RESOURCE_LINKS_KEY, RESOURCE_META_KEY } from './data/constants'
 
 // Util
 
 /** @hidden */
 export type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
+
+/** @hidden */
+export type ReadonlyRecord<K extends keyof any, T> = {
+  readonly [P in K]: T
+}
+
+type WithOptional<T, K extends keyof T = keyof T> = {
+  [P in K]?: T[K]
+} &
+  {
+    [P in Exclude<keyof T, K>]: T[K]
+  }
 
 // Resource
 export type ResourceType = string
@@ -25,32 +38,42 @@ export type ResourceId = string
 
 export type ResourcePath = string
 
-export type ResourceFieldName = string
+export type ResourceFieldName<T extends ResourceFormatter = any> = Extract<
+  keyof T['fields'],
+  string
+>
 
 export type ResourceIdentifierKey = keyof ResourceIdentifier<any>
 
-export type Resource<T extends ResourceFormatter<any, any>> = ResourceIdentifier<T['type']> &
-  ResourceFieldValues<T['fields']>
-
-type BaseRelationshipFieldValueWrapper<T, U, V> = V extends ResourceFieldFlag.AlwaysGet
+type BaseRelationshipFieldValueWrapper<T, U, V> = V extends ResourceFieldFlag.GetRequired
   ? U extends RelationshipFieldType.ToOne
     ? T
     : Array<T>
-  : V extends ResourceFieldFlag.MaybeGet
+  : V extends ResourceFieldFlag.GetOptional
   ? U extends RelationshipFieldType.ToOne
     ? T | null
     : Array<T>
   : never
 
 type FilteredResourceFieldName<
-  T extends ResourceFormatter<any, any>,
+  T extends ResourceFormatter,
   U extends ResourceFilter<T>
 > = T['type'] extends keyof U['fields'] ? U['fields'][T['type']][number] : keyof T['fields']
 
-export type FilteredResource<
-  T extends ResourceFormatter<any, any> = any,
-  U extends ResourceFilter<T> = any
+type ResourceLinksKey = typeof RESOURCE_LINKS_KEY
+
+type ResourceMetaKey = typeof RESOURCE_META_KEY
+
+export type Resource<
+  T extends ResourceFormatter = any,
+  U extends ResourceFilter<T> = {}
 > = ResourceIdentifier<T['type']> &
+  // {
+  //   [P in ResourceMetaKey]: JSONAPIMetaObject | null
+  // } &
+  // {
+  //   [P in ResourceLinksKey]: JSONAPILinksObject | null
+  // } &
   {
     [P in FilteredResourceFieldName<T, U>]: T['fields'][P] extends RelationshipField<
       infer R,
@@ -60,19 +83,16 @@ export type FilteredResource<
       ? BaseRelationshipFieldValueWrapper<
           {
             [K in R['type']]: P extends keyof U['include']
-              ? FilteredResource<
-                  Extract<R, { type: K }>,
-                  { fields: U['fields']; include: U['include'][P] }
-                >
+              ? Resource<Extract<R, { type: K }>, { fields: U['fields']; include: U['include'][P] }>
               : ResourceIdentifier<K>
           }[R['type']],
           S,
           V
         >
       : T['fields'][P] extends AttributeField<infer R, any, infer S>
-      ? S extends ResourceFieldFlag.AlwaysGet
+      ? S extends ResourceFieldFlag.GetRequired
         ? R
-        : S extends ResourceFieldFlag.MaybeGet
+        : S extends ResourceFieldFlag.GetOptional
         ? R | null
         : never
       : never
@@ -82,65 +102,45 @@ export type ResourceConstructorData<T extends ResourceType, U extends ResourceFi
   ResourceFormatter<T, U>
 >
 
-type MonoResourceCreateData<T extends ResourceFormatter<any, any>> = {
-  id?: ResourceId
-  type: T['type']
-} & {
-  [P in ResourceFieldNameWithFlag<
-    T['fields'],
-    ResourceFieldFlag.AlwaysPost
-  >]: ResourceFieldCreateValue<T['fields'][P]>
-} &
-  {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.MaybePost
-    >]?: ResourceFieldCreateValue<T['fields'][P]>
-  } &
-  {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.NeverPost
-    >]?: JSONAPIClient.IllegalField<
-      'Field with NeverPost flag must be omitted from ResourceCreateData',
-      T['fields'][P]
-    >
-  }
+type MonoResourceCreateData<T extends ResourceFormatter> = WithOptional<
+  ResourceIdentifier<T['type']>,
+  'id'
+> &
+  Pick<
+    {
+      [P in keyof T['fields']]: ResourceFieldCreateValue<T['fields'][P]>
+    },
+    ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.PostRequired>
+  > &
+  Pick<
+    {
+      [P in keyof T['fields']]?: ResourceFieldCreateValue<T['fields'][P]>
+    },
+    ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.PostOptional>
+  >
 
-export type ResourceCreateData<T extends ResourceFormatter<any, any>> = {
+export type ResourceCreateData<T extends ResourceFormatter> = {
   [P in T['type']]: MonoResourceCreateData<Extract<T, { type: P }>>
 }[T['type']]
 
-type MonoResourcePatchData<T extends ResourceFormatter<any, any>> = ResourceIdentifier<T['type']> &
-  {
-    [P in ResourceFieldNameWithFlag<
+type MonoResourcePatchData<T extends ResourceFormatter> = ResourceIdentifier<T['type']> &
+  Pick<
+    {
+      [P in keyof T['fields']]?: ResourceFieldPatchValue<T['fields'][P]>
+    },
+    ResourceFieldNameWithFlag<
       T['fields'],
-      ResourceFieldFlag.AlwaysPatch
-    >]: ResourceFieldPatchValue<T['fields'][P]>
-  } &
-  {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.MaybePatch
-    >]?: ResourceFieldPatchValue<T['fields'][P]>
-  } &
-  {
-    [P in ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.NeverPatch
-    >]?: JSONAPIClient.IllegalField<
-      'Field with NeverPatch flag must be omitted from ResourcePatchData',
-      T['fields'][P]
+      ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     >
-  }
+  >
 
-export type ResourcePatchData<T extends ResourceFormatter<any, any>> = {
+export type ResourcePatchData<T extends ResourceFormatter> = {
   [P in T['type']]: MonoResourcePatchData<Extract<T, { type: P }>>
 }[T['type']]
 
 //
 export type ExperimentalResourceQuery<
-  T extends ResourceFormatter<any, any>,
+  T extends ResourceFormatter,
   U extends ResourceFieldsQuery<T>,
   V extends ResourceIncludeQuery<T>
 > = {
@@ -181,73 +181,63 @@ type BaseResourceFieldsRelatedResources<T, U extends ResourceType> = T extends R
   : never
 
 export type ResourceRelatedResources<
-  T extends ResourceFormatter<any, any>
+  T extends ResourceFormatter
 > = BaseResourceFieldsRelatedResources<T['fields'], never>
 
 // ResourceFilter
-export type ResourceFilter<T extends ResourceFormatter<any, any>> = {
-  [P in 'fields']?: ResourceFieldsQuery<T>
-} &
-  {
-    [P in 'include']?: ResourceIncludeQuery<T>
-  }
+export type ResourceFilter<T extends ResourceFormatter = any> = {
+  fields?: ResourceFieldsQuery<T>
+} & {
+  include?: ResourceIncludeQuery<T>
+}
 
 // Query
 export type ResourceQueryParams = ResourceFilter<any>
 
-type BaseResourcesFieldsQuery<T> = T extends ResourceFormatter<any, any>
+type BaseResourcesFieldsQuery<T> = T extends ResourceFormatter
   ? {
       [P in T['type']]?: NonEmptyReadonlyArray<
         ResourceFieldNameWithFlag<
           Extract<T, { type: P }>['fields'],
-          ResourceFieldFlag.AlwaysGet | ResourceFieldFlag.MaybeGet
+          ResourceFieldFlag.GetRequired | ResourceFieldFlag.GetOptional
         >
       >
     }
   : never
 
-export type ResourceFieldsQuery<T extends ResourceFormatter<any, any> = any> = Intersect<
+export type ResourceFieldsQuery<T extends ResourceFormatter = any> = Intersect<
   BaseResourcesFieldsQuery<ResourceRelatedResources<T>>
 >
 
 type ExperimentalResourceIncludeQuery<
-  T extends ResourceFormatter<any, any> = any,
+  T extends ResourceFormatter = any,
   U extends ResourceFieldsQuery<T> | {} = {}
 > = {
   [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<
     any,
     any,
-    ResourceFieldFlag.NeverGet
+    ResourceFieldFlag.GetForbidden
   >
-    ? JSONAPIClient.IllegalField<
-        'Field with NeverGet flag must be omitted from ResourceIncludeQuery',
-        T[P]
-      >
+    ? never
     : T['fields'][P] extends RelationshipField<infer R, any, any>
     ? T['type'] extends keyof U
       ? P extends U[T['type']][number]
         ? ExperimentalResourceIncludeQuery<R, U> | null
-        : JSONAPIClient.IllegalField<
-            'Field must be present in ResourceIncludeQuery',
-            { [P in T['type']]: U[T['type']] }
-          >
+        : never
       : ExperimentalResourceIncludeQuery<R, U> | null
-    : JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
+    : never
 }
 
-export type ResourceIncludeQuery<T extends ResourceFormatter<any, any> = any> = {
+export type ResourceIncludeQuery<T extends ResourceFormatter = any> = {
   [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<
     any,
     any,
-    ResourceFieldFlag.NeverGet
+    ResourceFieldFlag.GetForbidden
   >
-    ? JSONAPIClient.IllegalField<
-        'Field with NeverGet flag must be omitted from ResourceIncludeQuery',
-        T[P]
-      >
+    ? never
     : T['fields'][P] extends RelationshipField<infer R, any, any>
     ? ResourceIncludeQuery<R> | null
-    : JSONAPIClient.IllegalField<'Field must be a RelationshipField', T['fields'][P]>
+    : never
 }
 
 // Fields
@@ -285,41 +275,47 @@ export type ResourceFieldPatchValue<
   ? AttributeFieldPatchValue<T>
   : never
 
-export type ResourceFieldNameWithFlag<T extends ResourceFields, U extends ResourceFieldFlag> = {
-  [P in keyof T]: T[P] extends ResourceField<any, infer R> ? (R extends U ? P : never) : never
-}[keyof T]
+export type ResourceFieldNameWithFlag<
+  T extends ResourceFields,
+  U extends ResourceFieldFlag
+> = Extract<
+  {
+    [P in keyof T]: T[P] extends ResourceField<any, infer R> ? (R extends U ? P : never) : never
+  }[keyof T],
+  string
+>
 
 export type ResourceFieldFactoryRules = [ResourceFieldRule, ResourceFieldRule, ResourceFieldRule]
 
 export type ResourceFieldGetMask =
-  | ResourceFieldFlag.NeverGet
-  | ResourceFieldFlag.MaybeGet
-  | ResourceFieldFlag.AlwaysGet
+  | ResourceFieldFlag.GetForbidden
+  | ResourceFieldFlag.GetOptional
+  | ResourceFieldFlag.GetRequired
 
 export type ResourceFieldPostMask =
-  | ResourceFieldFlag.NeverPost
-  | ResourceFieldFlag.MaybePost
-  | ResourceFieldFlag.AlwaysPost
+  | ResourceFieldFlag.PostForbidden
+  | ResourceFieldFlag.PostOptional
+  | ResourceFieldFlag.PostRequired
 
 export type ResourceFieldPatchMask =
-  | ResourceFieldFlag.NeverPatch
-  | ResourceFieldFlag.MaybePatch
-  | ResourceFieldFlag.AlwaysPatch
+  | ResourceFieldFlag.PatchForbidden
+  | ResourceFieldFlag.PatchOptional
+  | ResourceFieldFlag.PatchRequired
 
 export type ResourceFieldNeverMask =
-  | ResourceFieldFlag.NeverGet
-  | ResourceFieldFlag.NeverPost
-  | ResourceFieldFlag.NeverPatch
+  | ResourceFieldFlag.GetForbidden
+  | ResourceFieldFlag.PostForbidden
+  | ResourceFieldFlag.PatchForbidden
 
 export type ResourceFieldMaybeMask =
-  | ResourceFieldFlag.MaybeGet
-  | ResourceFieldFlag.MaybePost
-  | ResourceFieldFlag.MaybePatch
+  | ResourceFieldFlag.GetOptional
+  | ResourceFieldFlag.PostOptional
+  | ResourceFieldFlag.PatchOptional
 
 export type ResourceFieldAlwaysMask =
-  | ResourceFieldFlag.AlwaysGet
-  | ResourceFieldFlag.AlwaysPost
-  | ResourceFieldFlag.AlwaysPatch
+  | ResourceFieldFlag.GetRequired
+  | ResourceFieldFlag.PostRequired
+  | ResourceFieldFlag.PatchRequired
 
 // Attributes
 export type AttributeValue =
@@ -349,7 +345,7 @@ export type RawAttributeFieldValue<
 export type AttributeFieldCreateValue<
   T extends AttributeField<any, any, any>
 > = T extends AttributeField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.MaybePost | ResourceFieldFlag.AlwaysPost
+  ? S extends ResourceFieldFlag.PostOptional | ResourceFieldFlag.PostRequired
     ? R
     : never
   : never
@@ -357,9 +353,9 @@ export type AttributeFieldCreateValue<
 export type AttributeFieldPatchValue<
   T extends AttributeField<any, any, any>
 > = T extends AttributeField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.MaybePatch
+  ? S extends ResourceFieldFlag.PatchOptional
     ? R | null
-    : S extends ResourceFieldFlag.AlwaysPatch
+    : S extends ResourceFieldFlag.PatchRequired
     ? R
     : never
   : never
@@ -389,7 +385,7 @@ export type AttributeFieldValidator<T> = {
 }
 
 // Relationships
-export type RelationshipValue = Resource<any> | null | Array<Resource<any>>
+export type RelationshipValue = Resource | null | Array<Resource>
 
 export type RelationshipFieldValue<
   T extends RelationshipField<any, any, any>
@@ -420,7 +416,7 @@ export type RelationshipCreateData<
 export type ToOneRelationshipCreateData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.MaybePost | ResourceFieldFlag.AlwaysPost
+  ? S extends ResourceFieldFlag.PostOptional | ResourceFieldFlag.PostRequired
     ? ResourceIdentifier<R['type']>
     : never
   : never
@@ -428,7 +424,7 @@ export type ToOneRelationshipCreateData<
 export type ToManyRelationshipCreateData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
+  ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     ? Array<ResourceIdentifier<R['type']>>
     : never
   : never
@@ -446,9 +442,9 @@ export type RelationshipPatchData<
 export type ToOneRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.MaybePatch
+  ? S extends ResourceFieldFlag.PatchOptional
     ? ResourceIdentifier<R['type']> | null
-    : S extends ResourceFieldFlag.AlwaysPatch
+    : S extends ResourceFieldFlag.PatchRequired
     ? ResourceIdentifier<R['type']>
     : never
   : never
@@ -456,7 +452,7 @@ export type ToOneRelationshipPatchData<
 export type ToManyRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.MaybePatch | ResourceFieldFlag.AlwaysPatch
+  ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     ? Array<ResourceIdentifier<R['type']>>
     : never
   : never
@@ -511,18 +507,18 @@ export type ToManyRelationshipFieldNameWithFlag<
 > = ResourceFieldNameWithFlag<Pick<T, ToManyRelationshipFieldName<T>>, U>
 
 export type RelationshipFieldFactory = (
-  getResources: () => NonEmptyReadonlyArray<ResourceFormatter<any, any>>,
+  getResources: () => NonEmptyReadonlyArray<ResourceFormatter>,
 ) => RelationshipField<any, RelationshipFieldType, any>
 
 export type ToOneRelationshipFieldFromFactory<
-  T extends ResourceFormatter<any, any>,
+  T extends ResourceFormatter,
   U extends RelationshipFieldFactory
 > = ReturnType<U> extends RelationshipField<any, any, infer R>
   ? RelationshipField<T, RelationshipFieldType.ToOne, R>
   : never
 
 export type ToManyRelationshipFieldFromFactory<
-  T extends ResourceFormatter<any, any>,
+  T extends ResourceFormatter,
   U extends RelationshipFieldFactory
 > = ReturnType<U> extends RelationshipField<any, any, infer R>
   ? RelationshipField<T, RelationshipFieldType.ToMany, R>
@@ -546,73 +542,37 @@ type BaseJSONAPIDocument = {
 /**
  * {@link https://jsonapi.org/format/#document-structure|JSON:API Reference}
  */
-export type JSONAPIDocument<T extends ResourceFormatter | Array<ResourceFormatter> = any> =
+export type JSONAPIDocument<T extends ResourceFormatter = any> =
   | JSONAPISuccessDocument<T>
   | JSONAPIFailureDocument
-// (
-//   | ((
-//       | {
-//           // data and errors are mutually exclusive
-//           data: JSONAPIResourceObject<
-//             T extends ResourceFormatter<any, any>
-//               ? T
-//               : T extends Array<ResourceFormatter<any, any>>
-//               ? T[number]
-//               : never
-//           >
-//           included?: Array<
-//             JSONAPIResourceObject<
-//               ResourceRelatedResources<
-//                 T extends ResourceFormatter<any, any>
-//                   ? T
-//                   : T extends Array<ResourceFormatter<any, any>>
-//                   ? T[number]
-//                   : never
-//               >
-//             >
-//           >
-//           errors?: never
-//         }
-//       | {
-//           data?: never
-//           included?: never
-//           errors: Array<JSONAPIErrorObject>
-//         }
-//     ) & {
-//       meta?: JSONAPIMetaObject
-//     })
-//   | {
-//       meta: JSONAPIMetaObject
-//     }
-// ) & {
-//   jsonapi?: {
-//     version?: JSONAPIVersion
-//   }
-//   links?: JSONAPILinksObject
-// }
 
-export type JSONAPISuccessDocument<
-  T extends ResourceFormatter | Array<ResourceFormatter> = any
+export type JSONAPISuccessOfManyDocument<
+  T extends ResourceFormatter = any
 > = BaseJSONAPIDocument & {
-  data: JSONAPIResourceObject<
-    T extends ResourceFormatter<any, any>
-      ? T
-      : T extends Array<ResourceFormatter<any, any>>
-      ? T[number]
-      : never
-  >
+  data: Array<JSONAPIResourceObject<T>>
   included?: Array<
     JSONAPIResourceObject<
       ResourceRelatedResources<
-        T extends ResourceFormatter<any, any>
-          ? T
-          : T extends Array<ResourceFormatter<any, any>>
-          ? T[number]
-          : never
+        T extends ResourceFormatter ? T : T extends Array<ResourceFormatter> ? T[number] : never
       >
     >
   >
 }
+
+export type JSONAPISuccessOfOneDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument & {
+  data: JSONAPIResourceObject<T>
+  included?: Array<
+    JSONAPIResourceObject<
+      ResourceRelatedResources<
+        T extends ResourceFormatter ? T : T extends Array<ResourceFormatter> ? T[number] : never
+      >
+    >
+  >
+}
+
+export type JSONAPISuccessDocument<T extends ResourceFormatter = any> =
+  | JSONAPISuccessOfManyDocument<T>
+  | JSONAPISuccessOfOneDocument<T>
 
 export type JSONAPIFailureDocument = BaseJSONAPIDocument & {
   errors: Array<JSONAPIErrorObject>
@@ -621,7 +581,7 @@ export type JSONAPIFailureDocument = BaseJSONAPIDocument & {
 /**
  * {@link https://jsonapi.org/format/#document-resource-objects|JSON:API Reference}
  */
-export type JSONAPIResourceObject<T extends ResourceFormatter<any, any> = any> = {
+export type JSONAPIResourceObject<T extends ResourceFormatter = any> = {
   type: T['type']
   id: ResourceId
   attributes?: JSONAPIResourceObjectAttributes<T['fields']>
@@ -633,7 +593,7 @@ export type JSONAPIResourceObject<T extends ResourceFormatter<any, any> = any> =
 /**
  * {@link https://jsonapi.org/format/#crud-creating|JSON:API Reference}
  */
-export type JSONAPIResourceCreateObject<T extends ResourceFormatter<any, any> = any> = {
+export type JSONAPIResourceCreateObject<T extends ResourceFormatter = any> = {
   type: T['type']
   id?: ResourceId
   attributes?: JSONAPIResourceObjectAttributes<T['fields']>
@@ -773,11 +733,3 @@ export type JSONAPIFilterParams =
  * {@link https://jsonapi.org/faq/#wheres-put|JSON:API Reference}
  */
 export type JSONAPIRequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
-
-// JSONAPIClient
-namespace JSONAPIClient {
-  export type IllegalField<V extends string, U> = TypeError & {
-    message: V
-    actual: U
-  }
-}

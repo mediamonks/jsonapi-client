@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime'
-import JSONAPI, { AbsolutePathRoot, InitialRelationshipData } from '../../../src'
+import JSONAPI, { AbsolutePathRoot, RelationshipFieldData, ResourceCreateData } from '../../../src'
 
 import { author, book, chapter, series } from './resources'
 
@@ -7,7 +7,7 @@ const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
 const client = JSONAPI.client(url, {
   absolutePathRoot: AbsolutePathRoot.Client,
-  initialRelationshipData: InitialRelationshipData.ResourceIdentifiers,
+  initialRelationshipData: RelationshipFieldData.ResourceIdentifiers,
 })
 
 const authors = client.endpoint('authors', author)
@@ -25,7 +25,7 @@ const chapters = client.endpoint('chapters', chapter)
       books: [],
     })
     .then((oneAuthor) => {
-      console.log('Created', oneAuthor.data)
+      console.log('Created', oneAuthor)
     })
 
 0 &&
@@ -34,38 +34,43 @@ const chapters = client.endpoint('chapters', chapter)
       type: 'authors',
       id: '1',
       name: 'Jane',
-      // books: [{ type: 'books', id: '4' }],
+      books: [{ type: 'books', id: '4' }],
     })
     .then(() => {
       console.log('Updated Author')
     })
 
-const authorFilter = author.filter(
-  {
+const authorFilter = author.filter({
+  fields: {
     [author.type]: ['name', 'books', 'photos'],
     [book.type]: ['title', 'chapters'],
   },
-  { books: null, photos: null },
-)
+  include: {
+    books: null,
+    photos: null,
+  },
+})
 
 0 &&
   authors.getOne('4', authorFilter).then((data) => {
     console.log('One Author', data)
   })
 
-const bookFilter = book.filter(
-  {
+const bookFilter = book.filter({
+  fields: {
     [book.type]: ['title', 'chapters', 'series'],
     [series.type]: ['title', 'books'],
   },
-  {
+  include: {
     series: null,
   },
-)
+})
 
 1 &&
   books.getOne('28', bookFilter).then((data) => {
     console.log('One Book', data)
+    // const meta = client.getResourceMeta(data)
+    // console.log('Meta', meta)
   })
 
 const chapterQuery = {
@@ -74,20 +79,31 @@ const chapterQuery = {
   },
 }
 
-const chapterFilter = chapter.filter(
-  {
+const chapterFilter = chapter.filter({
+  fields: {
     [chapter.type]: ['book'],
     [book.type]: ['title', 'author'],
     [author.type]: ['name'],
   },
-  {
+  include: {
     book: {
       author: null,
     },
   },
-)
+})
 
 0 &&
-  chapters.getMany(chapterQuery, chapterFilter).then((data) => {
-    console.log('Many Chapters', data[1].book)
+  chapters.getMany(chapterQuery, chapterFilter).then((chapters) => {
+    console.log('Many Chapters', chapters[1].book)
+    // const meta = client.getMeta(chapters[1].book)
+    // console.log('Meta', meta)
   })
+
+const getOneBookWithAuthor = books.one({
+  fields: {
+    books: ['author'],
+  },
+  include: {
+    author: null,
+  },
+})

@@ -1,15 +1,19 @@
 import type { AttributeField } from './field/attribute'
 import type { RelationshipField } from './field/relationship'
-import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRoot } from '../enum'
+import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRoot } from '../data/enum'
 
 /** @hidden */
 export type ResourceFieldMaskIndex = typeof resourceFieldMaskIndex
 
 /** @hidden */
 export const resourceFieldMaskIndex = [
-  [ResourceFieldFlag.NeverGet, ResourceFieldFlag.MaybeGet, ResourceFieldFlag.AlwaysGet],
-  [ResourceFieldFlag.NeverPost, ResourceFieldFlag.MaybePost, ResourceFieldFlag.AlwaysPost],
-  [ResourceFieldFlag.NeverPatch, ResourceFieldFlag.MaybePatch, ResourceFieldFlag.AlwaysPatch],
+  [ResourceFieldFlag.GetForbidden, ResourceFieldFlag.GetOptional, ResourceFieldFlag.GetRequired],
+  [ResourceFieldFlag.PostForbidden, ResourceFieldFlag.PostOptional, ResourceFieldFlag.PostRequired],
+  [
+    ResourceFieldFlag.PatchForbidden,
+    ResourceFieldFlag.PatchOptional,
+    ResourceFieldFlag.PatchRequired,
+  ],
 ] as const
 
 // ResourceField

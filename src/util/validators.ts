@@ -1,23 +1,19 @@
 import { either, isString, isObject, isArray, and, instance } from 'isntnt'
 
 import { ResourceField } from '../resource/field'
-import { Type, StaticType } from '../type'
+import { Type, StaticType } from './type'
 import { ResourceIdentifierKey } from '../types'
-import { isURLString, isNotEmpty, isResourceType, isResourceIdentifierKey } from './predicates'
+import { isURLString, isResourceType, isResourceIdentifierKey } from './predicates'
 import { ResourceIdentifier } from '../resource/identifier'
 
-const array = Type.is('an array', isArray)
-const object = Type.is('an object', isObject)
-
-const string = Type.is('a string', isString)
-
-type NonEmptyArray<T> = Array<T> & { 0: T }
+/** @hidden */
+export const array = Type.is('an array', isArray)
 
 /** @hidden */
-export const nonEmptyStringArray: Type<NonEmptyArray<string>> = Type.and([
-  Type.array(string),
-  Type.is('not empty', isNotEmpty),
-]) as any
+export const object = Type.is('an object', isObject)
+
+/** @hidden */
+export const string = Type.is('a string', isString)
 
 /** @hidden */
 export const urlString: Type<string> = Type.is('a valid url string', and(isString, isURLString))

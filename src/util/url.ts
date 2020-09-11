@@ -1,6 +1,6 @@
 import { isArray, isObject, isSome, or, isSerializableNumber, and, isString } from 'isntnt'
 
-import { EMPTY_ARRAY, EMPTY_OBJECT } from '../util/constants'
+import { EMPTY_ARRAY, EMPTY_OBJECT } from '../data/constants'
 import {
   ResourceFilter,
   JSONAPISearchParams,

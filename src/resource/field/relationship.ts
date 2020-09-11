@@ -4,19 +4,19 @@ import {
   ResourceFieldMethod,
   ResourceFieldRoot,
   ResourceFieldRule,
-} from '../../enum'
+} from '../../data/enum'
 import {
   ToOneRelationshipFieldFromFactory,
   ToManyRelationshipFieldFromFactory,
   ResourceFieldFactoryRules,
   NonEmptyReadonlyArray,
 } from '../../types'
-import { ResourceFormatter } from '../formatter'
+import { ResourceFormatter } from '../../formatter'
 import { ResourceField, ResourceFieldMaskIndex, resourceFieldMaskIndex } from '../field'
 
 export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
-) => <U extends ResourceFormatter<any, any>>(
+) => <U extends ResourceFormatter>(
   getResources: () => NonEmptyReadonlyArray<U>,
 ): RelationshipField<
   U,
@@ -32,7 +32,7 @@ export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFacto
 
 export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
-) => <U extends ResourceFormatter<any, any>>(
+) => <U extends ResourceFormatter>(
   getResources: () => NonEmptyReadonlyArray<U>,
 ): RelationshipField<
   U,
@@ -47,7 +47,7 @@ export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFact
 }
 
 export class RelationshipField<
-  T extends ResourceFormatter<any, any>,
+  T extends ResourceFormatter,
   U extends RelationshipFieldType,
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Relationships, V> {
@@ -63,64 +63,68 @@ export class RelationshipField<
 
 export namespace Relationship {
   export const toOne = createToOneRelationshipFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
   )
 
-  export type ToOne<T extends ResourceFormatter<any, any>> = ToOneRelationshipFieldFromFactory<
+  export type ToOne<T extends ResourceFormatter> = ToOneRelationshipFieldFromFactory<
     T,
     typeof toOne
   >
 
   export const toOneRequired = createToOneRelationshipFieldFactory(
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
   )
 
-  export type ToOneRequired<
-    T extends ResourceFormatter<any, any>
-  > = ToOneRelationshipFieldFromFactory<T, typeof toOneRequired>
+  export type ToOneRequired<T extends ResourceFormatter> = ToOneRelationshipFieldFromFactory<
+    T,
+    typeof toOneRequired
+  >
 
   export const toOneReadOnly = createToOneRelationshipFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Forbidden,
   )
 
-  export type ToOneReadOnly<
-    T extends ResourceFormatter<any, any>
-  > = ToOneRelationshipFieldFromFactory<T, typeof toOneReadOnly>
+  export type ToOneReadOnly<T extends ResourceFormatter> = ToOneRelationshipFieldFromFactory<
+    T,
+    typeof toOneReadOnly
+  >
 
   export const toMany = createToManyRelationshipFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
   )
 
-  export type ToMany<T extends ResourceFormatter<any, any>> = ToManyRelationshipFieldFromFactory<
+  export type ToMany<T extends ResourceFormatter> = ToManyRelationshipFieldFromFactory<
     T,
     typeof toMany
   >
 
   export const toManyRequired = createToManyRelationshipFieldFactory(
-    ResourceFieldRule.Always,
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Maybe,
+    ResourceFieldRule.Required,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Optional,
   )
 
-  export type ToManyRequired<
-    T extends ResourceFormatter<any, any>
-  > = ToManyRelationshipFieldFromFactory<T, typeof toManyRequired>
+  export type ToManyRequired<T extends ResourceFormatter> = ToManyRelationshipFieldFromFactory<
+    T,
+    typeof toManyRequired
+  >
 
   export const toManyReadOnly = createToManyRelationshipFieldFactory(
-    ResourceFieldRule.Maybe,
-    ResourceFieldRule.Never,
-    ResourceFieldRule.Never,
+    ResourceFieldRule.Optional,
+    ResourceFieldRule.Forbidden,
+    ResourceFieldRule.Forbidden,
   )
 
-  export type ToManyReadOnly<
-    T extends ResourceFormatter<any, any>
-  > = ToManyRelationshipFieldFromFactory<T, typeof toManyReadOnly>
+  export type ToManyReadOnly<T extends ResourceFormatter> = ToManyRelationshipFieldFromFactory<
+    T,
+    typeof toManyReadOnly
+  >
 }

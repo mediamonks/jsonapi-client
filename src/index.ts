@@ -1,16 +1,20 @@
-import { client } from './client'
-import { formatter } from './resource/formatter'
+import client from './client'
+import formatter from './formatter'
 
 export * from './client'
 export * from './client/endpoint'
+export * from './data/enum'
 export * from './resource/field'
 export * from './resource/field/attribute'
-export * from './resource/formatter'
+export * from './formatter'
 export * from './resource/field/relationship'
-export * from './type'
+export * from './resource/identifier'
+export * from './util/type'
 export * from './types'
 
-export default {
+const JSONAPI = {
   client,
   formatter,
 }
+
+export default JSONAPI

@@ -1,4 +1,4 @@
-import { at, min, test, either, isString, isNumber, or } from 'isntnt'
+import { at, min, test, either, isString, isNumber, or, and } from 'isntnt'
 
 export const isContent = or(isString, isNumber)
 
@@ -15,6 +15,7 @@ export const isURLString = (value: unknown): value is string => {
 
 export const isResourceIdentifierKey = either('type', 'id')
 
-export const isResourceType = test(
-  /^(?! _-)[a-zA-Z0-9][^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^`{|}~]+(\1)$/,
-)
+const testMemberNameStructure = and(test(/^[^ _\-]/), test(/[^ _\-]$/))
+const testNoReservedCharacters = test(/^[^+,\.\[\]!"#$%&'\(\)\/*:;<=>?@\\^\`{|}~]+$/)
+
+export const isResourceType = and(testMemberNameStructure, testNoReservedCharacters)
