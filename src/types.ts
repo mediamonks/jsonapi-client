@@ -457,7 +457,7 @@ export type ToManyRelationshipPatchData<
     : never
   : never
 
-export type RelationshipFieldResourceConstructor<
+export type RelationshipFieldResourceFormatter<
   T extends RelationshipField<any, any, any>
 > = T extends RelationshipField<infer R, any, any> ? R : never
 
@@ -663,9 +663,10 @@ export type JSONAPILinksObject = {
 /**
  * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
  */
-export type JSONAPIPaginationLinks = {
-  [P in 'first' | 'prev' | 'next' | 'last']?: JSONAPILink | null
-}
+export type JSONAPIPaginationLinks = JSONAPILinksObject &
+  {
+    [P in 'first' | 'prev' | 'next' | 'last']?: JSONAPILink | null
+  }
 
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-links|JSON:API Reference}

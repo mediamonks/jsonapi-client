@@ -1,4 +1,4 @@
-import { decodeDocument } from './decodeDocument'
+import { decodeDocument, DOCUMENT_CONTEXT_STORE } from './decodeDocument'
 import { formatterA } from '../../test/formatters'
 import { RESOURCE_CONTEXT_STORE } from './decodeResourceObject'
 
@@ -75,7 +75,7 @@ describe('decodeDocument', () => {
         self: 'foo',
       },
     })
-    expect(RESOURCE_CONTEXT_STORE.get(resource as any)).toEqual({
+    expect(DOCUMENT_CONTEXT_STORE.get(resource as any)).toEqual({
       meta: {
         foo: 'baz',
       },
@@ -134,6 +134,36 @@ describe('decodeDocument', () => {
         toManyRelationship: [],
       },
     ])
+  })
+
+  it('throws when a document with an invalid of-one resource value is passed', () => {
+    expect(() => {
+      decodeDocument([formatterA], {
+        data: {
+          type: 'a',
+          id: '<some-id>',
+          attributes: {
+            requiredAttribute: null as any,
+          },
+        },
+      })
+    }).toThrow()
+  })
+
+  it('throws when a document with an invalid of-many resource value is passed', () => {
+    expect(() => {
+      decodeDocument([formatterA], {
+        data: [
+          {
+            type: 'a',
+            id: '<some-id>',
+            attributes: {
+              requiredAttribute: null as any,
+            },
+          },
+        ],
+      })
+    }).toThrow()
   })
 
   it('throws when an invalid document value is passed', () => {

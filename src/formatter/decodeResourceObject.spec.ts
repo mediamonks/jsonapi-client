@@ -18,4 +18,6 @@ describe('decodeRelationship', () => {
   it.todo(
     'returns a failure validation when a resource object does not match any of its formatters',
   )
+
+  it.todo('throws an error when a field is included that is not allowed')
 })

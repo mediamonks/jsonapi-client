@@ -1,7 +1,6 @@
 import { ResourceFormatter } from './formatter'
 import { optionalStringAttribute } from '../test/fields'
 import { ResourceIdentifier } from './resource/identifier'
-import { formatterA } from '../test/formatters'
 
 describe('ResourceFormatter', () => {
   describe('#constructor', () => {
@@ -79,51 +78,6 @@ describe('ResourceFormatter', () => {
     it('returns a resource identifier from the id param and instance type', () => {
       const formatter = new ResourceFormatter('foo', {})
       expect(formatter.identifier('<some-id>')).toEqual(new ResourceIdentifier('foo', '<some-id>'))
-    })
-  })
-
-  describe('#filter', () => {
-    it('returns a parsed resource filter', () => {
-      const filter = {
-        fields: {
-          a: ['requiredAttribute', 'toOneRelationship', 'toManyRelationship'],
-          b: ['foo'],
-        },
-        include: {
-          toOneRelationship: null,
-          toManyRelationship: null,
-        },
-      } as const
-      expect(formatterA.filter(filter)).toEqual(filter)
-    })
-
-    it('throws when an invalid filter is provided', () => {
-      expect(() =>
-        formatterA.filter({
-          fields: {
-            a: [],
-          },
-        } as any),
-      ).toThrow()
-      expect(() =>
-        formatterA.filter({
-          fields: {
-            a: ['does not exist'],
-          },
-        } as any),
-      ).toThrow()
-      expect(() =>
-        formatterA.filter({
-          include: {
-            doesNotExist: null,
-          },
-        } as any),
-      ).toThrow()
-      expect(() =>
-        formatterA.filter({
-          include: true,
-        } as any),
-      ).toThrow()
     })
   })
 })
