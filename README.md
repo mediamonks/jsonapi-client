@@ -14,9 +14,9 @@ JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe 
 - [x] Polymorphic relationships
 - [ ] Polymorphic endpoints
 - [x] JSON:API document meta and links
-- [ ] Resource object meta and links
-- [ ] Resource relationship links
-- [ ] Resource identifier meta
+- [x] Resource object meta and links
+- [x] Resource relationship links
+- [x] Resource identifier meta
 
 ## Design Goals
 
@@ -33,7 +33,6 @@ JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe 
 
 - Add support for polymorphic endpoints (maybe)
 - Write specs
-- Implement everything...
 
 # Getting Started
 
@@ -52,7 +51,7 @@ type UserFields = {
   friends: Relationship.ToMany<UserResource>
 }
 
-type UserResource = ResourceFormatter<UserType, UserFields>
+type UserFormatter = ResourceFormatter<UserType, UserFields>
 
 const dateStringFormatter = {
   serialize: (value: Date) => value.toISOString(),
@@ -61,7 +60,7 @@ const dateStringFormatter = {
 
 const isUserRole = either('admin', 'editor', 'subscriber')
 
-const user = JSONAPI.resource('User', {
+const user: UserFormatter = JSONAPI.resource('User', {
   emailAddress: Attribute.required(isString),
   password: Attribute.requiredWriteOnly(isString),
   userName: Attribute.requiredStatic(isString),
@@ -78,7 +77,7 @@ const user = JSONAPI.resource('User', {
 const url = new URL('https://example.com/api/')
 
 const client = JSONAPI.client(url, {
-  initialRelationshipData: 'primary-relationships',
+  relationshipFieldData: RelationshipFieldData.ResourceIdentifiers,
 })
 ```
 
@@ -96,11 +95,11 @@ const userEndpoint = client.endpoint(userPath, user)
 const myFirstUser = {
   emailAddress: 'jane.smiht@example.com',
   password: 'password1',
-  userName: 'example_jane',
+  userName: 'jane',
 }
 
 userEndpoint.create(myFirstUser).then((oneUser) => {
-  console.log(oneUser.data.messages)
+  console.log(oneUser.messages)
 })
 ```
 
@@ -111,7 +110,7 @@ const myFirstUserUpdate = {
   emailAddress: 'jane.smith@example.com',
 }
 
-userEndpoint.update('17', myFirstUserUpdate)
+userEndpoint.update('1', myFirstUserUpdate)
 ```
 
 ## Get a Single Resource Using a Filter
@@ -122,7 +121,7 @@ const userEmailFilter = User.createFilter({
 })
 
 userEndpoint.getOne('12', userEmailFilter).then((oneUser) => {
-  console.log(userResource.data)
+  console.log(oneUser)
   /* Resource { 
     type: 'User', 
     id: string,

@@ -24,9 +24,10 @@ import {
 import { createURL } from '../util/url'
 import { Client } from '../client'
 import { EMPTY_OBJECT } from '../data/constants'
-import { DOCUMENT_CONTEXT_STORE } from '../formatter/decodeDocument'
+import { DOCUMENT_CONTEXT_STORE, decodeDocument } from '../formatter/decodeDocument'
 import { RESOURCE_CONTEXT_STORE } from '../formatter/decodeResourceObject'
 import { ResourceIdentifier } from '../resource/identifier'
+import { parseResourceFilter } from '../formatter/parseResourceFilter'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   readonly client: T
@@ -43,12 +44,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     const url = createURL(this.client.url, [this.path])
     const body = this.formatter.createResourcePostDocument(data)
     const document = await this.client.request(url, 'POST', body as any)
-    if (document) {
-      return this.formatter.decode(document) as Resource<U, {}>
-    }
-    // TODO: Strip body of GetForbidden fields
-
-    return this.formatter.decode(body as JSONAPIDocument) as Resource<U, {}>
+    return decodeDocument([this.formatter], document || (body as any)) as Resource<U, {}>
   }
 
   async update(data: ResourcePatchData<U>): Promise<void> {
@@ -82,11 +78,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       U['fields'],
       ResourceFieldFlag.PatchRequired | ResourceFieldFlag.PatchOptional
     >
-  >(
-    id: ResourceId,
-    fieldName: V,
-    data: ToManyRelationshipPatchData<U['fields'][V]>,
-  ): Promise<void> {
+  >(id: ResourceId, fieldName: V): Promise<void> {
     const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'DELETE')
@@ -112,6 +104,10 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', EMPTY_OBJECT)
+  }
+
+  filter<V extends ResourceFilter<U>>(resourceFilter: V): V {
+    return parseResourceFilter([this.formatter], resourceFilter as any)
   }
 
   async getOne<V extends ResourceFilter<U>>(

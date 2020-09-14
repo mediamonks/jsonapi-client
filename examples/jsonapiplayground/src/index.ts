@@ -69,6 +69,7 @@ const bookFilter = book.filter({
 1 &&
   books.getOne('28', bookFilter).then((data) => {
     console.log('Book', data)
+    console.log('Book Links', books.getResourceLinks(data))
     console.log('Book Document Meta', books.getDocumentMeta(data))
     console.log('Book Resource Meta', books.getResourceMeta(data))
   })

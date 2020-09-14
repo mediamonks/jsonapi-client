@@ -35,9 +35,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     )
   }
 
-  parseResourceFilter(formatters, resourceFilter as any)
-
-  const { fields = EMPTY_OBJECT as any, include = EMPTY_OBJECT } = resourceFilter
+  const { fields, include } = parseResourceFilter(formatters, resourceFilter as any)
   const included = (document.included || []).concat(document.data)
 
   if ((isArray as Predicate<Array<any>>)(document.data)) {
