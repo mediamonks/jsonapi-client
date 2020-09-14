@@ -78,7 +78,7 @@ export const decodeResourceObject = (
     const field: ResourceFields[any] = formatter.fields[fieldName]
 
     if (field.matches(ResourceFieldFlag.GetForbidden)) {
-      throw new Error(ErrorMessage.ResourceFieldNotAllowed)
+      throw new TypeError(ErrorMessage.ResourceFieldNotAllowed)
     } else {
       if (field.isAttributeField()) {
         const [value, validationErrors] = decodeAttribute(

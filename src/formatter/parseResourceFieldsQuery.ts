@@ -1,6 +1,7 @@
 import { ResourceFieldFlag } from '../data/enum'
 import { ResourceFieldName } from '../types'
 import type { ResourceFormatter } from '../formatter'
+import { onResourceOfTypeMessage } from '../util/formatting'
 
 /**
  * Return `fieldNames` if every fieldName is allowed in a ResourceFilter for `formatter`
@@ -16,11 +17,13 @@ export const parseResourceFieldsQuery = (
 ): ReadonlyArray<ResourceFieldName> => {
   fieldNames.forEach((fieldName) => {
     if (!formatter.hasField(fieldName)) {
-      throw new TypeError(`Field "${fieldName}" does not exist on resource of type "${formatter}"`)
+      throw new TypeError(
+        onResourceOfTypeMessage([formatter], `Field "${fieldName}" does not exist`),
+      )
     }
     if (formatter.getField(fieldName).matches(ResourceFieldFlag.GetForbidden)) {
       throw new TypeError(
-        `Field "${fieldName}" may not be queried on resource of type "${formatter}"`,
+        onResourceOfTypeMessage([formatter], `Field "${fieldName}" may not be queried`),
       )
     }
   })

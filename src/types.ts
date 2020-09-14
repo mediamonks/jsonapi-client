@@ -13,7 +13,6 @@ import { AttributeField } from './resource/field/attribute'
 import { RelationshipField } from './resource/field/relationship'
 import { ResourceFormatter } from './formatter'
 import { ResourceIdentifier } from './resource/identifier'
-import { RESOURCE_LINKS_KEY, RESOURCE_META_KEY } from './data/constants'
 
 // Util
 
@@ -59,10 +58,6 @@ type FilteredResourceFieldName<
   T extends ResourceFormatter,
   U extends ResourceFilter<T>
 > = T['type'] extends keyof U['fields'] ? U['fields'][T['type']][number] : keyof T['fields']
-
-type ResourceLinksKey = typeof RESOURCE_LINKS_KEY
-
-type ResourceMetaKey = typeof RESOURCE_META_KEY
 
 export type Resource<
   T extends ResourceFormatter = any,

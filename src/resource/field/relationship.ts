@@ -17,7 +17,7 @@ import { ResourceField, ResourceFieldMaskIndex, resourceFieldMaskIndex } from '.
 export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
 ) => <U extends ResourceFormatter>(
-  getResources: () => NonEmptyReadonlyArray<U>,
+  getFormatters: () => NonEmptyReadonlyArray<U>,
 ): RelationshipField<
   U,
   RelationshipFieldType.ToOne,
@@ -27,13 +27,13 @@ export const createToOneRelationshipFieldFactory = <T extends ResourceFieldFacto
 > => {
   const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
   const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
-  return new RelationshipField(flag as any, RelationshipFieldType.ToOne, getResources)
+  return new RelationshipField(flag as any, RelationshipFieldType.ToOne, getFormatters)
 }
 
 export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFactoryRules>(
   ...rules: T
 ) => <U extends ResourceFormatter>(
-  getResources: () => NonEmptyReadonlyArray<U>,
+  getFormatters: () => NonEmptyReadonlyArray<U>,
 ): RelationshipField<
   U,
   RelationshipFieldType.ToMany,
@@ -43,7 +43,7 @@ export const createToManyRelationshipFieldFactory = <T extends ResourceFieldFact
 > => {
   const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
   const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
-  return new RelationshipField(flag as any, RelationshipFieldType.ToMany, getResources)
+  return new RelationshipField(flag as any, RelationshipFieldType.ToMany, getFormatters)
 }
 
 export class RelationshipField<
@@ -52,12 +52,12 @@ export class RelationshipField<
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Relationships, V> {
   relationshipType: U
-  getResources: () => NonEmptyReadonlyArray<T>
+  getFormatters: () => NonEmptyReadonlyArray<T>
 
-  constructor(flag: V, relationshipType: U, getResources: () => NonEmptyReadonlyArray<T>) {
+  constructor(flag: V, relationshipType: U, getFormatters: () => NonEmptyReadonlyArray<T>) {
     super(ResourceFieldRoot.Relationships, flag)
     this.relationshipType = relationshipType
-    this.getResources = getResources
+    this.getFormatters = getFormatters
   }
 }
 

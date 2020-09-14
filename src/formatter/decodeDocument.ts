@@ -19,7 +19,7 @@ export const DOCUMENT_CONTEXT_STORE = createContextStore()
 
 /** @hidden */
 export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFilter<T>>(
-  formatters: Array<T>,
+  formatters: ReadonlyArray<T>,
   document: JSONAPIDocument<T>,
   resourceFilter: U = EMPTY_OBJECT as U,
 ): Resource<T, U> | Array<Resource<T, U>> => {
@@ -35,8 +35,11 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     )
   }
 
-  const { fields, include } = parseResourceFilter(formatters, resourceFilter as any)
   const included = (document.included || []).concat(document.data)
+  const { fields = EMPTY_OBJECT, include = EMPTY_OBJECT } = parseResourceFilter(
+    formatters,
+    resourceFilter as any,
+  )
 
   if ((isArray as Predicate<Array<any>>)(document.data)) {
     const data: Array<Resource<T, U>> = []
@@ -54,6 +57,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       data.push(value as any)
       validationErrors.forEach((error) => validationErrors.push(error))
     })
+
     if (validationErrors.length) {
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
@@ -73,6 +77,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       include,
       [],
     )
+
     if (validationErrors.length) {
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
@@ -82,6 +87,6 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     }
 
     DOCUMENT_CONTEXT_STORE.set(resource, document)
-    return resource as Resource<T, U>
+    return resource as any
   }
 }

@@ -7,7 +7,6 @@ export enum AbsolutePathRoot {
 // To what degree relationship data is included by default
 export enum ImplicitInclude {
   None = 'none',
-  All = 'all',
   PrimaryRelationships = 'primary-relationships',
 }
 

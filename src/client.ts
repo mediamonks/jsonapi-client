@@ -62,7 +62,7 @@ export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = {
   [P in keyof DefaultClientSetup]: P extends keyof T ? T[P] : DefaultClientSetup[P]
 }
 
-const client = <T extends Partial<ClientSetup> = DefaultClientSetup>(
+const client = <T extends Partial<ClientSetup>>(
   url: URL,
   setup?: T,
 ): Client<ClientSetupWithDefaults<T>> => new Client(url, setup) as any
@@ -78,8 +78,8 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
     this.setup = parseClientSetup(setup) as any
   }
 
-  endpoint<U extends ResourceFormatter>(path: ResourcePath, resource: U): Endpoint<this, U> {
-    return new Endpoint(this, path, resource)
+  endpoint<U extends ResourceFormatter>(path: ResourcePath, formatter: U): Endpoint<this, U> {
+    return new Endpoint(this, path, [formatter])
   }
 
   async request<U extends JSONAPIRequestMethod = 'GET'>(

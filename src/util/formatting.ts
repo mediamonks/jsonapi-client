@@ -12,7 +12,7 @@ export const formatIncludePointer = (pointer: ReadonlyArray<string>) => pointer.
 export const resourceTypeNotFoundDetail = (formatters: ReadonlyArray<ResourceFormatter>) =>
   formatters.length === 1
     ? `Resource type must equal "${formatters}"`
-    : `Resource type must be one of; ${formatFormatterTypes(formatters)}`
+    : `Resource type must equal one of; ${formatFormatterTypes(formatters)}`
 
 /** @hidden */
 export const onResourceOfTypeMessage = (

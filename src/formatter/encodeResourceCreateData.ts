@@ -11,10 +11,10 @@ import { resourceTypeNotFoundDetail, onResourceOfTypeMessage } from '../util/for
 import { resourceCreateData, resourceIdentifier } from '../util/validators'
 import type { ResourceFormatter } from '../formatter'
 
-export const encodeResourceCreateData = (
-  formatters: ReadonlyArray<ResourceFormatter>,
-  data: ResourceCreateData<ResourceFormatter>,
-): { data: JSONAPIResourceCreateObject } => {
+export const encodeResourceCreateData = <T extends ResourceFormatter>(
+  formatters: ReadonlyArray<T>,
+  data: ResourceCreateData<T>,
+): { data: JSONAPIResourceCreateObject<T> } => {
   resourceCreateData.assert(data)
 
   const formatter = formatters.find((formatter) => formatter.type === data.type)
@@ -52,7 +52,7 @@ export const encodeResourceCreateData = (
   })
 
   Object.keys(formatter.fields).forEach((fieldName) => {
-    const field: ResourceFields[any] = formatter.getField(fieldName)
+    const field: ResourceFields[any] = formatter.getField(fieldName as any)
     const value = data[fieldName as keyof typeof data]
 
     if (field.matches(ResourceFieldFlag.PostForbidden)) {
@@ -92,7 +92,7 @@ export const encodeResourceCreateData = (
       })
     } else if (field.isRelationshipField()) {
       const relationships: Record<string, any> = body.relationships || (body.relationships = {})
-      const formatters = field.getResources()
+      const formatters = field.getFormatters()
       if (field.isToOneRelationshipField()) {
         if (!resourceIdentifier.predicate(value)) {
           resourceIdentifier.validate(value).forEach((detail) => {

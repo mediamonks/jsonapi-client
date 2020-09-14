@@ -21,9 +21,7 @@ export const createContextStore = () => {
   return {
     set(key: ContextKey, data: ContextData) {
       const { links, meta } = data
-      if (links || meta) {
-        map.set(key, { links, meta })
-      }
+      map.set(key, { links, meta })
     },
     get(key: ContextKey): Required<ContextData> {
       const { links = {}, meta = {} } = map.get(key) || {}

@@ -1,6 +1,6 @@
 import { isString } from 'isntnt'
 
-import { ResourceFieldFlag } from '../data/enum'
+import { ResourceFieldFlag, RelationshipFieldType } from '../data/enum'
 import { ResourceFormatter } from '../formatter'
 import {
   ResourcePath,
@@ -9,17 +9,17 @@ import {
   Resource,
   ResourceCreateData,
   ResourcePatchData,
-  RelationshipFieldNameWithFlag,
-  RelationshipPatchData,
   ToManyRelationshipFieldNameWithFlag,
-  ToManyRelationshipPatchData,
-  RelationshipFieldResourceConstructor,
+  RelationshipFieldResourceFormatter,
   ToOneRelationshipFieldNameWithFlag,
   JSONAPISearchParams,
   JSONAPIDocument,
   JSONAPIMetaObject,
   JSONAPILinksObject,
   JSONAPIPaginationLinks,
+  ToManyRelationshipPatchData,
+  RelationshipFieldNameWithFlag,
+  RelationshipPatchData,
 } from '../types'
 import { createURL } from '../util/url'
 import { Client } from '../client'
@@ -28,27 +28,29 @@ import { DOCUMENT_CONTEXT_STORE, decodeDocument } from '../formatter/decodeDocum
 import { RESOURCE_CONTEXT_STORE } from '../formatter/decodeResourceObject'
 import { ResourceIdentifier } from '../resource/identifier'
 import { parseResourceFilter } from '../formatter/parseResourceFilter'
+import { encodeResourceCreateData } from '../formatter/encodeResourceCreateData'
+import { encodeResourcePatchData } from '../formatter/encodeResourcePatchData'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   readonly client: T
   readonly path: ResourcePath
-  readonly formatter: U
+  readonly formatters: ReadonlyArray<U>
 
-  constructor(client: T, path: ResourcePath, formatter: U) {
+  constructor(client: T, path: ResourcePath, formatters: ReadonlyArray<U>) {
     this.client = client
     this.path = path
-    this.formatter = formatter
+    this.formatters = formatters
   }
 
   async create(data: ResourceCreateData<U>): Promise<Resource<U, {}>> {
     const url = createURL(this.client.url, [this.path])
-    const body = this.formatter.createResourcePostDocument(data)
+    const body = encodeResourceCreateData(this.formatters, data)
     const document = await this.client.request(url, 'POST', body as any)
-    return decodeDocument([this.formatter], document || (body as any)) as Resource<U, {}>
+    return decodeDocument(this.formatters, document || (body as any)) as Resource<U, {}>
   }
 
   async update(data: ResourcePatchData<U>): Promise<void> {
-    const body = this.formatter.createResourcePatchDocument(data)
+    const body = encodeResourcePatchData(this.formatters, data)
     const url = createURL(this.client.url, [this.path, body.data.id])
     await this.client.request(url, 'PATCH', body as any)
   }
@@ -68,7 +70,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     fieldName: V,
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
-    const field = this.formatter.getField(fieldName)
+    const field = this.formatters[0].getRelationshipField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
@@ -79,7 +81,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       ResourceFieldFlag.PatchRequired | ResourceFieldFlag.PatchOptional
     >
   >(id: ResourceId, fieldName: V): Promise<void> {
-    const field = this.formatter.getField(fieldName)
+    const field = this.formatters[0].getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'DELETE')
   }
@@ -90,7 +92,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     >
   >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
-    const field = this.formatter.getField(fieldName)
+    const field = this.formatters[0].getRelationshipField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
@@ -101,13 +103,13 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       ResourceFieldFlag.PatchRequired | ResourceFieldFlag.PatchOptional
     >
   >(id: ResourceId, fieldName: V): Promise<void> {
-    const field = this.formatter.getField(fieldName)
+    const field = this.formatters[0].getRelationshipField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', EMPTY_OBJECT)
   }
 
   filter<V extends ResourceFilter<U>>(resourceFilter: V): V {
-    return parseResourceFilter([this.formatter], resourceFilter as any)
+    return parseResourceFilter(this.formatters, resourceFilter as any)
   }
 
   async getOne<V extends ResourceFilter<U>>(
@@ -116,7 +118,11 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   ): Promise<Resource<U, V>> {
     const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
     const data = await this.client.request(url)
-    return this.formatter.decode(data as JSONAPIDocument, resourceFilter) as Resource<U, V>
+    return decodeDocument(
+      this.formatters,
+      data as JSONAPIDocument,
+      resourceFilter as any,
+    ) as Resource<U, V>
   }
 
   async getMany<V extends ResourceFilter<U>>(
@@ -129,90 +135,89 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       resourceFilter as ResourceFilter<any>,
       searchParams || EMPTY_OBJECT,
     )
-    return this.client
-      .request(url)
-      .then(
-        (data) =>
-          this.formatter.decode(data as JSONAPIDocument, resourceFilter as any) as Array<
-            Resource<U, V>
-          >,
-      )
+    const data = await this.client.request(url)
+    return decodeDocument(this.formatters, data as JSONAPIDocument, resourceFilter as any) as Array<
+      Resource<U, V>
+    >
   }
 
   async getOneRelationship<
-    V extends ToOneRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    V extends EndpointToOneFieldName<this>,
+    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(
     id: ResourceId,
     fieldName: V,
     resourceFilter?: W,
-  ): Promise<Resource<RelationshipFieldResourceConstructor<U['fields'][V]>, W>> {
-    const url = createURL(
-      this.client.url,
-      [this.path, id, fieldName as string],
-      resourceFilter as any,
-    )
-
-    return this.client
-      .request(url)
-      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
+  ): Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> {
+    return this.toOne(fieldName, resourceFilter)(id)
   }
 
   async getManyRelationship<
-    V extends ToManyRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    V extends EndpointToManyFieldName<this>,
+    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(
     id: ResourceId,
     fieldName: V,
     resourceFilter?: W,
     searchParams: JSONAPISearchParams | null = null,
-  ): Promise<Array<Resource<RelationshipFieldResourceConstructor<U['fields'][V]>, W>>> {
-    const url = createURL(
-      this.client.url,
-      [this.formatter.type, id, fieldName],
-      resourceFilter as any,
-      searchParams as any,
-    )
-
-    return this.client
-      .request(url)
-      .then((data) => this.formatter.decode(data as any, resourceFilter as any) as any)
+  ): Promise<Array<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> {
+    return this.toMany(fieldName, resourceFilter)(id, searchParams)
   }
 
   one<V extends ResourceFilter<U>>(resourceFilter?: V) {
-    return (id: ResourceId) => this.getOne(id, resourceFilter)
+    return async (id: ResourceId): Promise<Resource<U, V>> => this.getOne(id, resourceFilter)
   }
 
   many<V extends ResourceFilter<U>>(resourceFilter?: V) {
-    return (searchParams: JSONAPISearchParams | null = null) =>
-      this.getMany(searchParams, resourceFilter)
+    return async (
+      searchParams: JSONAPISearchParams | null = null,
+    ): Promise<Array<Resource<U, V>>> => this.getMany(searchParams, resourceFilter)
   }
 
   toOne<
-    V extends ToOneRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    V extends EndpointToOneFieldName<this>,
+    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(fieldName: V, resourceFilter?: W) {
-    return (id: ResourceId) => this.getOneRelationship(id, fieldName, resourceFilter)
+    const fieldFormatters = this.getRelationshipFieldFormatters(
+      fieldName,
+      RelationshipFieldType.ToOne,
+    )
+    return async (
+      id: ResourceId,
+    ): Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> => {
+      const url = createURL(
+        this.client.url,
+        [this.path, id, this.client.setup.transformRelationshipPath(fieldName)],
+        resourceFilter as any,
+      )
+
+      const data = await this.client.request(url)
+      return decodeDocument(fieldFormatters, data as JSONAPIDocument, resourceFilter as any) as any
+    }
   }
 
   toMany<
-    V extends ToManyRelationshipFieldNameWithFlag<
-      U['fields'],
-      ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
-    >,
-    W extends ResourceFilter<RelationshipFieldResourceConstructor<U['fields'][V]>>
+    V extends EndpointToManyFieldName<this>,
+    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(fieldName: V, resourceFilter?: W) {
-    return (id: ResourceId, searchQuery: JSONAPISearchParams | null = null) =>
-      this.getManyRelationship(id, fieldName, resourceFilter, searchQuery)
+    const fieldFormatters = this.getRelationshipFieldFormatters(
+      fieldName,
+      RelationshipFieldType.ToOne,
+    )
+
+    return async (
+      id: ResourceId,
+      searchParams: JSONAPISearchParams | null = null,
+    ): Promise<Array<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> => {
+      const url = createURL(
+        this.client.url,
+        [this.path, id, this.client.setup.transformRelationshipPath(fieldName)],
+        resourceFilter as any,
+        searchParams as any,
+      )
+      const data = await this.client.request(url)
+      return decodeDocument(fieldFormatters, data as JSONAPIDocument, resourceFilter as any) as any
+    }
   }
 
   getResourceMeta(resource: ResourceIdentifier<U['type']>): JSONAPIMetaObject {
@@ -252,4 +257,38 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   }
 
   // getPrev() {}
+
+  private getRelationshipFieldFormatters(
+    fieldName: string,
+    relationshipType: RelationshipFieldType,
+  ) {
+    const fieldFormatters = this.formatters.flatMap((formatter) => {
+      const field = formatter.fields[fieldName]
+      return field && field.isRelationshipField() && field.relationshipType === relationshipType
+        ? field.getResources()
+        : []
+    })
+    if (!fieldFormatters.length) {
+      throw new Error(`Field "${fieldName}" does not exist on endpoint "${this.path}"`)
+    }
+    return fieldFormatters
+  }
 }
+
+type EndpointToManyFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
+  ? {
+      [P in R['type']]: ToManyRelationshipFieldNameWithFlag<
+        Extract<R, { type: P }>['fields'],
+        ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
+      >
+    }[R['type']]
+  : never
+
+type EndpointToOneFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
+  ? {
+      [P in R['type']]: ToOneRelationshipFieldNameWithFlag<
+        Extract<R, { type: P }>['fields'],
+        ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
+      >
+    }[R['type']]
+  : never

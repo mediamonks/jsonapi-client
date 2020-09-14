@@ -10,12 +10,12 @@ import {
   ResourcePatchData,
   JSONAPIResourceCreateObject,
   ResourceFieldName,
+  RelationshipFieldName,
 } from './types'
 import { EMPTY_OBJECT } from './data/constants'
 import { resourceType } from './util/validators'
 import { decodeDocument } from './formatter/decodeDocument'
 import { parseResourceFields } from './formatter/parseResourceFields'
-import { parseResourceFilter } from './formatter/parseResourceFilter'
 import { ResourceIdentifier } from './resource/identifier'
 import { encodeResourceCreateData } from './formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from './formatter/encodeResourcePatchData'
@@ -37,10 +37,6 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
 
   identifier(id: ResourceId): ResourceIdentifier<T> {
     return new ResourceIdentifier(this.type, id)
-  }
-
-  filter<V extends ResourceFilter<this>>(resourceFilter: V): V {
-    return parseResourceFilter([this], resourceFilter as any)
   }
 
   decode<V extends ResourceFilter<this> = {}>(
@@ -71,6 +67,18 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
       throw new TypeError(onResourceOfTypeMessage([this], `Field "${fieldName}" does not exist`))
     }
     return this.fields[fieldName]
+  }
+
+  getRelationshipField<V extends RelationshipFieldName<this['fields']>>(
+    fieldName: V,
+  ): this['fields'][V] {
+    const field = this.getField(fieldName as any)
+    if (!field.isRelationshipField()) {
+      throw new TypeError(
+        onResourceOfTypeMessage([this], `Field "${fieldName}" is not a relationship field`),
+      )
+    }
+    return field
   }
 
   toString(): T {

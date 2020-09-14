@@ -52,7 +52,7 @@ export const decodeToManyRelationship = (
     ])
   }
 
-  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getResources()
+  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatters()
   const relatedResourceData: Array<any> = []
   const validationErrorObjects: Array<ResourceValidationErrorObject> = []
 
@@ -61,7 +61,7 @@ export const decodeToManyRelationship = (
     validationErrorObjects,
   ]
 
-  if (fieldName in includeFilter) {
+  if (includeFilter && fieldName in includeFilter) {
     return data.reduce((result, item) => {
       const [resources, errors] = result
       const [resourceIdentifier, validationErrors] = decodeResourceIdentifier(

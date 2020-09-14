@@ -1,7 +1,14 @@
 import 'regenerator-runtime/runtime'
-import JSONAPI, { AbsolutePathRoot, RelationshipFieldData } from '../../../src'
+import JSONAPI, {
+  AbsolutePathRoot,
+  RelationshipFieldData,
+  ResourceIncludeQuery,
+  Resource,
+  MonoResourceIncludeQuery,
+} from '../../../src'
 
-import { author, book, chapter, series } from './resources'
+import { author, book, chapter, series, photo } from './resources'
+import { Some } from 'isntnt'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
@@ -17,30 +24,28 @@ const chapters = client.endpoint('chapters', chapter)
 0 &&
   authors
     .create({
-      type: 'authors',
+      type: author.type,
       name: 'John',
       date_of_birth: new Date(1970, 0, 1),
       birthplace: 'New Guinea',
-      photos: [],
-      books: [],
     })
-    .then((oneAuthor) => {
-      console.log('Created', oneAuthor)
+    .then((data) => {
+      console.log('Created', data)
     })
 
 0 &&
   authors
     .update({
-      type: 'authors',
+      type: author.type,
       id: '1',
       name: 'Jane',
-      books: [{ type: 'books', id: '4' }],
+      books: [book.identifier('4')],
     })
     .then(() => {
       console.log('Updated Author')
     })
 
-const authorFilter = author.filter({
+const authorsFilter = authors.filter({
   fields: {
     [author.type]: ['name', 'books', 'photos'],
     [book.type]: ['title', 'chapters'],
@@ -52,11 +57,13 @@ const authorFilter = author.filter({
 })
 
 0 &&
-  authors.getOne('4', authorFilter).then((data) => {
+  authors.getOne('2', authorsFilter).then((data) => {
     console.log('One Author', data)
   })
 
-const bookFilter = book.filter({
+authors.getManyRelationship('7', 'photos')
+
+const booksFilter = books.filter({
   fields: {
     [book.type]: ['title', 'chapters', 'series'],
     [series.type]: ['title', 'books'],
@@ -67,7 +74,7 @@ const bookFilter = book.filter({
 })
 
 1 &&
-  books.getOne('28', bookFilter).then((data) => {
+  books.getOne('28', booksFilter).then((data) => {
     console.log('Book', data)
     console.log('Book Links', books.getResourceLinks(data))
     console.log('Book Document Meta', books.getDocumentMeta(data))
@@ -80,7 +87,7 @@ const chapterQuery = {
   },
 }
 
-const chapterFilter = chapter.filter({
+const chaptersFilter = chapters.filter({
   fields: {
     [chapter.type]: ['book'],
     [book.type]: ['title', 'author'],
@@ -94,7 +101,7 @@ const chapterFilter = chapter.filter({
 })
 
 1 &&
-  chapters.getMany(chapterQuery, chapterFilter).then((data) => {
+  chapters.getMany(chapterQuery, chaptersFilter).then((data) => {
     console.log('Chapters', data[1].book)
     console.log('Chapters Meta', chapters.getDocumentMeta(data))
     console.log('First Chapter Meta', chapters.getResourceMeta(data[0]))
@@ -109,3 +116,21 @@ const getOneBookWithAuthor = books.one({
     author: null,
   },
 })
+
+0 &&
+  getOneBookWithAuthor('1').then((data) => {
+    console.log('Book With Author', data)
+  })
+
+const x = books.filter({
+  fields: {
+    books: ['photos'],
+  },
+  include: {
+    photos: {
+      book: null,
+    },
+  },
+})
+
+type X = Resource<typeof book, typeof x>

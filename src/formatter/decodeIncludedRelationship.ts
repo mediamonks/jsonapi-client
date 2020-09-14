@@ -1,3 +1,4 @@
+import { EMPTY_OBJECT } from '../data/constants'
 import { ValidationErrorMessage } from '../data/enum'
 import { createValidationErrorObject, ResourceValidationErrorObject } from '../error'
 import {
@@ -11,7 +12,6 @@ import { RelationshipField } from '../resource/field/relationship'
 import { ResourceIdentifier } from '../resource/identifier'
 import { decodeResourceObject } from './decodeResourceObject'
 import { failure, Validation } from '../util/validation'
-import { EMPTY_OBJECT } from '../data/constants'
 
 export const decodeIncludedRelationship = (
   field: RelationshipField<any, any, any>,
@@ -36,14 +36,14 @@ export const decodeIncludedRelationship = (
     ])
   }
 
-  const relatedResourceFormatters = field.getResources()
-  const childIncludeFilter = includeFilter[fieldName] || EMPTY_OBJECT
+  const relatedResourceFormatters = field.getFormatters()
+  const childIncludeFilter = (includeFilter || EMPTY_OBJECT)[fieldName]
   return decodeResourceObject(
     relatedResourceFormatters,
     includedResourceObject,
     included,
     fieldsFilter,
-    childIncludeFilter,
+    childIncludeFilter as any,
     pointer,
   )
 }

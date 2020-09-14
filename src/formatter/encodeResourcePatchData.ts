@@ -1,4 +1,4 @@
-import { isArray, isNone, isUndefined, isNull } from 'isntnt'
+import { isArray, isUndefined, isNull } from 'isntnt'
 
 import { ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import {
@@ -84,7 +84,7 @@ export const encodeResourcePatchData = (
         }
       } else if (field.isRelationshipField()) {
         const relationships: Record<string, any> = body.relationships || (body.relationships = {})
-        const formatters = field.getResources()
+        const formatters = field.getFormatters()
         if (field.isToOneRelationshipField()) {
           if (isNull(value)) {
             relationships[fieldName] = value
