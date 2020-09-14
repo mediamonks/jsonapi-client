@@ -1,3 +1,5 @@
+import { isString } from 'isntnt'
+
 import { ResourceFieldFlag } from '../data/enum'
 import { ResourceFormatter } from '../formatter'
 import {
@@ -15,10 +17,16 @@ import {
   ToOneRelationshipFieldNameWithFlag,
   JSONAPISearchParams,
   JSONAPIDocument,
+  JSONAPIMetaObject,
+  JSONAPILinksObject,
+  JSONAPIPaginationLinks,
 } from '../types'
 import { createURL } from '../util/url'
 import { Client } from '../client'
 import { EMPTY_OBJECT } from '../data/constants'
+import { DOCUMENT_CONTEXT_STORE } from '../formatter/decodeDocument'
+import { RESOURCE_CONTEXT_STORE } from '../formatter/decodeResourceObject'
+import { ResourceIdentifier } from '../resource/identifier'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   readonly client: T
@@ -210,4 +218,42 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     return (id: ResourceId, searchQuery: JSONAPISearchParams | null = null) =>
       this.getManyRelationship(id, fieldName, resourceFilter, searchQuery)
   }
+
+  getResourceMeta(resource: ResourceIdentifier<U['type']>): JSONAPIMetaObject {
+    return RESOURCE_CONTEXT_STORE.getMeta(resource)
+  }
+
+  getResourceLinks(resource: ResourceIdentifier<U['type']>): JSONAPILinksObject {
+    return RESOURCE_CONTEXT_STORE.getLinks(resource) as any
+  }
+
+  getDocumentMeta(
+    document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
+  ): JSONAPIMetaObject {
+    return DOCUMENT_CONTEXT_STORE.getMeta(document)
+  }
+
+  getOneDocumentLinks(
+    document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
+  ): JSONAPILinksObject {
+    return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
+  }
+
+  getManyDocumentLinks(
+    document: ReadonlyArray<ResourceIdentifier<U['type']>>,
+  ): JSONAPIPaginationLinks {
+    return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
+  }
+
+  hasNext(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
+    return isString(this.getManyDocumentLinks(document).next)
+  }
+
+  // getNext() {}
+
+  hasPrev(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
+    return isString(this.getManyDocumentLinks(document).prev)
+  }
+
+  // getPrev() {}
 }

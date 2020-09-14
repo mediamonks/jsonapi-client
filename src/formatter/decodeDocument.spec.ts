@@ -1,6 +1,6 @@
-import { decodeDocument, RESOURCE_DOCUMENT_CONTEXT } from './decodeDocument'
+import { decodeDocument } from './decodeDocument'
 import { formatterA } from '../../test/formatters'
-import { RESOURCE_CONTEXT } from './decodeResourceObject'
+import { RESOURCE_CONTEXT_STORE } from './decodeResourceObject'
 
 type InvalidJSONAPIDocument = any
 
@@ -75,7 +75,7 @@ describe('decodeDocument', () => {
         self: 'foo',
       },
     })
-    expect(RESOURCE_DOCUMENT_CONTEXT.get(resource as any)).toEqual({
+    expect(RESOURCE_CONTEXT_STORE.get(resource as any)).toEqual({
       meta: {
         foo: 'baz',
       },
@@ -101,7 +101,7 @@ describe('decodeDocument', () => {
         },
       },
     })
-    expect(RESOURCE_CONTEXT.get(resource as any)).toEqual({
+    expect(RESOURCE_CONTEXT_STORE.get(resource as any)).toEqual({
       meta: {
         foo: 'baz',
       },

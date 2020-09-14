@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime'
-import JSONAPI, { AbsolutePathRoot, RelationshipFieldData, ResourceCreateData } from '../../../src'
+import JSONAPI, { AbsolutePathRoot, RelationshipFieldData } from '../../../src'
 
 import { author, book, chapter, series } from './resources'
 
@@ -68,9 +68,9 @@ const bookFilter = book.filter({
 
 1 &&
   books.getOne('28', bookFilter).then((data) => {
-    console.log('One Book', data)
-    // const meta = client.getResourceMeta(data)
-    // console.log('Meta', meta)
+    console.log('Book', data)
+    console.log('Book Document Meta', books.getDocumentMeta(data))
+    console.log('Book Resource Meta', books.getResourceMeta(data))
   })
 
 const chapterQuery = {
@@ -92,11 +92,12 @@ const chapterFilter = chapter.filter({
   },
 })
 
-0 &&
-  chapters.getMany(chapterQuery, chapterFilter).then((chapters) => {
-    console.log('Many Chapters', chapters[1].book)
-    // const meta = client.getMeta(chapters[1].book)
-    // console.log('Meta', meta)
+1 &&
+  chapters.getMany(chapterQuery, chapterFilter).then((data) => {
+    console.log('Chapters', data[1].book)
+    console.log('Chapters Meta', chapters.getDocumentMeta(data))
+    console.log('First Chapter Meta', chapters.getResourceMeta(data[0]))
+    console.log('Chapters Has Next Page', chapters.hasNext(data))
   })
 
 const getOneBookWithAuthor = books.one({

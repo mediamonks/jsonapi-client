@@ -531,9 +531,9 @@ export type ToManyRelationshipFieldFromFactory<
  */
 export type JSONAPIVersion = '1.0'
 
-type BaseJSONAPIDocument = {
+type BaseJSONAPIDocument<T extends JSONAPILinksObject | JSONAPIPaginationLinks> = {
   meta?: JSONAPIMetaObject
-  links?: JSONAPILinksObject
+  links?: T
   jsonapi?: {
     version?: JSONAPIVersion
   }
@@ -546,9 +546,9 @@ export type JSONAPIDocument<T extends ResourceFormatter = any> =
   | JSONAPISuccessDocument<T>
   | JSONAPIFailureDocument
 
-export type JSONAPISuccessOfManyDocument<
-  T extends ResourceFormatter = any
-> = BaseJSONAPIDocument & {
+export type JSONAPISuccessOfManyDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument<
+  JSONAPIPaginationLinks
+> & {
   data: Array<JSONAPIResourceObject<T>>
   included?: Array<
     JSONAPIResourceObject<
@@ -559,7 +559,9 @@ export type JSONAPISuccessOfManyDocument<
   >
 }
 
-export type JSONAPISuccessOfOneDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument & {
+export type JSONAPISuccessOfOneDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument<
+  JSONAPILinksObject
+> & {
   data: JSONAPIResourceObject<T>
   included?: Array<
     JSONAPIResourceObject<
@@ -574,7 +576,7 @@ export type JSONAPISuccessDocument<T extends ResourceFormatter = any> =
   | JSONAPISuccessOfManyDocument<T>
   | JSONAPISuccessOfOneDocument<T>
 
-export type JSONAPIFailureDocument = BaseJSONAPIDocument & {
+export type JSONAPIFailureDocument = BaseJSONAPIDocument<any> & {
   errors: Array<JSONAPIErrorObject>
 }
 

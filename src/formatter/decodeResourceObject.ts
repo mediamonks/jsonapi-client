@@ -13,12 +13,10 @@ import { resourceObject } from '../util/validators'
 import { decodeAttribute } from './decodeAttribute'
 import { decodeRelationship } from './decodeRelationship'
 import type { ResourceFormatter } from '../formatter'
+import { createContextStore } from '../util/createContextStore'
 
 /** @hidden */
-export const RESOURCE_CONTEXT: WeakMap<
-  Resource<any, any>,
-  Pick<JSONAPIResourceObject, 'meta' | 'links'>
-> = new WeakMap()
+export const RESOURCE_CONTEXT_STORE = createContextStore()
 
 /**
  *
@@ -110,11 +108,7 @@ export const decodeResourceObject = (
   if (errors.length) {
     return failure(errors)
   }
-  if (resource.meta || resource.links) {
-    RESOURCE_CONTEXT.set(data, {
-      meta: resource.meta,
-      links: resource.links,
-    })
-  }
+
+  RESOURCE_CONTEXT_STORE.set(data, resource)
   return success(data)
 }

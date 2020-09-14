@@ -12,12 +12,10 @@ import { decodeResourceObject } from './decodeResourceObject'
 import { parseResourceFilter } from './parseResourceFilter'
 import type { ResourceFormatter } from '../formatter'
 import { jsonapiDocument } from '../util/validators'
+import { createContextStore } from '../util/createContextStore'
 
 /** @hidden */
-export const RESOURCE_DOCUMENT_CONTEXT: WeakMap<
-  Resource<any, any> | Array<Resource<any, any>>,
-  Pick<JSONAPIDocument, 'meta' | 'links'>
-> = new WeakMap()
+export const DOCUMENT_CONTEXT_STORE = createContextStore()
 
 /** @hidden */
 export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFilter<T>>(
@@ -43,7 +41,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
   const included = (document.included || []).concat(document.data)
 
   if ((isArray as Predicate<Array<any>>)(document.data)) {
-    const resources: Array<Resource<T, U>> = []
+    const data: Array<Resource<T, U>> = []
     const validationErrors: Array<ResourceValidationErrorObject> = []
 
     document.data.forEach((resource) => {
@@ -55,7 +53,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
         include,
         [],
       )
-      resources.push(value as any)
+      data.push(value as any)
       validationErrors.forEach((error) => validationErrors.push(error))
     })
     if (validationErrors.length) {
@@ -65,13 +63,9 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
         validationErrors,
       )
     }
-    if (document.meta || document.links) {
-      RESOURCE_DOCUMENT_CONTEXT.set(resources, {
-        meta: document.meta,
-        links: document.links,
-      })
-    }
-    return resources
+
+    DOCUMENT_CONTEXT_STORE.set(data, document)
+    return data
   } else {
     const [resource, validationErrors] = decodeResourceObject(
       formatters,
@@ -88,12 +82,8 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
         validationErrors,
       )
     }
-    if (document.meta || document.links) {
-      RESOURCE_DOCUMENT_CONTEXT.set(resource, {
-        meta: document.meta,
-        links: document.links,
-      })
-    }
+
+    DOCUMENT_CONTEXT_STORE.set(resource, document)
     return resource as Resource<T, U>
   }
 }
