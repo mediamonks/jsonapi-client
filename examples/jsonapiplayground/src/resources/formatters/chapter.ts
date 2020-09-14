@@ -18,6 +18,6 @@ type ChapterResource = ResourceFormatter<
 export const chapter: ChapterResource = jsonapi.formatter('chapters', {
   title: Attribute.required(string),
   ordering: Attribute.required(uint),
-  photos: Relationship.toMany(() => [photo]),
-  book: Relationship.toOne(() => [book]),
+  photos: Relationship.toMany(() => photo),
+  book: Relationship.toOne(() => book),
 })

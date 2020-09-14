@@ -52,7 +52,7 @@ export const decodeToManyRelationship = (
     ])
   }
 
-  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatters()
+  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatter()
   const relatedResourceData: Array<any> = []
   const validationErrorObjects: Array<ResourceValidationErrorObject> = []
 

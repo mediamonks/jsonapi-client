@@ -34,23 +34,23 @@ import { encodeResourcePatchData } from '../formatter/encodeResourcePatchData'
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   readonly client: T
   readonly path: ResourcePath
-  readonly formatters: ReadonlyArray<U>
+  readonly formatter: U
 
-  constructor(client: T, path: ResourcePath, formatters: ReadonlyArray<U>) {
+  constructor(client: T, path: ResourcePath, formatter: U) {
     this.client = client
     this.path = path
-    this.formatters = formatters
+    this.formatter = formatter
   }
 
   async create(data: ResourceCreateData<U>): Promise<Resource<U, {}>> {
     const url = createURL(this.client.url, [this.path])
-    const body = encodeResourceCreateData(this.formatters, data)
+    const body = encodeResourceCreateData([this.formatter], data)
     const document = await this.client.request(url, 'POST', body as any)
-    return decodeDocument(this.formatters, document || (body as any)) as Resource<U, {}>
+    return decodeDocument([this.formatter], document || (body as any)) as Resource<U, {}>
   }
 
   async update(data: ResourcePatchData<U>): Promise<void> {
-    const body = encodeResourcePatchData(this.formatters, data)
+    const body = encodeResourcePatchData([this.formatter], data)
     const url = createURL(this.client.url, [this.path, body.data.id])
     await this.client.request(url, 'PATCH', body as any)
   }
@@ -70,7 +70,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     fieldName: V,
     data: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
-    const field = this.formatters[0].getRelationshipField(fieldName)
+    const field = this.formatter.getRelationshipField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
@@ -81,7 +81,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       ResourceFieldFlag.PatchRequired | ResourceFieldFlag.PatchOptional
     >
   >(id: ResourceId, fieldName: V): Promise<void> {
-    const field = this.formatters[0].getField(fieldName)
+    const field = this.formatter.getField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'DELETE')
   }
@@ -92,7 +92,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     >
   >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
-    const field = this.formatters[0].getRelationshipField(fieldName)
+    const field = this.formatter.getRelationshipField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', data as any)
   }
@@ -103,13 +103,13 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       ResourceFieldFlag.PatchRequired | ResourceFieldFlag.PatchOptional
     >
   >(id: ResourceId, fieldName: V): Promise<void> {
-    const field = this.formatters[0].getRelationshipField(fieldName)
+    const field = this.formatter.getRelationshipField(fieldName)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldName])
     await this.client.request(url, 'PATCH', EMPTY_OBJECT)
   }
 
   filter<V extends ResourceFilter<U>>(resourceFilter: V): V {
-    return parseResourceFilter(this.formatters, resourceFilter as any)
+    return parseResourceFilter([this.formatter], resourceFilter as any)
   }
 
   async getOne<V extends ResourceFilter<U>>(
@@ -119,7 +119,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
     const data = await this.client.request(url)
     return decodeDocument(
-      this.formatters,
+      [this.formatter],
       data as JSONAPIDocument,
       resourceFilter as any,
     ) as Resource<U, V>
@@ -136,9 +136,11 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       searchParams || EMPTY_OBJECT,
     )
     const data = await this.client.request(url)
-    return decodeDocument(this.formatters, data as JSONAPIDocument, resourceFilter as any) as Array<
-      Resource<U, V>
-    >
+    return decodeDocument(
+      [this.formatter],
+      data as JSONAPIDocument,
+      resourceFilter as any,
+    ) as Array<Resource<U, V>>
   }
 
   async getOneRelationship<
@@ -178,10 +180,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     V extends EndpointToOneFieldName<this>,
     W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(fieldName: V, resourceFilter?: W) {
-    const fieldFormatters = this.getRelationshipFieldFormatters(
-      fieldName,
-      RelationshipFieldType.ToOne,
-    )
+    const fieldFormatter = this.formatter.getRelationshipField(fieldName as any).getFormatter()
     return async (
       id: ResourceId,
     ): Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> => {
@@ -192,7 +191,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       )
 
       const data = await this.client.request(url)
-      return decodeDocument(fieldFormatters, data as JSONAPIDocument, resourceFilter as any) as any
+      return decodeDocument([fieldFormatter], data as JSONAPIDocument, resourceFilter as any) as any
     }
   }
 
@@ -200,10 +199,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     V extends EndpointToManyFieldName<this>,
     W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(fieldName: V, resourceFilter?: W) {
-    const fieldFormatters = this.getRelationshipFieldFormatters(
-      fieldName,
-      RelationshipFieldType.ToOne,
-    )
+    const fieldFormatter = this.formatter.getRelationshipField(fieldName as any).getFormatter()
 
     return async (
       id: ResourceId,
@@ -216,7 +212,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
         searchParams as any,
       )
       const data = await this.client.request(url)
-      return decodeDocument(fieldFormatters, data as JSONAPIDocument, resourceFilter as any) as any
+      return decodeDocument([fieldFormatter], data as JSONAPIDocument, resourceFilter as any) as any
     }
   }
 
@@ -257,22 +253,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
   }
 
   // getPrev() {}
-
-  private getRelationshipFieldFormatters(
-    fieldName: string,
-    relationshipType: RelationshipFieldType,
-  ) {
-    const fieldFormatters = this.formatters.flatMap((formatter) => {
-      const field = formatter.fields[fieldName]
-      return field && field.isRelationshipField() && field.relationshipType === relationshipType
-        ? field.getResources()
-        : []
-    })
-    if (!fieldFormatters.length) {
-      throw new Error(`Field "${fieldName}" does not exist on endpoint "${this.path}"`)
-    }
-    return fieldFormatters
-  }
 }
 
 type EndpointToManyFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>

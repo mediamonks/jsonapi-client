@@ -15,6 +15,6 @@ type SeriesResource = ResourceFormatter<
 
 export const series: SeriesResource = jsonapi.formatter('series', {
   title: Attribute.required(string),
-  photos: Relationship.toMany(() => [photo]),
-  books: Relationship.toMany(() => [book]),
+  photos: Relationship.toMany(() => photo),
+  books: Relationship.toMany(() => book),
 })

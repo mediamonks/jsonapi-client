@@ -79,7 +79,7 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
   }
 
   endpoint<U extends ResourceFormatter>(path: ResourcePath, formatter: U): Endpoint<this, U> {
-    return new Endpoint(this, path, [formatter])
+    return new Endpoint(this, path, formatter)
   }
 
   async request<U extends JSONAPIRequestMethod = 'GET'>(

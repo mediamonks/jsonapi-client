@@ -24,7 +24,7 @@ export const store: StoreResource = jsonapi.formatter('stores', {
   name: Attribute.required(string),
   address: Attribute.requiredStatic(string),
   created_by: Attribute.requiredReadonly(uint),
-  photos: Relationship.toMany(() => [photo]),
-  books: Relationship.toMany(() => [book]),
-  countries: Relationship.toOne(() => [country]),
+  photos: Relationship.toMany(() => photo),
+  books: Relationship.toMany(() => book),
+  countries: Relationship.toOne(() => country),
 })

@@ -22,6 +22,6 @@ export const author: AuthorResource = jsonapi.formatter('authors', {
   birthplace: Attribute.required(string),
   date_of_birth: Attribute.required(dateString, dateStringFormatter),
   date_of_death: Attribute.optional(dateString, dateStringFormatter),
-  photos: Relationship.toMany(() => [photo]),
-  books: Relationship.toMany(() => [book]),
+  photos: Relationship.toMany(() => photo),
+  books: Relationship.toMany(() => book),
 })

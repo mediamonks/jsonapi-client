@@ -4,7 +4,7 @@ import { Relationship } from '../resource/field/relationship'
 
 describe('decodeRelationship', () => {
   it('returns a Validation Array', () => {
-    const toOneRelationship = Relationship.toOne(() => [formatterA])
+    const toOneRelationship = Relationship.toOne(() => formatterA)
 
     const validation = decodeRelationship(toOneRelationship, 'foo', {} as any, [], {}, {}, [])
     const [value, errors] = validation

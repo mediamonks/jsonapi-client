@@ -27,7 +27,7 @@ export const decodeToOneRelationship = (
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
 ): Validation<ToOneRelationshipData, ResourceValidationErrorObject> => {
-  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatters()
+  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatter()
   const value = (resourceObject.relationships || EMPTY_OBJECT)[fieldName]
   const data: ResourceIdentifier | null = (value || EMPTY_OBJECT).data
 

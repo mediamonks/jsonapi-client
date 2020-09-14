@@ -105,7 +105,7 @@ export const assertIncludeFilterAndGetNestedFormatters = (
 
       const relatedFormatters: ReadonlyArray<ResourceFormatter> = formatters.flatMap((formatter) =>
         formatter.hasField(fieldName) && formatter.fields[fieldName].isRelationshipField()
-          ? formatter.fields[fieldName].getFormatters()
+          ? [formatter.fields[fieldName].getFormatter()]
           : EMPTY_ARRAY,
       )
 

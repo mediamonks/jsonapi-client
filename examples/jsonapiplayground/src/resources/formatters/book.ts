@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from '../../../../../src'
+import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/string'
@@ -27,9 +27,9 @@ export const book: BookResource = jsonapi.formatter('books', {
   title: Attribute.required(string),
   date_published: Attribute.required(dateString, dateStringFormatter),
   isbn: Attribute.required(uint),
-  author: Relationship.toOne(() => [author]),
-  chapters: Relationship.toManyReadOnly(() => [chapter]),
-  photos: Relationship.toMany(() => [photo]),
-  series: Relationship.toOne(() => [series]),
-  stores: Relationship.toMany(() => [store]),
+  author: Relationship.toOne(() => author),
+  chapters: Relationship.toManyReadOnly(() => chapter),
+  photos: Relationship.toMany(() => photo),
+  series: Relationship.toOne(() => series),
+  stores: Relationship.toMany(() => store),
 })

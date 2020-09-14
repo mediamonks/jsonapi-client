@@ -204,25 +204,6 @@ export type ResourceFieldsQuery<T extends ResourceFormatter = any> = Intersect<
   BaseResourcesFieldsQuery<ResourceRelatedResources<T>>
 >
 
-type ExperimentalResourceIncludeQuery<
-  T extends ResourceFormatter = any,
-  U extends ResourceFieldsQuery<T> | {} = {}
-> = {
-  [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<
-    any,
-    any,
-    ResourceFieldFlag.GetForbidden
-  >
-    ? never
-    : T['fields'][P] extends RelationshipField<infer R, any, any>
-    ? T['type'] extends keyof U
-      ? P extends U[T['type']][number]
-        ? ExperimentalResourceIncludeQuery<R, U> | null
-        : never
-      : ExperimentalResourceIncludeQuery<R, U> | null
-    : never
-}
-
 export type ResourceIncludeQuery<T extends ResourceFormatter = any> = {
   [P in keyof T['fields']]?: T['fields'][P] extends RelationshipField<
     any,
@@ -502,7 +483,7 @@ export type ToManyRelationshipFieldNameWithFlag<
 > = ResourceFieldNameWithFlag<Pick<T, ToManyRelationshipFieldName<T>>, U>
 
 export type RelationshipFieldFactory = (
-  getResources: () => NonEmptyReadonlyArray<ResourceFormatter>,
+  getFormatter: () => ResourceFormatter,
 ) => RelationshipField<any, RelationshipFieldType, any>
 
 export type ToOneRelationshipFieldFromFactory<
@@ -545,26 +526,14 @@ export type JSONAPISuccessOfManyDocument<T extends ResourceFormatter = any> = Ba
   JSONAPIPaginationLinks
 > & {
   data: Array<JSONAPIResourceObject<T>>
-  included?: Array<
-    JSONAPIResourceObject<
-      ResourceRelatedResources<
-        T extends ResourceFormatter ? T : T extends Array<ResourceFormatter> ? T[number] : never
-      >
-    >
-  >
+  included?: Array<JSONAPIResourceObject<ResourceRelatedResources<T>>>
 }
 
 export type JSONAPISuccessOfOneDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument<
   JSONAPILinksObject
 > & {
   data: JSONAPIResourceObject<T>
-  included?: Array<
-    JSONAPIResourceObject<
-      ResourceRelatedResources<
-        T extends ResourceFormatter ? T : T extends Array<ResourceFormatter> ? T[number] : never
-      >
-    >
-  >
+  included?: Array<JSONAPIResourceObject<ResourceRelatedResources<T>>>
 }
 
 export type JSONAPISuccessDocument<T extends ResourceFormatter = any> =

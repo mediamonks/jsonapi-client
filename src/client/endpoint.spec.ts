@@ -4,7 +4,7 @@ import { Client } from '../client'
 import { Endpoint } from './endpoint'
 
 const client = new Client(new URL('https://example.com/api'))
-const endpoint = new Endpoint(client, 'path', [formatterA])
+const endpoint = new Endpoint(client, 'path', formatterA)
 
 describe('Endpoint', () => {
   it.todo('is an Endpoint constructor')

@@ -11,7 +11,7 @@ JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe 
 - [x] Search params (filter, page, sort)
 - [x] CRUD operations on a resource
 - [x] CRUD operations on a relationship
-- [x] Polymorphic relationships
+- [ ] Polymorphic relationships
 - [ ] Polymorphic endpoints
 - [x] JSON:API document meta and links
 - [x] Resource object meta and links

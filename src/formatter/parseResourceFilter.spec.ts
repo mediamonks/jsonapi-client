@@ -16,10 +16,10 @@ describe('parseResourceFilter', () => {
   it('returns an unmodified resource filter if its valid', () => {
     const foo = new ResourceFormatter('Foo', {})
     const bar = new ResourceFormatter('Bar', {
-      foo: Relationship.toOne(() => [foo]),
+      foo: Relationship.toOne(() => foo),
     })
     const baz = new ResourceFormatter('Baz', {
-      bars: Relationship.toMany(() => [bar]),
+      bars: Relationship.toMany(() => bar),
     })
 
     const filter = {
@@ -40,10 +40,10 @@ describe('parseResourceFilter', () => {
   it('returns an unmodified resource filter if its valid for a polymorphic formatter', () => {
     const foo = new ResourceFormatter('Foo', {})
     const bar = new ResourceFormatter('Bar', {
-      foo: Relationship.toOne(() => [foo]),
+      foo: Relationship.toOne(() => foo),
     })
     const baz = new ResourceFormatter('Baz', {
-      bars: Relationship.toMany(() => [bar]),
+      bars: Relationship.toMany(() => bar),
     })
 
     const filter = {
@@ -148,10 +148,10 @@ describe('assertIncludeFilterAndGetNestedFormatters', () => {
   it('returns an array with every (nested) formatter from an includeFilter', () => {
     const foo = new ResourceFormatter('Foo', {})
     const bar = new ResourceFormatter('Bar', {
-      foo: Relationship.toOne(() => [foo]),
+      foo: Relationship.toOne(() => foo),
     })
     const baz = new ResourceFormatter('Baz', {
-      bars: Relationship.toMany(() => [bar]),
+      bars: Relationship.toMany(() => bar),
     })
 
     const includeFilter = {
@@ -179,7 +179,7 @@ describe('assertIncludeFilterAndGetNestedFormatters', () => {
   it('throws if a key of a nested include filter does not equal the type of its formatter', () => {
     const foo = new ResourceFormatter('Foo', {})
     const bar = new ResourceFormatter('Bar', {
-      foo: Relationship.toOne(() => [foo]),
+      foo: Relationship.toOne(() => foo),
     })
     const includeFilter = {
       foo: {

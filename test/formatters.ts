@@ -11,8 +11,8 @@ type FormatterAFields = {
 export const formatterA: ResourceFormatter<'a', FormatterAFields> = JSONAPI.formatter('a', {
   requiredAttribute: Attribute.required(string),
   optionalAttribute: Attribute.optional(string),
-  toOneRelationship: Relationship.toOne(() => [formatterA]),
-  toManyRelationship: Relationship.toMany(() => [formatterB]),
+  toOneRelationship: Relationship.toOne(() => formatterA),
+  toManyRelationship: Relationship.toMany(() => formatterB),
 })
 
 type FormatterBFields = {
@@ -21,5 +21,5 @@ type FormatterBFields = {
 
 export const formatterB: ResourceFormatter<'b', FormatterBFields> = JSONAPI.formatter('b', {
   foo: Attribute.required(string),
-  toOneA: Relationship.toOne(() => [formatterA]),
+  toOneA: Relationship.toOne(() => formatterA),
 })

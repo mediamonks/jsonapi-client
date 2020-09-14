@@ -8,7 +8,7 @@ describe('RelationshipField', () => {
     const relationshipField = new RelationshipField(
       requiredFieldFlag,
       RelationshipFieldType.ToOne,
-      () => [formatterA],
+      () => formatterA,
     )
     expect(relationshipField).toBeInstanceOf(RelationshipField)
   })
@@ -17,7 +17,7 @@ describe('RelationshipField', () => {
 describe('Relationship', () => {
   describe('toOne', () => {
     it('creates an optional to-one relationship field', () => {
-      const relationshipField = Relationship.toOne(() => [formatterA])
+      const relationshipField = Relationship.toOne(() => formatterA)
       expect(relationshipField.relationshipType).toBe(RelationshipFieldType.ToOne)
       expect(relationshipField.isToOneRelationshipField()).toBe(true)
       expect(relationshipField.flag).toBe(optionalFieldFlag)
@@ -26,7 +26,7 @@ describe('Relationship', () => {
 
   describe('toMany', () => {
     it('creates an optional to-many relationship field', () => {
-      const relationshipField = Relationship.toOne(() => [formatterA])
+      const relationshipField = Relationship.toOne(() => formatterA)
       expect(relationshipField.relationshipType).toBe(RelationshipFieldType.ToOne)
       expect(relationshipField.isToOneRelationshipField()).toBe(true)
       expect(relationshipField.flag).toBe(optionalFieldFlag)

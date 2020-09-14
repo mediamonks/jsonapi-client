@@ -92,7 +92,7 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
       })
     } else if (field.isRelationshipField()) {
       const relationships: Record<string, any> = body.relationships || (body.relationships = {})
-      const formatters = field.getFormatters()
+      const formatters = field.getFormatter()
       if (field.isToOneRelationshipField()) {
         if (!resourceIdentifier.predicate(value)) {
           resourceIdentifier.validate(value).forEach((detail) => {
@@ -105,11 +105,7 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
             )
           })
         } else {
-          const formatter: ResourceFormatter | undefined = formatters.find(
-            (formatter) => formatter.type === value.type,
-          )
-
-          if (!formatter) {
+          if (formatter.type !== value.type) {
             errors.push(
               createValidationErrorObject(ValidationErrorMessage.InvalidResourceType, `todo`, [
                 fieldName,
@@ -150,15 +146,11 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
                   )
                 })
                 return item
-              } else if (!formatters.some((resource) => resource.type === item.type)) {
+              } else if (formatter.type !== item.type) {
                 errors.push(
                   createValidationErrorObject(
                     ValidationErrorMessage.InvalidResourceType,
-                    formatters.length === 1
-                      ? `Resource type must equal "${formatters}"`
-                      : `Resource type must be one of; ${formatters
-                          .map((resource) => `"${resource.type}"`)
-                          .join(', ')}`,
+                    resourceTypeNotFoundDetail([formatter]),
                     [fieldName],
                   ),
                 )

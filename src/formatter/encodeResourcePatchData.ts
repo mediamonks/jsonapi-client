@@ -84,7 +84,7 @@ export const encodeResourcePatchData = (
         }
       } else if (field.isRelationshipField()) {
         const relationships: Record<string, any> = body.relationships || (body.relationships = {})
-        const formatters = field.getFormatters()
+        const formatter = field.getFormatter()
         if (field.isToOneRelationshipField()) {
           if (isNull(value)) {
             relationships[fieldName] = value
@@ -99,7 +99,7 @@ export const encodeResourcePatchData = (
                   ),
                 )
               })
-            } else if (!formatters.some((formatter) => formatter.type === value.type)) {
+            } else if (formatter.type !== value.type) {
               errors.push(
                 createValidationErrorObject(ValidationErrorMessage.InvalidResourceType, `todo`, [
                   fieldName,
