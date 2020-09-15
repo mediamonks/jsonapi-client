@@ -1,5 +1,3 @@
-import { isSome, isFunction } from 'isntnt'
-
 import { MockResourceRepository } from './repository'
 
 export type MockFetchSetup = {
@@ -19,7 +17,7 @@ export const createMockFetch = ({ repositories, latency = 0 }: MockFetchSetup) =
         : mockRepository.getMany(url)
       : null
 
-    const ok = isSome(result)
+    const ok = result != null
     return new Promise((resolve) => {
       setTimeout(
         () => {
@@ -39,9 +37,10 @@ export const createMockFetch = ({ repositories, latency = 0 }: MockFetchSetup) =
                       errors: [
                         {
                           title: 'Not Found',
-                          detail: isSome(id)
-                            ? `Resource at "${path}" with id "${id}" not found in mocks`
-                            : `Path "${path}" does not exist in mocks`,
+                          detail:
+                            id != null
+                              ? `Resource at "${path}" with id "${id}" not found in mocks`
+                              : `Path "${path}" does not exist in mocks`,
                         },
                       ],
                     })
@@ -49,7 +48,7 @@ export const createMockFetch = ({ repositories, latency = 0 }: MockFetchSetup) =
                 },
           )
         },
-        isFunction(latency) ? latency() : latency,
+        typeof latency === 'function' ? latency() : latency,
       )
     })
   }

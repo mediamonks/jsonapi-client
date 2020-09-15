@@ -1,4 +1,3 @@
-import { isFunction } from 'isntnt'
 import { ResourceFormatter } from '../formatter'
 import { ResourceIdentifier } from '../resource/identifier'
 import { RelationshipFieldType, ResourceFieldFlag } from '../data/enum'
@@ -11,6 +10,7 @@ import {
   JSONAPISuccessOfManyDocument,
   JSONAPISuccessOfOneDocument,
 } from '../types'
+import { reflect } from '../util/helpers'
 
 export type MockResource<
   T extends ResourceFormatter,
@@ -165,7 +165,7 @@ export class MockResourceRepository<T extends ResourceFormatter> {
       if (field.isAttributeField()) {
         ;(resource.attributes as any)[fieldName] = value
       } else if (field.isRelationshipField()) {
-        if (isFunction(value)) {
+        if (typeof value === 'function') {
           const resolvedValue = value(url, included)
           ;(resource.relationships as any)[fieldName] = {
             data: Array.isArray(resolvedValue)
@@ -186,8 +186,6 @@ export class MockResourceRepository<T extends ResourceFormatter> {
 }
 
 // Util
-const reflect = <T>(value: T) => value
-
 const arrayOfLength = <T = number>(
   length: number,
   transform: (index: number) => T = reflect as any,

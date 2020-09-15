@@ -28,11 +28,14 @@ JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe 
 - Relationships fields should support resources of more than one type.
 - Resource query values should no longer be required to be cast `as const`.
 - Resource include query values should only allow relationships that are present in its fields query.
+- Includes mock tools (experimental)
 
 ## Road Map
 
-- Add support for polymorphic endpoints (maybe)
+- Add support for polymorphic relationships and endpoints (maybe)
 - Write specs
+- Add integration tests
+- Docs
 
 # Getting Started
 
@@ -66,8 +69,8 @@ const user: UserFormatter = JSONAPI.resource('User', {
   userName: Attribute.requiredStatic(isString),
   dateOfBirth: Attribute.optional(isString, dateStringFormatter),
   role: Attribute.requiredReadOnly(isUserRole),
-  messages: Relationship.toMany(() => [message]),
-  friends: Relationship.toMany(() => [user]),
+  messages: Relationship.toMany(() => message),
+  friends: Relationship.toMany(() => user),
 })
 ```
 
@@ -116,8 +119,10 @@ userEndpoint.update('1', myFirstUserUpdate)
 ## Get a Single Resource Using a Filter
 
 ```typescript
-const userEmailFilter = User.createFilter({
-  [user.type]: ['emailAddress', 'dateOfBirth'],
+const userEmailFilter = User.filter({
+  fields: {
+    [user.type]: ['emailAddress', 'dateOfBirth'],
+  },
 })
 
 userEndpoint.getOne('12', userEmailFilter).then((oneUser) => {

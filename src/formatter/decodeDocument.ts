@@ -1,5 +1,3 @@
-import { isArray, Predicate } from 'isntnt'
-
 import { ValidationErrorMessage } from '../data/enum'
 import {
   ResourceDocumentError,
@@ -41,7 +39,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     resourceFilter as any,
   )
 
-  if ((isArray as Predicate<Array<any>>)(document.data)) {
+  if (Array.isArray(document.data)) {
     const data: Array<Resource<T, U>> = []
     const errors: Array<ResourceValidationErrorObject> = []
 
