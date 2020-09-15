@@ -35,8 +35,8 @@ export const country: CountryResource = jsonapi.formatter('Country', {
   nameVariations: Attribute.optional(Type.array(string)),
   thumbnailUrl: Attribute.optional(string),
   isFeatured: Attribute.optional(boolean),
-  organisation: Relationship.toOne(() => [organisation]),
-  flag: Relationship.toOne(() => [asset]),
-  participants: Relationship.toMany(() => [participant]),
-  tags: Relationship.toMany(() => [tag]),
+  organisation: Relationship.toOne(() => organisation),
+  flag: Relationship.toOne(() => asset),
+  participants: Relationship.toMany(() => participant),
+  tags: Relationship.toMany(() => tag),
 })

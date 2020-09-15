@@ -11,13 +11,78 @@ describe('decodeRelationship', () => {
     expect(errors).toBeInstanceOf(Array)
   })
 
-  it.todo('returns a success validation when a resource object matches any of its formatters')
+  it('returns a success validation when a resource object matches its formatter', () => {
+    const [value, errors] = decodeResourceObject(
+      [formatterA],
+      {
+        type: 'a',
+        id: '<some-id>',
+        attributes: {
+          requiredAttribute: 'abc',
+        },
+      },
+      [],
+      {},
+      {},
+      [],
+    )
+    expect(value).toEqual({
+      type: 'a',
+      id: '<some-id>',
+      requiredAttribute: 'abc',
+      optionalAttribute: null,
+      toOneRelationship: null,
+      toManyRelationship: [],
+    })
+    expect(errors).toEqual([])
+  })
 
-  it.todo('returns a failure validation when a resource object is not valid')
+  it('returns a failure validation when a resource object does not match its formatter', () => {
+    const [value, errors] = decodeResourceObject(
+      [formatterA],
+      {
+        type: 'a',
+        id: '<some-id>',
+        attributes: {
+          requiredAttribute: null,
+          optionalAttribute: 12,
+        },
+      },
+      [],
+      {},
+      {},
+      [],
+    )
+    expect(value).toBe(null)
+    expect(errors.length).toBe(2)
+  })
 
-  it.todo(
-    'returns a failure validation when a resource object does not match any of its formatters',
-  )
+  it('returns a failure validation when a resource object is not valid', () => {
+    const [value, errors] = decodeResourceObject([formatterA], null as any, [], {}, {}, [])
+    expect(value).toBe(null)
+    expect(errors.length > 0).toBe(true)
+  })
+
+  it('throws an error when a field is included that does not exist', () => {
+    expect(() =>
+      decodeResourceObject(
+        [formatterA],
+        {
+          type: 'a',
+          id: '<some-id>',
+          attributes: {
+            requiredAttribute: 'abc',
+          },
+        },
+        [],
+        {
+          a: ['non_existing_field'],
+        },
+        {},
+        [],
+      ),
+    ).toThrow()
+  })
 
   it.todo('throws an error when a field is included that is not allowed')
 })

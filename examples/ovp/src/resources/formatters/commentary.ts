@@ -19,5 +19,5 @@ export const commentary: CommentaryResource = jsonapi.formatter('Commentary', {
   name: Attribute.required(string),
   language: Attribute.required(string),
   sortOrder: Attribute.optional(uint),
-  tags: Relationship.toMany(() => [tag]),
+  tags: Relationship.toMany(() => tag),
 })

@@ -34,8 +34,8 @@ export const timelineMarker: TimelineMarkerResource = jsonapi.formatter('Timelin
   statistics: Attribute.optional(timelineMarkerStatistics),
   timestamp: Attribute.optional(number),
   timeDelta: Attribute.optional(number),
-  scheduleSession: Relationship.toOne(() => [scheduleSession]),
-  eventUnit: Relationship.toOne(() => [eventUnit]),
-  phase: Relationship.toOne(() => [phase]),
-  tags: Relationship.toMany(() => [tag]),
+  scheduleSession: Relationship.toOne(() => scheduleSession),
+  eventUnit: Relationship.toOne(() => eventUnit),
+  phase: Relationship.toOne(() => phase),
+  tags: Relationship.toMany(() => tag),
 })

@@ -61,5 +61,5 @@ export const individual: IndividualResource = jsonapi.formatter('Individual', {
   profileImages: Attribute.optional(string),
   sportingDebut: Attribute.optional(string),
   startedCompeting: Attribute.optional(isoDateString, isoDateStringFormatter),
-  participants: Relationship.toMany(() => [participant]),
+  participants: Relationship.toMany(() => participant),
 })

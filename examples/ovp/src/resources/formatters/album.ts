@@ -13,5 +13,5 @@ type AlbumResource = ResourceFormatter<
 
 export const album: AlbumResource = jsonapi.formatter('Album', {
   title: Attribute.required(string),
-  media: Relationship.toMany(() => [media]),
+  media: Relationship.toMany(() => media),
 })

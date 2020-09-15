@@ -17,6 +17,6 @@ export type ChannelResource = ResourceFormatter<
 export const channel: ChannelResource = jsonapi.formatter('Channel', {
   name: Attribute.required(string),
   stream: Attribute.required(string),
-  scheduleSessions: Relationship.toMany(() => [scheduleSession]),
-  tags: Relationship.toMany(() => [tag]),
+  scheduleSessions: Relationship.toMany(() => scheduleSession),
+  tags: Relationship.toMany(() => tag),
 })

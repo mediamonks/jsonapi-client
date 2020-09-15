@@ -63,12 +63,6 @@ export type Resource<
   T extends ResourceFormatter = any,
   U extends ResourceFilter<T> = {}
 > = ResourceIdentifier<T['type']> &
-  // {
-  //   [P in ResourceMetaKey]: JSONAPIMetaObject | null
-  // } &
-  // {
-  //   [P in ResourceLinksKey]: JSONAPILinksObject | null
-  // } &
   {
     [P in FilteredResourceFieldName<T, U>]: T['fields'][P] extends RelationshipField<
       infer R,
@@ -97,7 +91,7 @@ export type ResourceConstructorData<T extends ResourceType, U extends ResourceFi
   ResourceFormatter<T, U>
 >
 
-type MonoResourceCreateData<T extends ResourceFormatter> = WithOptional<
+export type ResourceCreateData<T extends ResourceFormatter> = WithOptional<
   ResourceIdentifier<T['type']>,
   'id'
 > &
@@ -114,11 +108,7 @@ type MonoResourceCreateData<T extends ResourceFormatter> = WithOptional<
     ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.PostOptional>
   >
 
-export type ResourceCreateData<T extends ResourceFormatter> = {
-  [P in T['type']]: MonoResourceCreateData<Extract<T, { type: P }>>
-}[T['type']]
-
-type MonoResourcePatchData<T extends ResourceFormatter> = ResourceIdentifier<T['type']> &
+export type ResourcePatchData<T extends ResourceFormatter> = ResourceIdentifier<T['type']> &
   Pick<
     {
       [P in keyof T['fields']]?: ResourceFieldPatchValue<T['fields'][P]>
@@ -128,10 +118,6 @@ type MonoResourcePatchData<T extends ResourceFormatter> = ResourceIdentifier<T['
       ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     >
   >
-
-export type ResourcePatchData<T extends ResourceFormatter> = {
-  [P in T['type']]: MonoResourcePatchData<Extract<T, { type: P }>>
-}[T['type']]
 
 //
 export type ExperimentalResourceQuery<

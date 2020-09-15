@@ -32,8 +32,8 @@ export const stage: StageResource = jsonapi.formatter('Stage', {
   startDate: Attribute.optional(isoDateString, isoDateStringFormatter),
   endDate: Attribute.optional(isoDateString, isoDateStringFormatter),
   brackets: Attribute.optional(stageBrackets),
-  event: Relationship.toOne(() => [event]),
-  phases: Relationship.toMany(() => [phase]),
-  competitors: Relationship.toMany(() => [competitor]),
-  tags: Relationship.toMany(() => [tag]),
+  event: Relationship.toOne(() => event),
+  phases: Relationship.toMany(() => phase),
+  competitors: Relationship.toMany(() => competitor),
+  tags: Relationship.toMany(() => tag),
 })

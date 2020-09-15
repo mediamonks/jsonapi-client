@@ -21,6 +21,6 @@ export const aggregate: AggregateResource = jsonapi.formatter('Aggregate', {
   key: Attribute.required(string),
   aggregateType: Attribute.required(aggregateType),
   value: Attribute.required(aggregateValue),
-  discipline: Relationship.toOne(() => [discipline]),
-  tags: Relationship.toMany(() => [tag]),
+  discipline: Relationship.toOne(() => discipline),
+  tags: Relationship.toMany(() => tag),
 })

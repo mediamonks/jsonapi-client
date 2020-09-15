@@ -43,10 +43,10 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
 
   if ((isArray as Predicate<Array<any>>)(document.data)) {
     const data: Array<Resource<T, U>> = []
-    const validationErrors: Array<ResourceValidationErrorObject> = []
+    const errors: Array<ResourceValidationErrorObject> = []
 
     document.data.forEach((resource) => {
-      const [value, validationErrors] = decodeResourceObject(
+      const [value, resourceErrors] = decodeResourceObject(
         formatters,
         resource,
         included,
@@ -55,21 +55,21 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
         [],
       )
       data.push(value as any)
-      validationErrors.forEach((error) => validationErrors.push(error))
+      resourceErrors.forEach((error) => errors.push(error))
     })
 
-    if (validationErrors.length) {
+    if (errors.length) {
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,
-        validationErrors,
+        errors,
       )
     }
 
     DOCUMENT_CONTEXT_STORE.set(data, document)
     return data
   } else {
-    const [resource, validationErrors] = decodeResourceObject(
+    const [resource, errors] = decodeResourceObject(
       formatters,
       document.data,
       included,
@@ -78,11 +78,11 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       [],
     )
 
-    if (validationErrors.length) {
+    if (errors.length) {
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,
-        validationErrors,
+        errors,
       )
     }
 

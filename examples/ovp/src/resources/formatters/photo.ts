@@ -28,6 +28,6 @@ export const photo: PhotoResource = jsonapi.formatter('Photo', {
   publishedAt: Attribute.optional(isoDateString, isoDateStringFormatter),
   width: Attribute.optional(uint),
   height: Attribute.optional(uint),
-  image: Relationship.toOne(() => [asset]),
-  tags: Relationship.toMany(() => [tag]),
+  image: Relationship.toOne(() => asset),
+  tags: Relationship.toMany(() => tag),
 })

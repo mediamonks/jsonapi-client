@@ -1,14 +1,8 @@
 import 'regenerator-runtime/runtime'
-import JSONAPI, {
-  AbsolutePathRoot,
-  RelationshipFieldData,
-  ResourceIncludeQuery,
-  Resource,
-  MonoResourceIncludeQuery,
-} from '../../../src'
+import JSONAPI, { AbsolutePathRoot, RelationshipFieldData } from '../../../src'
+import { decodeDocument } from '../../../src/formatter/decodeDocument'
 
-import { author, book, chapter, series, photo } from './resources'
-import { Some } from 'isntnt'
+import { author, book, chapter, series } from './resources'
 
 const url = new URL('http://jsonapiplayground.reyesoft.com/v2')
 
@@ -73,7 +67,7 @@ const booksFilter = books.filter({
   },
 })
 
-1 &&
+0 &&
   books.getOne('28', booksFilter).then((data) => {
     console.log('Book', data)
     console.log('Book Links', books.getResourceLinks(data))
@@ -100,7 +94,7 @@ const chaptersFilter = chapters.filter({
   },
 })
 
-1 &&
+0 &&
   chapters.getMany(chapterQuery, chaptersFilter).then((data) => {
     console.log('Chapters', data[1].book)
     console.log('Chapters Meta', chapters.getDocumentMeta(data))
@@ -122,15 +116,15 @@ const getOneBookWithAuthor = books.one({
     console.log('Book With Author', data)
   })
 
-const x = books.filter({
-  fields: {
-    books: ['photos'],
-  },
-  include: {
-    photos: {
-      book: null,
-    },
-  },
-})
-
-type X = Resource<typeof book, typeof x>
+try {
+  const x = decodeDocument([book], {
+    data: [
+      {
+        type: 'jemoer',
+        id: 'ok',
+      } as any,
+    ],
+  })
+} catch (err) {
+  console.dir(err)
+}

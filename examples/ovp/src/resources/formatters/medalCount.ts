@@ -27,7 +27,7 @@ export const medalCount: MedalCountResource = jsonapi.formatter('MedalCount', {
   total: Attribute.required(uint),
   goldRank: Attribute.required(uint),
   totalRank: Attribute.required(uint),
-  discipline: Relationship.toOne(() => [discipline]),
-  organisation: Relationship.toOne(() => [organisation]),
-  country: Relationship.toOne(() => [country]),
+  discipline: Relationship.toOne(() => discipline),
+  organisation: Relationship.toOne(() => organisation),
+  country: Relationship.toOne(() => country),
 })

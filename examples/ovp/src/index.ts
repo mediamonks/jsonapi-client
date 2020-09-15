@@ -3,7 +3,6 @@ import jsonapi from '../../../src'
 
 import {
   competitor,
-  discipline,
   event,
   stage,
   phase,
@@ -28,8 +27,8 @@ const client = jsonapi.client(url, {
 
 const eventEndpoint = client.endpoint('events', event)
 
-const eventFilter = event.filter(
-  {
+const eventFilter = eventEndpoint.filter({
+  fields: {
     [event.type]: ['externalId', 'name', 'stages', 'competitors'],
     [stage.type]: ['externalId', 'phases', 'competitors'],
     [phase.type]: ['externalId', 'title', 'eventUnits'],
@@ -57,7 +56,7 @@ const eventFilter = event.filter(
     [asset.type]: ['source'],
     [organisation.type]: ['externalId', 'flag', 'country'],
   },
-  {
+  include: {
     stages: {
       competitors: {
         medals: null,
@@ -89,7 +88,7 @@ const eventFilter = event.filter(
       },
     },
   },
-)
+})
 
 eventEndpoint
   .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilter)
@@ -98,15 +97,15 @@ eventEndpoint
   })
   .catch(console.dir)
 
-const eventFilterDiscipline = event.filter(
-  {
+const eventFilterDiscipline = eventEndpoint.filter({
+  fields: {
     [event.type]: ['stages'],
     [stage.type]: ['phases', 'startDate', 'endDate'],
   },
-  {
+  include: {
     stages: null,
   },
-)
+})
 
 eventEndpoint
   .getMany(null, eventFilterDiscipline)

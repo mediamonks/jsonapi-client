@@ -29,6 +29,6 @@ export const spriteSheet: SpriteSheetResource = jsonapi.formatter('SpriteSheet',
   tileHeight: Attribute.required(uint),
   tiles: Attribute.required(uint),
   source: Attribute.required(string),
-  vod: Relationship.toOne(() => [vod]),
-  tags: Relationship.toMany(() => [tag]),
+  vod: Relationship.toOne(() => vod),
+  tags: Relationship.toMany(() => tag),
 })

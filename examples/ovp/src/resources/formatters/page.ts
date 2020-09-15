@@ -20,5 +20,5 @@ export const page: PageResource = jsonapi.formatter('Page', {
   slug: Attribute.required(pageSlug),
   path: Attribute.required(string),
   navigationIndex: Attribute.optional(uint),
-  widgets: Relationship.toMany(() => [widget]),
+  widgets: Relationship.toMany(() => widget),
 })

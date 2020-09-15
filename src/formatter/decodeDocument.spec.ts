@@ -155,7 +155,7 @@ describe('decodeDocument', () => {
       decodeDocument([formatterA], {
         data: [
           {
-            type: 'a',
+            type: 'x' as any,
             id: '<some-id>',
             attributes: {
               requiredAttribute: null as any,

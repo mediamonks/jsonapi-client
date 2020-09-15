@@ -21,6 +21,6 @@ export const asset: AssetResource = jsonapi.formatter('Asset', {
   name: Attribute.required(string),
   source: Attribute.required(string),
   alt: Attribute.optional(string),
-  rendition: Relationship.toMany(() => [rendition]),
-  tags: Relationship.toMany(() => [tag]),
+  rendition: Relationship.toMany(() => rendition),
+  tags: Relationship.toMany(() => tag),
 })

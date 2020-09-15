@@ -75,8 +75,8 @@ export const result: ResultResource = jsonapi.formatter('Result', {
   tied: Attribute.optional(uint),
   lost: Attribute.optional(uint),
   extendedInfoMap: Attribute.optional(resultExtendedInfoMap),
-  children: Relationship.toMany(() => [result]),
-  parent: Relationship.toOne(() => [result]),
-  competitor: Relationship.toOne(() => [competitor]),
-  tags: Relationship.toMany(() => [tag]),
+  children: Relationship.toMany(() => result),
+  parent: Relationship.toOne(() => result),
+  competitor: Relationship.toOne(() => competitor),
+  tags: Relationship.toMany(() => tag),
 })
