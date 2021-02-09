@@ -1,12 +1,12 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/primitive'
 import { medalRankStatistics, MedalRankStatistics } from '../attributes/medalRankStatistics'
-import { asset } from './asset'
-import { country } from './country'
-import { medalCount } from './medalCount'
-import { scheduleSession } from './scheduleSession'
-import { tag } from './tag'
+import { asset, AssetResource } from './asset'
+import { country, CountryResource } from './country'
+import { medalCount, MedalCountResource } from './medalCount'
+import { scheduleSession, ScheduleSessionResource } from './scheduleSession'
+import { tag, TagResource } from './tag'
 
 export type OrganisationResource = ResourceFormatter<
   'Organisation',
@@ -15,15 +15,15 @@ export type OrganisationResource = ResourceFormatter<
     name: Attribute.Required<string>
     description: Attribute.Optional<string>
     statistics: Attribute.Required<MedalRankStatistics>
-    country: Relationship.ToOne<typeof country>
-    flag: Relationship.ToOne<typeof asset>
-    medalCounts: Relationship.ToOne<typeof medalCount>
-    scheduleSessions: Relationship.ToMany<typeof scheduleSession>
-    tags: Relationship.ToMany<typeof tag>
+    country: Relationship.ToOne<CountryResource>
+    flag: Relationship.ToOne<AssetResource>
+    medalCounts: Relationship.ToOne<MedalCountResource>
+    scheduleSessions: Relationship.ToMany<ScheduleSessionResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const organisation: OrganisationResource = jsonapi.formatter('Organisation', {
+export const organisation: OrganisationResource = new ResourceFormatter('Organisation', {
   externalId: Attribute.required(string),
   name: Attribute.required(string),
   description: Attribute.optional(string),

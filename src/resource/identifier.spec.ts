@@ -1,7 +1,7 @@
 import { ResourceIdentifier } from './identifier'
 
 describe('ResourceIdentifier', () => {
-  describe('#constructor', () => {
+  describe('constructor', () => {
     it('must throw an Error if its first param (type) is not a string', () => {
       expect(() => new ResourceIdentifier(null as any, 'id')).toThrowError()
     })

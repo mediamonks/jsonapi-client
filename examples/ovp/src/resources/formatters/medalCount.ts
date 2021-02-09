@@ -1,9 +1,9 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { uint } from '../attributes/primitive'
-import { country } from './country'
-import { discipline } from './discipline'
-import { organisation } from './organisation'
+import { country, CountryResource } from './country'
+import { discipline, DisciplineResource } from './discipline'
+import { organisation, OrganisationResource } from './organisation'
 
 export type MedalCountResource = ResourceFormatter<
   'MedalCount',
@@ -14,13 +14,13 @@ export type MedalCountResource = ResourceFormatter<
     total: Attribute.Required<number>
     goldRank: Attribute.Required<number>
     totalRank: Attribute.Required<number>
-    discipline: Relationship.ToOne<typeof discipline>
-    organisation: Relationship.ToOne<typeof organisation>
-    country: Relationship.ToOne<typeof country>
+    discipline: Relationship.ToOne<DisciplineResource>
+    organisation: Relationship.ToOne<OrganisationResource>
+    country: Relationship.ToOne<CountryResource>
   }
 >
 
-export const medalCount: MedalCountResource = jsonapi.formatter('MedalCount', {
+export const medalCount: MedalCountResource = new ResourceFormatter('MedalCount', {
   bronze: Attribute.required(uint),
   silver: Attribute.required(uint),
   gold: Attribute.required(uint),

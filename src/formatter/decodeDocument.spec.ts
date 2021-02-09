@@ -21,7 +21,7 @@ describe('decodeDocument', () => {
             type: 'a',
             id: '<some-id>',
             attributes: {
-              requiredAttribute: 'foo',
+              requiredString: 'foo',
             },
           },
         ],
@@ -30,10 +30,10 @@ describe('decodeDocument', () => {
       {
         type: 'a',
         id: '<some-id>',
-        requiredAttribute: 'foo',
-        optionalAttribute: null,
-        toOneRelationship: null,
-        toManyRelationship: [],
+        requiredString: 'foo',
+        optionalString: null,
+        toOneB: null,
+        toManyA: [],
       },
     ])
   })
@@ -45,17 +45,17 @@ describe('decodeDocument', () => {
           type: 'a',
           id: '<some-id>',
           attributes: {
-            requiredAttribute: 'foo',
+            requiredString: 'foo',
           },
         },
       }),
     ).toEqual({
       type: 'a',
       id: '<some-id>',
-      requiredAttribute: 'foo',
-      optionalAttribute: null,
-      toOneRelationship: null,
-      toManyRelationship: [],
+      requiredString: 'foo',
+      optionalString: null,
+      toOneB: null,
+      toManyA: [],
     })
   })
 
@@ -65,7 +65,7 @@ describe('decodeDocument', () => {
         type: 'a',
         id: '<some-id>',
         attributes: {
-          requiredAttribute: 'foo',
+          requiredString: 'foo',
         },
       },
       meta: {
@@ -91,7 +91,7 @@ describe('decodeDocument', () => {
         type: 'a',
         id: '<some-id>',
         attributes: {
-          requiredAttribute: 'foo',
+          requiredString: 'foo',
         },
         meta: {
           foo: 'baz',
@@ -119,7 +119,7 @@ describe('decodeDocument', () => {
             type: 'a',
             id: '<some-id>',
             attributes: {
-              requiredAttribute: 'foo',
+              requiredString: 'foo',
             },
           },
         ],
@@ -128,10 +128,10 @@ describe('decodeDocument', () => {
       {
         type: 'a',
         id: '<some-id>',
-        requiredAttribute: 'foo',
-        optionalAttribute: null,
-        toOneRelationship: null,
-        toManyRelationship: [],
+        requiredString: 'foo',
+        optionalString: null,
+        toOneB: null,
+        toManyA: [],
       },
     ])
   })
@@ -143,7 +143,7 @@ describe('decodeDocument', () => {
           type: 'a',
           id: '<some-id>',
           attributes: {
-            requiredAttribute: null as any,
+            requiredString: null as any,
           },
         },
       })
@@ -158,7 +158,7 @@ describe('decodeDocument', () => {
             type: 'x' as any,
             id: '<some-id>',
             attributes: {
-              requiredAttribute: null as any,
+              requiredString: null as any,
             },
           },
         ],

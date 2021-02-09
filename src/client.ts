@@ -32,7 +32,7 @@ export type DefaultClientSetup = ClientSetup & {
 /**
  * @private
  */
-export const defaultClientSetup: DefaultClientSetup = {
+export const DEFAULT_CLIENT_SETUP: DefaultClientSetup = {
   absolutePathRoot: AbsolutePathRoot.Domain,
   implicitIncludes: ImplicitInclude.None,
   relationshipFieldData: RelationshipFieldData.None,
@@ -50,7 +50,7 @@ export type ClientSetup = {
   implicitIncludes: ImplicitInclude
   relationshipFieldData: RelationshipFieldData
   relationshipFieldLinks: RelationshipFieldLinks
-  transformRelationshipPath(path: string): string
+  transformRelationshipPath(path: string, formatter: ResourceFormatter<any, any>): string
   beforeRequest(request: Request): Request | Promise<Request>
   beforeRequestURL(url: URL): URL | Promise<URL>
   beforeRequestHeaders(headers: Headers): Headers | Promise<Headers>
@@ -61,19 +61,11 @@ export type ClientSetup = {
 export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = {
   [P in keyof DefaultClientSetup]: P extends keyof T ? T[P] : DefaultClientSetup[P]
 }
-
-const client = <T extends Partial<ClientSetup>>(
-  url: URL,
-  setup?: T,
-): Client<ClientSetupWithDefaults<T>> => new Client(url, setup) as any
-
-export default client
-
-export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
+export class Client<T extends Partial<ClientSetup>> {
   readonly url: URL
   readonly setup: ClientSetupWithDefaults<T>
 
-  constructor(url: URL | string, setup: T = {} as T) {
+  constructor(url: URL | string, setup: T = {} as any) {
     this.url = parseClientURL(url)
     this.setup = parseClientSetup(setup) as any
   }
@@ -82,18 +74,11 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
     return new Endpoint(this, path, formatter)
   }
 
-  async request<U extends JSONAPIRequestMethod = 'GET'>(
+  async request<U extends JSONAPIRequestMethod = JSONAPIRequestMethod.Get>(
     url: URL,
-    method: U = 'GET' as U,
-    body?: U extends 'POST' | 'PATCH' ? SerializableObject : never,
+    method: U = JSONAPIRequestMethod.Get as U,
+    body?: SerializableObject,
   ): Promise<JSONAPIDocument<any> | null> {
-    if (method === 'POST' || method === 'PATCH') {
-      if (arguments.length < 3) {
-        throw new TypeError(`Request body must be provided with a "${method}" request`)
-      }
-    } else if (arguments.length > 2) {
-      throw new TypeError(`Request body must be omitted with a "${method}" request`)
-    }
     return this.beforeRequest(url, method, body).then((request) =>
       this.setup.fetchAdapter!(request).then((response) => this.afterRequest(response, request)),
     )
@@ -135,10 +120,12 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
     )
   }
 
-  private async afterRequest(response: Response, request: Request): Promise<JSONAPIDocument<any>> {
+  private async afterRequest(
+    response: Response,
+    request: Request,
+  ): Promise<JSONAPIDocument<any> | null> {
     return Promise.resolve(this.setup.afterRequest!(response))
       .then((response) => {
-        // console.log('RESPONSE', response)
         if (!response.ok) {
           return response.json().then((data: Serializable) => {
             // console.log('FAILURE RESPONSE DATA', data)
@@ -152,17 +139,18 @@ export class Client<T extends Partial<ClientSetup> = DefaultClientSetup> {
             throw new ResourceDocumentError(response.statusText, data, data.errors)
           })
         }
-        if (request.method === 'GET' && response.status === 204) {
-          // Use request data, see https://jsonapi.org/format/#crud-creating-responses-204
-          // TODO: Should filter out all non-readable fields to prevent parse errors
-          // TODO: Should throw custom error message if a 204 returns non-200 data (missing non-writable fields)
-          return request.json()
+        if (request.method === JSONAPIRequestMethod.Post && response.status === 204) {
+          // See see https://jsonapi.org/format/#crud-creating-responses-204
+          return null
         }
         return response.json()
       })
       .then((data: Serializable) => {
         // console.log('SUCCESS RESPONSE DATA', data)
-        if (!(jsonapiSuccessDocument.predicate as Predicate<JSONAPISuccessDocument>)(data)) {
+        if (
+          isSome(data) &&
+          !(jsonapiSuccessDocument.predicate as Predicate<JSONAPISuccessDocument>)(data)
+        ) {
           throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
         }
         return data
@@ -178,7 +166,7 @@ const parseClientURL = (value: unknown): URL =>
 
 const parseClientSetup = (value: unknown): ClientSetup =>
   isObject(value)
-    ? clientSetup.parse({ ...defaultClientSetup, ...value })
+    ? clientSetup.parse({ ...DEFAULT_CLIENT_SETUP, ...value })
     : clientSetup.parse(value)
 
 const clientSetup: Type<ClientSetup> = Type.shape('a valid client setup object', {

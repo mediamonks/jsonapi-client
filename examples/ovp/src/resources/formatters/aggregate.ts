@@ -1,10 +1,10 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { aggregateType, AggregateType } from '../attributes/aggregateType'
 import { aggregateValue, AggregateValue } from '../attributes/aggregateValue'
 import { string } from '../attributes/primitive'
-import { discipline } from './discipline'
-import { tag } from './tag'
+import { discipline, DisciplineResource } from './discipline'
+import { tag, TagResource } from './tag'
 
 type AggregateResource = ResourceFormatter<
   'Aggregate',
@@ -12,12 +12,12 @@ type AggregateResource = ResourceFormatter<
     key: Attribute.Required<string>
     aggregateType: Attribute.Required<AggregateType>
     value: Attribute.Required<AggregateValue>
-    discipline: Relationship.ToOne<typeof discipline>
-    tags: Relationship.ToMany<typeof tag>
+    discipline: Relationship.ToOne<DisciplineResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const aggregate: AggregateResource = jsonapi.formatter('Aggregate', {
+export const aggregate: AggregateResource = new ResourceFormatter('Aggregate', {
   key: Attribute.required(string),
   aggregateType: Attribute.required(aggregateType),
   value: Attribute.required(aggregateValue),

@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '../../../../../src'
 
 import { configurationKey, ConfigurationKey } from '../attributes/configurationKey'
 import { configurationValue, ConfigurationValue } from '../attributes/configurationValue'
@@ -11,7 +11,7 @@ export type ConfigurationResource = ResourceFormatter<
   }
 >
 
-export const configuration: ConfigurationResource = jsonapi.formatter('Configuration', {
+export const configuration: ConfigurationResource = new ResourceFormatter('Configuration', {
   key: Attribute.required(configurationKey),
   value: Attribute.required(configurationValue),
 })

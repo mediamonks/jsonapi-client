@@ -11,6 +11,7 @@ import {
   JSONAPIResourceCreateObject,
   ResourceFieldName,
   RelationshipFieldName,
+  AttributeFieldName,
 } from './types'
 import { EMPTY_OBJECT } from './data/constants'
 import { resourceType } from './util/validators'
@@ -20,12 +21,6 @@ import { ResourceIdentifier } from './resource/identifier'
 import { encodeResourceCreateData } from './formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from './formatter/encodeResourcePatchData'
 import { onResourceOfTypeMessage } from './util/formatting'
-
-const formatter = <T extends ResourceType, U extends ResourceFields>(type: T, fields: U) =>
-  new ResourceFormatter(type, fields)
-
-export default formatter
-
 export class ResourceFormatter<T extends ResourceType = any, U extends ResourceFields = any> {
   readonly type: T
   readonly fields: U
@@ -67,6 +62,16 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
       throw new TypeError(onResourceOfTypeMessage([this], `Field "${fieldName}" does not exist`))
     }
     return this.fields[fieldName]
+  }
+
+  getAttributeField<V extends AttributeFieldName<this['fields']>>(fieldName: V): this['fields'][V] {
+    const field = this.getField(fieldName as any)
+    if (!field.isAttributeField()) {
+      throw new TypeError(
+        onResourceOfTypeMessage([this], `Field "${fieldName}" is not an attribute field`),
+      )
+    }
+    return field
   }
 
   getRelationshipField<V extends RelationshipFieldName<this['fields']>>(

@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '../../../../../src'
 
 import { string, uint } from '../attributes/primitive'
 
@@ -13,7 +13,7 @@ export type RenditionResource = ResourceFormatter<
   }
 >
 
-export const rendition: RenditionResource = jsonapi.formatter('Rendition', {
+export const rendition: RenditionResource = new ResourceFormatter('Rendition', {
   renditionType: Attribute.required(string),
   name: Attribute.required(string),
   source: Attribute.required(string),

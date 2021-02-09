@@ -1,13 +1,13 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import { medalType, MedalType } from '../attributes/medalType'
 import { boolean, string, uint } from '../attributes/primitive'
-import { competitor } from './competitor'
-import { event } from './event'
-import { eventUnit } from './eventUnit'
-import { organisation } from './organisation'
-import { participant } from './participant'
+import { competitor, CompetitorResource } from './competitor'
+import { event, EventResource } from './event'
+import { eventUnit, EventUnitResource } from './eventUnit'
+import { organisation, OrganisationResource } from './organisation'
+import { participant, ParticipantResource } from './participant'
 
 export type MedalResource = ResourceFormatter<
   'Medal',
@@ -18,15 +18,15 @@ export type MedalResource = ResourceFormatter<
     perpetual: Attribute.Required<boolean>
     determinedDate: Attribute.Optional<string, Date>
     year: Attribute.Optional<number>
-    event: Relationship.ToOne<typeof event>
-    eventUnit: Relationship.ToOne<typeof eventUnit>
-    competitor: Relationship.ToOne<typeof competitor>
-    participant: Relationship.ToOne<typeof participant>
-    organisation: Relationship.ToOne<typeof organisation>
+    event: Relationship.ToOne<EventResource>
+    eventUnit: Relationship.ToOne<EventUnitResource>
+    competitor: Relationship.ToOne<CompetitorResource>
+    participant: Relationship.ToOne<ParticipantResource>
+    organisation: Relationship.ToOne<OrganisationResource>
   }
 >
 
-export const medal: MedalResource = jsonapi.formatter('Medal', {
+export const medal: MedalResource = new ResourceFormatter('Medal', {
   externalId: Attribute.optional(string),
   medalType: Attribute.required(medalType),
   description: Attribute.required(string),

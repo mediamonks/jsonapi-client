@@ -1,11 +1,11 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { medalStatistics, MedalStatistics } from '../attributes/medalStatistics'
 import { boolean, string, uint } from '../attributes/primitive'
-import { asset } from './asset'
-import { event } from './event'
-import { participant } from './participant'
-import { tag } from './tag'
+import { asset, AssetResource } from './asset'
+import { event, EventResource } from './event'
+import { participant, ParticipantResource } from './participant'
+import { tag, TagResource } from './tag'
 
 export type DisciplineResource = ResourceFormatter<
   'Discipline',
@@ -19,15 +19,15 @@ export type DisciplineResource = ResourceFormatter<
     federationLink: Attribute.Optional<string>
     federationLabel: Attribute.Optional<string>
     statistics: Attribute.Required<MedalStatistics>
-    pictogram: Relationship.ToOne<typeof asset>
-    thumbnail: Relationship.ToOne<typeof asset>
-    participants: Relationship.ToMany<typeof participant>
-    events: Relationship.ToMany<typeof event>
-    tags: Relationship.ToMany<typeof tag>
+    pictogram: Relationship.ToOne<AssetResource>
+    thumbnail: Relationship.ToOne<AssetResource>
+    participants: Relationship.ToMany<ParticipantResource>
+    events: Relationship.ToMany<EventResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const discipline: DisciplineResource = jsonapi.formatter('Discipline', {
+export const discipline: DisciplineResource = new ResourceFormatter('Discipline', {
   externalId: Attribute.required(string),
   name: Attribute.required(string),
   description: Attribute.optional(string),

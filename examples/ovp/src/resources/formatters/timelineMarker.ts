@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { number, string } from '../attributes/primitive'
 import {
@@ -6,10 +6,10 @@ import {
   TimelineMarkerStatistics,
 } from '../attributes/timelineMarkerStatistics'
 import { timelineMarkerType, TimelineMarkerType } from '../attributes/timelineMarkerType'
-import { eventUnit } from './eventUnit'
-import { phase } from './phase'
-import { scheduleSession } from './scheduleSession'
-import { tag } from './tag'
+import { eventUnit, EventUnitResource } from './eventUnit'
+import { phase, PhaseResource } from './phase'
+import { scheduleSession, ScheduleSessionResource } from './scheduleSession'
+import { tag, TagResource } from './tag'
 
 export type TimelineMarkerResource = ResourceFormatter<
   'TimelineMarker',
@@ -20,14 +20,14 @@ export type TimelineMarkerResource = ResourceFormatter<
     statistics: Attribute.Optional<TimelineMarkerStatistics>
     timestamp: Attribute.Optional<number>
     timeDelta: Attribute.Optional<number>
-    scheduleSession: Relationship.ToOne<typeof scheduleSession>
-    eventUnit: Relationship.ToOne<typeof eventUnit>
-    phase: Relationship.ToOne<typeof phase>
-    tags: Relationship.ToMany<typeof tag>
+    scheduleSession: Relationship.ToOne<ScheduleSessionResource>
+    eventUnit: Relationship.ToOne<EventUnitResource>
+    phase: Relationship.ToOne<PhaseResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const timelineMarker: TimelineMarkerResource = jsonapi.formatter('TimelineMarker', {
+export const timelineMarker: TimelineMarkerResource = new ResourceFormatter('TimelineMarker', {
   timelineMarkerType: Attribute.optional(timelineMarkerType),
   title: Attribute.optional(string),
   description: Attribute.optional(string),

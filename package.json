@@ -19,8 +19,10 @@
   "devDependencies": {
     "@types/jest": "^26.0.13",
     "jest": "^26.4.2",
+    "node-fetch": "^2.6.1",
     "prettier": "^2.0.5",
     "ts-jest": "^26.3.0",
-    "typescript": "^3.9.6"
+    "typescript": "^4.1.3",
+    "url-parse": "^1.4.7"
   }
 }

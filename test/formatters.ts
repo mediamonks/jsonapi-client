@@ -1,25 +1,32 @@
-import JSONAPI, { Attribute, Relationship, ResourceFormatter } from '../src'
+import { Attribute, Relationship, ResourceFormatter } from '../src'
 import { string } from '../src/util/validators'
 
-type FormatterAFields = {
-  requiredAttribute: Attribute.Required<string>
-  optionalAttribute: Attribute.Optional<string>
-  toOneRelationship: Relationship.ToOne<typeof formatterA>
-  toManyRelationship: Relationship.ToMany<typeof formatterB>
-}
+export type FormatterA = ResourceFormatter<
+  'a',
+  {
+    requiredString: Attribute.Required<string>
+    optionalString: Attribute.Optional<string>
+    toOneB: Relationship.ToOne<FormatterB>
+    toManyA: Relationship.ToMany<FormatterA>
+  }
+>
 
-export const formatterA: ResourceFormatter<'a', FormatterAFields> = JSONAPI.formatter('a', {
-  requiredAttribute: Attribute.required(string),
-  optionalAttribute: Attribute.optional(string),
-  toOneRelationship: Relationship.toOne(() => formatterA),
-  toManyRelationship: Relationship.toMany(() => formatterB),
+export const formatterA: FormatterA = new ResourceFormatter('a', {
+  requiredString: Attribute.required(string),
+  optionalString: Attribute.optional(string),
+  toOneB: Relationship.toOne(() => formatterB),
+  toManyA: Relationship.toMany(() => formatterA),
 })
 
-type FormatterBFields = {
-  foo: Attribute.Required<string>
-}
+export type FormatterB = ResourceFormatter<
+  'b',
+  {
+    requiredString: Attribute.Required<string>
+    toOneA: Relationship.ToOne<FormatterA>
+  }
+>
 
-export const formatterB: ResourceFormatter<'b', FormatterBFields> = JSONAPI.formatter('b', {
-  foo: Attribute.required(string),
+export const formatterB: FormatterB = new ResourceFormatter('b', {
+  requiredString: Attribute.required(string),
   toOneA: Relationship.toOne(() => formatterA),
 })

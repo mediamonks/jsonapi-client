@@ -1,25 +1,25 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/primitive'
 import { tagType, TagType } from '../attributes/tagType'
-import { discipline } from './discipline'
-import { event } from './event'
-import { individual } from './individual'
-import { organisation } from './organisation'
+import { discipline, DisciplineResource } from './discipline'
+import { event, EventResource } from './event'
+import { individual, IndividualResource } from './individual'
+import { organisation, OrganisationResource } from './organisation'
 
 export type TagResource = ResourceFormatter<
   'Tag',
   {
     tagType: Attribute.Required<TagType>
     value: Attribute.Required<string>
-    discipline: Relationship.ToOne<typeof discipline>
-    event: Relationship.ToOne<typeof event>
-    individual: Relationship.ToOne<typeof individual>
-    organisation: Relationship.ToOne<typeof organisation>
+    discipline: Relationship.ToOne<DisciplineResource>
+    event: Relationship.ToOne<EventResource>
+    individual: Relationship.ToOne<IndividualResource>
+    organisation: Relationship.ToOne<OrganisationResource>
   }
 >
 
-export const tag: TagResource = jsonapi.formatter('Tag', {
+export const tag: TagResource = new ResourceFormatter('Tag', {
   tagType: Attribute.required(tagType),
   value: Attribute.required(string),
   discipline: Relationship.toOne(() => discipline),

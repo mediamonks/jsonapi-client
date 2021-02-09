@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/primitive'
 import { widgetData, WidgetData } from '../attributes/widgetData'
@@ -13,7 +13,7 @@ export type WidgetResource = ResourceFormatter<
   }
 >
 
-export const widget: WidgetResource = jsonapi.formatter('Widget', {
+export const widget: WidgetResource = new ResourceFormatter('Widget', {
   widgetType: Attribute.required(string),
   title: Attribute.required(string),
   slug: Attribute.required(string),

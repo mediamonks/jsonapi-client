@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/primitive'
 
@@ -9,6 +9,6 @@ export type PlaybackSessionResource = ResourceFormatter<
   }
 >
 
-export const playbackSession: PlaybackSessionResource = jsonapi.formatter('PlaybackSession', {
+export const playbackSession: PlaybackSessionResource = new ResourceFormatter('PlaybackSession', {
   url: Attribute.required(string),
 })

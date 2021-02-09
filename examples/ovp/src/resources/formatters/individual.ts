@@ -1,9 +1,9 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { number, string } from '../attributes/primitive'
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import { commaSeparatedListFormatter } from '../attributes/list'
-import { participant } from './participant'
+import { participant, ParticipantResource } from './participant'
 
 export type IndividualResource = ResourceFormatter<
   'Individual',
@@ -32,11 +32,11 @@ export type IndividualResource = ResourceFormatter<
     profileImages: Attribute.Optional<string>
     sportingDebut: Attribute.Optional<string>
     startedCompeting: Attribute.Optional<string, Date>
-    participants: Relationship.ToMany<typeof participant>
+    participants: Relationship.ToMany<ParticipantResource>
   }
 >
 
-export const individual: IndividualResource = jsonapi.formatter('Individual', {
+export const individual: IndividualResource = new ResourceFormatter('Individual', {
   individualType: Attribute.required(string),
   externalId: Attribute.required(string),
   ambition: Attribute.optional(string),

@@ -685,4 +685,9 @@ export type JSONAPIFilterParams =
 /**
  * {@link https://jsonapi.org/faq/#wheres-put|JSON:API Reference}
  */
-export type JSONAPIRequestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
+export enum JSONAPIRequestMethod {
+  Get = 'GET',
+  Post = 'POST',
+  Patch = 'PATCH',
+  Delete = 'DELETE',
+}

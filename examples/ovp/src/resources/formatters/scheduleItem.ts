@@ -1,12 +1,12 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, ResourceId } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter, ResourceId } from '../../../../../src'
 
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/primitive'
-import { event } from './event'
-import { eventUnit } from './eventUnit'
-import { participant } from './participant'
-import { phase } from './phase'
-import { stage } from './stage'
+import { event, EventResource } from './event'
+import { eventUnit, EventUnitResource } from './eventUnit'
+import { participant, ParticipantResource } from './participant'
+import { phase, PhaseResource } from './phase'
+import { stage, StageResource } from './stage'
 
 export type ScheduleItemResource = ResourceFormatter<
   'ScheduleItem',
@@ -18,15 +18,15 @@ export type ScheduleItemResource = ResourceFormatter<
     awardClass: Attribute.Optional<string>
     awardSubClass: Attribute.Optional<string>
     scheduleSessionId: Attribute.Optional<ResourceId>
-    participants: Relationship.ToMany<typeof participant>
-    eventUnits: Relationship.ToMany<typeof eventUnit>
-    events: Relationship.ToMany<typeof event>
-    phases: Relationship.ToMany<typeof phase>
-    stages: Relationship.ToMany<typeof stage>
+    participants: Relationship.ToMany<ParticipantResource>
+    eventUnits: Relationship.ToMany<EventUnitResource>
+    events: Relationship.ToMany<EventResource>
+    phases: Relationship.ToMany<PhaseResource>
+    stages: Relationship.ToMany<StageResource>
   }
 >
 
-export const scheduleItem: ScheduleItemResource = jsonapi.formatter('ScheduleItem', {
+export const scheduleItem: ScheduleItemResource = new ResourceFormatter('ScheduleItem', {
   title: Attribute.required(string),
   start: Attribute.required(isoDateString, isoDateStringFormatter),
   end: Attribute.optional(isoDateString, isoDateStringFormatter),

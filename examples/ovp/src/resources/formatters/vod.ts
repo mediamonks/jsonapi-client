@@ -1,13 +1,13 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import { number, string } from '../attributes/primitive'
 import { vodVideoType, VODVideoType } from '../attributes/vodVideoType'
-import { asset } from './asset'
-import { scheduleSession } from './scheduleSession'
-import { spriteSheet } from './spriteSheet'
-import { stream } from './stream'
-import { tag } from './tag'
+import { asset, AssetResource } from './asset'
+import { scheduleSession, ScheduleSessionResource } from './scheduleSession'
+import { spriteSheet, SpriteSheetResource } from './spriteSheet'
+import { stream, StreamResource } from './stream'
+import { tag, TagResource } from './tag'
 
 export type VODResource = ResourceFormatter<
   'VOD',
@@ -21,15 +21,15 @@ export type VODResource = ResourceFormatter<
     sviJobId: Attribute.Optional<string>
     sviJobStatus: Attribute.Optional<string>
     updated: Attribute.Optional<string, Date>
-    scheduleSession: Relationship.ToOne<typeof scheduleSession>
-    stream: Relationship.ToOne<typeof stream>
-    spriteSheet: Relationship.ToOne<typeof spriteSheet>
-    thumbnail: Relationship.ToOne<typeof asset>
-    tags: Relationship.ToMany<typeof tag>
+    scheduleSession: Relationship.ToOne<ScheduleSessionResource>
+    stream: Relationship.ToOne<StreamResource>
+    spriteSheet: Relationship.ToOne<SpriteSheetResource>
+    thumbnail: Relationship.ToOne<AssetResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const vod: VODResource = jsonapi.formatter('VOD', {
+export const vod: VODResource = new ResourceFormatter('VOD', {
   videoType: Attribute.required(vodVideoType),
   title: Attribute.required(string),
   start: Attribute.optional(isoDateString, isoDateStringFormatter),

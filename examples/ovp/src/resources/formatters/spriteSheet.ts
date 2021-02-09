@@ -1,8 +1,8 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string, uint } from '../attributes/primitive'
-import { tag } from './tag'
-import { vod } from './vod'
+import { tag, TagResource } from './tag'
+import { vod, VODResource } from './vod'
 
 export type SpriteSheetResource = ResourceFormatter<
   'SpriteSheet',
@@ -15,12 +15,12 @@ export type SpriteSheetResource = ResourceFormatter<
     tileHeight: Attribute.Required<number>
     tiles: Attribute.Required<number>
     source: Attribute.Required<string>
-    vod: Relationship.ToOne<typeof vod>
-    tags: Relationship.ToMany<typeof tag>
+    vod: Relationship.ToOne<VODResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const spriteSheet: SpriteSheetResource = jsonapi.formatter('SpriteSheet', {
+export const spriteSheet: SpriteSheetResource = new ResourceFormatter('SpriteSheet', {
   rows: Attribute.required(uint),
   columns: Attribute.required(uint),
   width: Attribute.required(uint),

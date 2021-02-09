@@ -1,10 +1,10 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter, Type } from '../../../../../src'
 
 import { boolean, string } from '../attributes/primitive'
-import { asset } from './asset'
-import { organisation } from './organisation'
-import { participant } from './participant'
-import { tag } from './tag'
+import { asset, AssetResource } from './asset'
+import { organisation, OrganisationResource } from './organisation'
+import { participant, ParticipantResource } from './participant'
+import { tag, TagResource } from './tag'
 
 export type CountryResource = ResourceFormatter<
   'Country',
@@ -18,14 +18,14 @@ export type CountryResource = ResourceFormatter<
     nameVariations: Attribute.Optional<Array<string>>
     thumbnailUrl: Attribute.Optional<string>
     isFeatured: Attribute.Optional<boolean>
-    organisation: Relationship.ToOne<typeof organisation>
-    flag: Relationship.ToOne<typeof asset>
-    participants: Relationship.ToMany<typeof participant>
-    tags: Relationship.ToMany<typeof tag>
+    organisation: Relationship.ToOne<OrganisationResource>
+    flag: Relationship.ToOne<AssetResource>
+    participants: Relationship.ToMany<ParticipantResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const country: CountryResource = jsonapi.formatter('Country', {
+export const country: CountryResource = new ResourceFormatter('Country', {
   iso2Code: Attribute.optional(string),
   iso3Code: Attribute.required(string),
   iocCode: Attribute.required(string),

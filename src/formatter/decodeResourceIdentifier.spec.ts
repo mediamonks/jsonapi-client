@@ -1,10 +1,10 @@
 import { decodeResourceIdentifier } from './decodeResourceIdentifier'
-import formatter from '../formatter'
+import { ResourceFormatter } from '../formatter'
 import { ResourceIdentifier } from '../resource/identifier'
 
 describe('getResourceIdentifierResult', () => {
   it('returns a success validation if its value is a valid resource identifier', () => {
-    const foo = formatter('Foo', {})
+    const foo = new ResourceFormatter('Foo', {})
     const identifier = {
       type: 'Foo',
       id: 'some-foo',

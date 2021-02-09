@@ -1,17 +1,17 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/primitive'
-import { media } from './media'
+import { media, MediaResource } from './media'
 
 type AlbumResource = ResourceFormatter<
   'Album',
   {
     title: Attribute.Required<string>
-    media: Relationship.ToMany<typeof media>
+    media: Relationship.ToMany<MediaResource>
   }
 >
 
-export const album: AlbumResource = jsonapi.formatter('Album', {
+export const album: AlbumResource = new ResourceFormatter('Album', {
   title: Attribute.required(string),
   media: Relationship.toMany(() => media),
 })

@@ -1,11 +1,12 @@
 import { ResourceFormatter } from './formatter'
 import { Endpoint } from './client/endpoint'
-import { defaultClientSetup, Client } from './client'
+import { DEFAULT_CLIENT_SETUP, Client } from './client'
+import { JSONAPIRequestMethod } from './types'
 
 const exampleHref = 'https://example.com/api/v1'
 
 describe('Client', () => {
-  describe('#constructor', () => {
+  describe('constructor', () => {
     it('throws an Error if its first param (url) is not a URL', () => {
       expect(() => new Client(12 as any)).toThrowError()
     })
@@ -38,11 +39,11 @@ describe('Client', () => {
 
     it('assigns defaultValues to Client#setup if no second param (clientSetup) is provided', () => {
       const client = new Client(exampleHref)
-      expect(client.setup).toEqual(defaultClientSetup)
+      expect(client.setup).toEqual(DEFAULT_CLIENT_SETUP)
     })
   })
 
-  describe('#endpoint', () => {
+  describe('endpoint', () => {
     it('returns an Endpoint where #client is this', () => {
       const client = new Client(exampleHref)
       const resource = new ResourceFormatter('Type', {})
@@ -52,37 +53,38 @@ describe('Client', () => {
     })
   })
 
-  describe('#request', () => {
-    it.todo('must perform a request')
-
-    it.todo(
-      'must user Client#setup.fetchAdapter to perform the request',
-      // async () => {
-      //   let hasUsedFetchAdapter = 0
-      //   const client = new Client(exampleHref, {
-      //     fetchAdapter: async () => {
-      //       hasUsedFetchAdapter++
-      //       throw new Error()
-      //     },
-      //   })
-
-      //   const url = new URL(exampleHref)
-      //   await client.request(url, 'GET').catch((error) => {
-      //     expect(hasUsedFetchAdapter).toBe(error)
-      //   })
-      // }
-    )
-
-    it.todo('must call Client#setup.beforeRequestURL')
-
-    it.todo('must call Client#setup.beforeRequestHeaders')
-
-    it.todo('must call Client#setup.beforeRequest')
-
-    it.todo('must call Client#setup.afterRequest')
-
-    it.todo('must call Client#setup hooks in the proper order')
-
+  describe('request', () => {
     it.todo('must set the default headers’ Content-Type to the JSON:API MIME type ')
+
+    it('must call request hooks when a request is made', async () => {
+      const requestURL = new URL('http://request.url')
+      const requestHeaders = {} as any
+      const request = {} as any
+      const response = {} as any
+
+      const beforeRequestURL = jest.fn(() => requestURL)
+      const beforeRequestHeaders = jest.fn(() => requestHeaders)
+      const beforeRequest = jest.fn(() => request)
+      const fetchAdapter = jest.fn(() => response)
+      const afterRequest = jest.fn()
+
+      const url = new URL('http://example.com/api')
+
+      const client = new Client(url, {
+        beforeRequest,
+        fetchAdapter,
+        afterRequest,
+      })
+
+      try {
+        await client.request(url, JSONAPIRequestMethod.Post, {} as any)
+
+        expect(beforeRequestURL).toBeCalledWith(url)
+        expect(beforeRequestHeaders).toBeCalled()
+        expect(beforeRequest).toBeCalled()
+        expect(fetchAdapter).toBeCalledWith(request)
+        expect(afterRequest).toBeCalledWith(response)
+      } catch (_) {}
+    })
   })
 })

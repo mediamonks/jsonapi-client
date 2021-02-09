@@ -1,13 +1,13 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { medalStatistics, MedalStatistics } from '../attributes/medalStatistics'
 import { participantType, ParticipantType } from '../attributes/participantType'
 import { string } from '../attributes/primitive'
-import { country } from './country'
-import { discipline } from './discipline'
-import { individual } from './individual'
-import { organisation } from './organisation'
-import { scheduleSession } from './scheduleSession'
+import { country, CountryResource } from './country'
+import { discipline, DisciplineResource } from './discipline'
+import { individual, IndividualResource } from './individual'
+import { organisation, OrganisationResource } from './organisation'
+import { scheduleSession, ScheduleSessionResource } from './scheduleSession'
 
 export type ParticipantResource = ResourceFormatter<
   'Participant',
@@ -15,16 +15,16 @@ export type ParticipantResource = ResourceFormatter<
     participantType: Attribute.Required<ParticipantType>
     name: Attribute.Required<string>
     statistics: Attribute.Optional<MedalStatistics>
-    individual: Relationship.ToOneRequired<typeof individual>
-    discipline: Relationship.ToOne<typeof discipline>
-    organisation: Relationship.ToOne<typeof organisation>
-    country: Relationship.ToOne<typeof country>
-    scheduleSessions: Relationship.ToMany<typeof scheduleSession>
-    participants: Relationship.ToMany<typeof participant>
+    individual: Relationship.ToOneRequired<IndividualResource>
+    discipline: Relationship.ToOne<DisciplineResource>
+    organisation: Relationship.ToOne<OrganisationResource>
+    country: Relationship.ToOne<CountryResource>
+    scheduleSessions: Relationship.ToMany<ScheduleSessionResource>
+    participants: Relationship.ToMany<ParticipantResource>
   }
 >
 
-export const participant: ParticipantResource = jsonapi.formatter('Participant', {
+export const participant: ParticipantResource = new ResourceFormatter('Participant', {
   participantType: Attribute.required(participantType),
   name: Attribute.required(string),
   statistics: Attribute.optional(medalStatistics),

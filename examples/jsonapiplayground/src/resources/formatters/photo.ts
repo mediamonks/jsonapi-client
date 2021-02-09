@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '../../../../../src'
 
 import { string } from '../attributes/string'
 import { url, urlFormatter } from '../attributes/url'
@@ -11,7 +11,7 @@ type PhotoResource = ResourceFormatter<
   }
 >
 
-export const photo: PhotoResource = jsonapi.formatter('photos', {
+export const photo: PhotoResource = new ResourceFormatter('photos', {
   title: Attribute.required(string),
   uri: Attribute.required(url, urlFormatter),
 })

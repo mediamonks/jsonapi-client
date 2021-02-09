@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import {
@@ -6,13 +6,13 @@ import {
   eventUnitScheduleStatus,
 } from '../attributes/eventUnitScheduleStatus'
 import { string } from '../attributes/primitive'
-import { competitor } from './competitor'
-import { medal } from './medal'
-import { participant } from './participant'
+import { competitor, CompetitorResource } from './competitor'
+import { medal, MedalResource } from './medal'
+import { participant, ParticipantResource } from './participant'
 import { PhaseResource, phase } from './phase'
-import { scheduleItem } from './scheduleItem'
-import { tag } from './tag'
-import { vod } from './vod'
+import { scheduleItem, ScheduleItemResource } from './scheduleItem'
+import { tag, TagResource } from './tag'
+import { vod, VODResource } from './vod'
 
 export type EventUnitResource = ResourceFormatter<
   'EventUnit',
@@ -23,16 +23,16 @@ export type EventUnitResource = ResourceFormatter<
     start: Attribute.Optional<string, Date>
     end: Attribute.Optional<string, Date>
     phase: Relationship.ToOne<PhaseResource>
-    highlightVod: Relationship.ToOne<typeof vod>
-    competitors: Relationship.ToMany<typeof competitor>
-    participants: Relationship.ToMany<typeof participant>
-    medals: Relationship.ToMany<typeof medal>
-    scheduleItems: Relationship.ToMany<typeof scheduleItem>
-    tags: Relationship.ToMany<typeof tag>
+    highlightVod: Relationship.ToOne<VODResource>
+    competitors: Relationship.ToMany<CompetitorResource>
+    participants: Relationship.ToMany<ParticipantResource>
+    medals: Relationship.ToMany<MedalResource>
+    scheduleItems: Relationship.ToMany<ScheduleItemResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const eventUnit: EventUnitResource = jsonapi.formatter('EventUnit', {
+export const eventUnit: EventUnitResource = new ResourceFormatter('EventUnit', {
   externalId: Attribute.optional(string),
   title: Attribute.required(string),
   scheduleStatus: Attribute.optional(eventUnitScheduleStatus),

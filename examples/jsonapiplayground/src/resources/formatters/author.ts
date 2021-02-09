@@ -1,4 +1,4 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
 import { string } from '../attributes/string'
@@ -17,7 +17,7 @@ type AuthorResource = ResourceFormatter<
   }
 >
 
-export const author: AuthorResource = jsonapi.formatter('authors', {
+export const author: AuthorResource = new ResourceFormatter('authors', {
   name: Attribute.required(string),
   birthplace: Attribute.required(string),
   date_of_birth: Attribute.required(dateString, dateStringFormatter),

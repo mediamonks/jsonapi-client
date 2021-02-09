@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime'
-import jsonapi from '../../../src'
+import { Client, ResourceFieldsQuery } from '../../../src'
 
 import {
   competitor,
@@ -18,22 +18,30 @@ import {
 
 const url = new URL(process.env.API_URL!)
 
-const client = jsonapi.client(url, {
+const client = new Client(url, {
   beforeRequestHeaders(headers: Headers) {
     headers.set('X-OBS-App-Token', process.env.API_KEY!)
     return headers
   },
-} as any)
+})
 
 const eventEndpoint = client.endpoint('events', event)
 
-const eventFilter = eventEndpoint.filter({
-  fields: {
-    [event.type]: ['externalId', 'name', 'stages', 'competitors'],
-    [stage.type]: ['externalId', 'phases', 'competitors'],
-    [phase.type]: ['externalId', 'title', 'eventUnits'],
-    [eventUnit.type]: ['externalId', 'title', 'start', 'competitors', 'scheduleStatus'],
-    [competitor.type]: ['externalId', 'extendedInfo', 'order', 'results', 'participant', 'medals'],
+const eventFilter = eventEndpoint.filter(
+  // @ts-ignore
+  {
+    [event.type]: ['externalId', 'stages'] as const,
+    [stage.type]: ['externalId', 'phases', 'competitors'] as const,
+    [phase.type]: ['externalId', 'title', 'eventUnits'] as const,
+    [eventUnit.type]: ['externalId', 'title', 'start', 'competitors', 'scheduleStatus'] as const,
+    [competitor.type]: [
+      'externalId',
+      'extendedInfo',
+      'order',
+      'results',
+      'participant',
+      'medals',
+    ] as const,
     [result.type]: [
       'resultType',
       'value',
@@ -48,15 +56,21 @@ const eventFilter = eventEndpoint.filter({
       'valueType',
       'irm',
       'pool',
-    ],
-    [medal.type]: ['medalType'],
-    [participant.type]: ['participantType', 'name', 'individual', 'participants', 'organisation'],
-    [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'],
-    [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'],
-    [asset.type]: ['source'],
-    [organisation.type]: ['externalId', 'flag', 'country'],
+    ] as const,
+    [medal.type]: ['medalType'] as const,
+    [participant.type]: [
+      'participantType',
+      'name',
+      'individual',
+      'participants',
+      'organisation',
+    ] as const,
+    [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'] as const,
+    [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'] as const,
+    [asset.type]: ['source'] as const,
+    [organisation.type]: ['externalId', 'flag', 'country'] as const,
   },
-  include: {
+  {
     stages: {
       competitors: {
         medals: null,
@@ -88,16 +102,16 @@ const eventFilter = eventEndpoint.filter({
       },
     },
   },
-})
+)
 
 eventEndpoint
   .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilter)
   .then((eventResource) => {
-    console.log(eventResource)
+    console.log(eventResource.stages[1].phases)
   })
   .catch(console.dir)
 
-const eventFilterDiscipline = eventEndpoint.filter({
+const eventFilterDiscipline = {
   fields: {
     [event.type]: ['stages'],
     [stage.type]: ['phases', 'startDate', 'endDate'],
@@ -105,7 +119,7 @@ const eventFilterDiscipline = eventEndpoint.filter({
   include: {
     stages: null,
   },
-})
+} as const
 
 eventEndpoint
   .getMany(null, eventFilterDiscipline)

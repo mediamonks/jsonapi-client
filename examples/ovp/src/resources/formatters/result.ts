@@ -1,10 +1,10 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, Type } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter, Type } from '../../../../../src'
 
 import { string, uint } from '../attributes/primitive'
 import { resultExtendedInfo, ResultExtendedInfo } from '../attributes/resultExtendedInfo'
 import { resultExtendedInfoMap, ResultExtendedInfoMap } from '../attributes/resultExtendedInfoMap'
-import { competitor } from './competitor'
-import { tag } from './tag'
+import { competitor, CompetitorResource } from './competitor'
+import { tag, TagResource } from './tag'
 
 export type ResultResource = ResourceFormatter<
   'Result',
@@ -40,12 +40,12 @@ export type ResultResource = ResourceFormatter<
     extendedInfoMap: Attribute.Optional<ResultExtendedInfoMap>
     children: Relationship.ToMany<ResultResource>
     parent: Relationship.ToOne<ResultResource>
-    competitor: Relationship.ToOne<typeof competitor>
-    tags: Relationship.ToMany<typeof tag>
+    competitor: Relationship.ToOne<CompetitorResource>
+    tags: Relationship.ToMany<TagResource>
   }
 >
 
-export const result: ResultResource = jsonapi.formatter('Result', {
+export const result: ResultResource = new ResourceFormatter('Result', {
   resultType: Attribute.optional(string),
   externalId: Attribute.required(string),
   irm: Attribute.optional(string),

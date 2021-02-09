@@ -18,7 +18,7 @@ describe('decodeRelationship', () => {
         type: 'a',
         id: '<some-id>',
         attributes: {
-          requiredAttribute: 'abc',
+          requiredString: 'abc',
         },
       },
       [],
@@ -29,10 +29,10 @@ describe('decodeRelationship', () => {
     expect(value).toEqual({
       type: 'a',
       id: '<some-id>',
-      requiredAttribute: 'abc',
-      optionalAttribute: null,
-      toOneRelationship: null,
-      toManyRelationship: [],
+      requiredString: 'abc',
+      optionalString: null,
+      toOneB: null,
+      toManyA: [],
     })
     expect(errors).toEqual([])
   })
@@ -44,8 +44,8 @@ describe('decodeRelationship', () => {
         type: 'a',
         id: '<some-id>',
         attributes: {
-          requiredAttribute: null,
-          optionalAttribute: 12,
+          requiredString: null,
+          optionalString: 12,
         },
       },
       [],
@@ -71,7 +71,7 @@ describe('decodeRelationship', () => {
           type: 'a',
           id: '<some-id>',
           attributes: {
-            requiredAttribute: 'abc',
+            requiredString: 'abc',
           },
         },
         [],

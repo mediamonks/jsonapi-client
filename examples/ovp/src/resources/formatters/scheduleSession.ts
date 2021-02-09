@@ -1,21 +1,21 @@
-import jsonapi, { Attribute, Relationship, ResourceFormatter, ResourceId } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter, ResourceId } from '../../../../../src'
 
 import { isoDateString, isoDateStringFormatter } from '../attributes/date'
 import { string, boolean, number } from '../attributes/primitive'
 import { promotionStatus, PromotionStatus } from '../attributes/promotionStatus'
 import { scheduleSessionState, ScheduleSessionState } from '../attributes/scheduleSessionState'
-import { asset } from './asset'
-import { channel } from './channel'
-import { commentary } from './commentary'
-import { discipline } from './discipline'
-import { organisation } from './organisation'
-import { participant } from './participant'
-import { scheduleItem } from './scheduleItem'
+import { asset, AssetResource } from './asset'
+import { channel, ChannelResource } from './channel'
+import { commentary, CommentaryResource } from './commentary'
+import { discipline, DisciplineResource } from './discipline'
+import { organisation, OrganisationResource } from './organisation'
+import { participant, ParticipantResource } from './participant'
+import { scheduleItem, ScheduleItemResource } from './scheduleItem'
 import { StreamResource, stream } from './stream'
-import { tag } from './tag'
-import { timelineMarker } from './timelineMarker'
-import { usdfMessageId } from './usdfMessageId'
-import { vod } from './vod'
+import { tag, TagResource } from './tag'
+import { timelineMarker, TimelineMarkerResource } from './timelineMarker'
+import { usdfMessageId, USDFMessageIdResource } from './usdfMessageId'
+import { vod, VODResource } from './vod'
 
 export type ScheduleSessionResource = ResourceFormatter<
   'ScheduleSession',
@@ -45,24 +45,24 @@ export type ScheduleSessionResource = ResourceFormatter<
     state: Attribute.Required<ScheduleSessionState>
     broadcastPublished: Attribute.Optional<string, Date>
     broadcastUnpublished: Attribute.Optional<string, Date>
-    discipline: Relationship.ToOne<typeof discipline>
-    organisation: Relationship.ToOne<typeof organisation>
-    channel: Relationship.ToOne<typeof channel>
+    discipline: Relationship.ToOne<DisciplineResource>
+    organisation: Relationship.ToOne<OrganisationResource>
+    channel: Relationship.ToOne<ChannelResource>
     stream: Relationship.ToOne<StreamResource>
-    thumbnail: Relationship.ToOne<typeof asset>
-    ferVod: Relationship.ToOne<typeof vod>
-    highlightVod: Relationship.ToOne<typeof vod>
-    timelineMarkers: Relationship.ToMany<typeof timelineMarker>
-    commentaries: Relationship.ToMany<typeof commentary>
-    usdfMessageIds: Relationship.ToMany<typeof usdfMessageId>
-    vods: Relationship.ToMany<typeof vod>
-    tags: Relationship.ToMany<typeof tag>
-    scheduleItems: Relationship.ToMany<typeof scheduleItem>
-    participants: Relationship.ToMany<typeof participant>
+    thumbnail: Relationship.ToOne<AssetResource>
+    ferVod: Relationship.ToOne<VODResource>
+    highlightVod: Relationship.ToOne<VODResource>
+    timelineMarkers: Relationship.ToMany<TimelineMarkerResource>
+    commentaries: Relationship.ToMany<CommentaryResource>
+    usdfMessageIds: Relationship.ToMany<USDFMessageIdResource>
+    vods: Relationship.ToMany<VODResource>
+    tags: Relationship.ToMany<TagResource>
+    scheduleItems: Relationship.ToMany<ScheduleItemResource>
+    participants: Relationship.ToMany<ParticipantResource>
   }
 >
 
-export const scheduleSession: ScheduleSessionResource = jsonapi.formatter('ScheduleSession', {
+export const scheduleSession: ScheduleSessionResource = new ResourceFormatter('ScheduleSession', {
   externalId: Attribute.required(string),
   code: Attribute.required(string),
   title: Attribute.required(string),

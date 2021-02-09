@@ -33,7 +33,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     )
   }
 
-  const included = (document.included || []).concat(document.data)
+  const included = (document.included || []).concat(document.data) as Array<any>
   const { fields = EMPTY_OBJECT, include = EMPTY_OBJECT } = parseResourceFilter(
     formatters,
     resourceFilter as any,
