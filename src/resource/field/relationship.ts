@@ -51,7 +51,7 @@ export class RelationshipField<
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Relationships, V> {
   relationshipType: U
-  getFormatter: () => T // NonEmptyReadonlyArray<T>
+  getFormatter: () => T
 
   constructor(flag: V, relationshipType: U, getFormatter: () => T) {
     super(ResourceFieldRoot.Relationships, flag)

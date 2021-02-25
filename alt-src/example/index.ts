@@ -15,18 +15,11 @@ import {
 
 const eventFilter = event.createQuery(
   {
-    [event.type]: ['externalId', 'stages'] as const,
-    [stage.type]: ['externalId', 'phases', 'competitors'] as const,
-    [phase.type]: ['externalId', 'title', 'eventUnits'] as const,
-    [eventUnit.type]: ['externalId', 'title', 'start', 'competitors', 'scheduleStatus'] as const,
-    [competitor.type]: [
-      'externalId',
-      'extendedInfo',
-      'order',
-      'results',
-      'participant',
-      'medals',
-    ] as const,
+    [event.type]: ['externalId', 'stages', 'competitors'],
+    [stage.type]: ['externalId', 'phases', 'competitors'],
+    [phase.type]: ['externalId', 'title', 'eventUnits'],
+    [eventUnit.type]: ['externalId', 'title', 'start', 'competitors', 'scheduleStatus'],
+    [competitor.type]: ['externalId', 'extendedInfo', 'order', 'results', 'participant', 'medals'],
     [result.type]: [
       'resultType',
       'value',
@@ -41,50 +34,46 @@ const eventFilter = event.createQuery(
       'valueType',
       'irm',
       'pool',
-    ] as const,
-    [medal.type]: ['medalType'] as const,
-    [participant.type]: [
-      'participantType',
-      'name',
-      'individual',
-      'participants',
-      'organisation',
-    ] as const,
-    [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'] as const,
-    [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'] as const,
-    [asset.type]: ['source'] as const,
-    [organisation.type]: ['externalId', 'flag', 'country'] as const,
+    ],
+    [medal.type]: ['medalType'],
+    [participant.type]: ['participantType', 'name', 'individual', 'participants', 'organisation'],
+    [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'],
+    [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'],
+    [asset.type]: ['source'],
+    [organisation.type]: ['externalId', 'flag', 'country'],
   },
   {
     stages: {
       competitors: {
-        medals: null,
-        results: null,
+        medals: true,
+        results: true,
         participant: {
-          participants: null,
-          individual: null,
+          participants: false,
+          individual: true,
           organisation: {
-            country: null,
-            flag: null,
+            country: true,
+            flag: true,
           },
         },
       },
       phases: {
         eventUnits: {
-          competitors: null,
+          competitors: true,
         },
       },
     },
     competitors: {
-      results: null,
-      medals: null,
+      results: false,
+      medals: true,
       participant: {
-        individual: null,
+        individual: true,
         organisation: {
-          country: null,
-          flag: null,
+          country: true,
+          flag: true,
         },
       },
     },
   },
 )
+
+const eventIncludeFilter = eventFilter.include.competitors
