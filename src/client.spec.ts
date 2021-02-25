@@ -291,4 +291,13 @@ describe('Client', () => {
       }
     })
   })
+
+  describe('toString', () => {
+    it('returns the url href', () => {
+      const url = new URL('htpp://example.com/api/')
+      const client = new Client(url)
+
+      expect(client.toString()).toBe(url.href)
+    })
+  })
 })

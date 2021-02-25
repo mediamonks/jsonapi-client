@@ -23,7 +23,6 @@ import { createURL } from '../util/url'
 import { Client } from '../client'
 import { EMPTY_OBJECT, JSONAPIRequestMethod } from '../data/constants'
 import { decodeDocument } from '../formatter/decodeDocument'
-import { ResourceIdentifier } from '../resource/identifier'
 import { parseResourceFilter } from '../formatter/parseResourceFilter'
 import { encodeResourceCreateData } from '../formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from '../formatter/encodeResourcePatchData'
@@ -315,6 +314,10 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
 
   private toRelationshipFieldPath(fieldName: EndpointRelationshipFieldName<this>): string {
     return this.client.setup.transformRelationshipPath(fieldName, this.formatter)
+  }
+
+  toString(): string {
+    return createURL(this.client.url, [this.path]).href
   }
 }
 

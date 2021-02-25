@@ -21,6 +21,7 @@ import { ResourceIdentifier } from './resource/identifier'
 import { encodeResourceCreateData } from './formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from './formatter/encodeResourcePatchData'
 import { onResourceOfTypeMessage } from './util/formatting'
+
 export class ResourceFormatter<T extends ResourceType = any, U extends ResourceFields = any> {
   readonly type: T
   readonly fields: U

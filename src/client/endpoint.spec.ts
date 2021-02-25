@@ -522,4 +522,18 @@ describe('Endpoint', () => {
       )
     })
   })
+
+  describe('toString', () => {
+    it('returns the root href for the endpoint', () => {
+      const clientA = new Client('http://example.com/api/')
+      const endpointA = new Endpoint(clientA, 'test', formatterA)
+
+      expect(endpointA.toString()).toBe('http://example.com/api/test/')
+
+      const clientB = new Client('http://example.com/api')
+      const endpointB = new Endpoint(clientB, 'test', formatterA)
+
+      expect(endpointB.toString()).toBe('http://example.com/api/test')
+    })
+  })
 })

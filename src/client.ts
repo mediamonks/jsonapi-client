@@ -140,6 +140,10 @@ export class Client<T extends Partial<ClientSetup>> {
 
     return data as JSONAPIDocument<any>
   }
+
+  toString(): string {
+    return this.url.href
+  }
 }
 
 // Experimental

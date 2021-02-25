@@ -161,4 +161,13 @@ describe('ResourceFormatter', () => {
       expect(() => formatter.getRelationshipField('a' as never)).toThrow()
     })
   })
+
+  describe('toString', () => {
+    it('returns the formatter type', () => {
+      const formatter = new ResourceFormatter('foo', {})
+
+      expect(formatter.toString()).toBe(formatter.type)
+      expect(formatter.toString()).toBe('foo')
+    })
+  })
 })
