@@ -5,7 +5,7 @@ export type Validation<T, U> = [T, Array<U>]
 export type Success<T> = Validation<T, never>
 
 /** @hidden */
-export type Failure<T> = Validation<any, T>
+export type Failure<T> = Validation<never, T>
 
 /** @hidden */
 export const validation = <T = any, U = any>(value: T, errors: Array<U>): Validation<T, U> => [
@@ -17,4 +17,4 @@ export const validation = <T = any, U = any>(value: T, errors: Array<U>): Valida
 export const success = <T = any>(value: T): Success<T> => validation(value, [])
 
 /** @hidden */
-export const failure = <T = any>(errors: Array<T>): Failure<T> => validation(null, errors)
+export const failure = <T = any>(errors: Array<T>): Failure<T> => validation(null as never, errors)

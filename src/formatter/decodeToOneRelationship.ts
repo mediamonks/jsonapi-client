@@ -1,5 +1,4 @@
 import { isSome } from 'isntnt'
-
 import { RelationshipFieldType, ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../error'
 import {
@@ -19,7 +18,7 @@ import type { ResourceFormatter } from '../formatter'
 export type ToOneRelationshipData = Resource | ResourceIdentifier<any> | null
 
 export const decodeToOneRelationship = (
-  field: RelationshipField<any, RelationshipFieldType.ToOne, any>,
+  field: RelationshipField<ResourceFormatter, RelationshipFieldType.ToOne, any>,
   fieldName: string,
   resourceObject: JSONAPIResourceObject<any>,
   included: ReadonlyArray<JSONAPIResourceObject>,
@@ -27,26 +26,30 @@ export const decodeToOneRelationship = (
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
 ): Validation<ToOneRelationshipData, ResourceValidationErrorObject> => {
-  const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatter()
-  const value = (resourceObject.relationships || EMPTY_OBJECT)[fieldName]
-  const data: ResourceIdentifier<any> | null = (value || EMPTY_OBJECT).data
+  const formatter = field.getFormatter()
+  const { relationships = EMPTY_OBJECT } = resourceObject
+  const { data } = relationships[fieldName] || EMPTY_OBJECT
 
   if (isSome(data)) {
-    const resourceIdentifierResult = decodeResourceIdentifier(resourceFormatters, data, pointer)
-
-    const [resourceIdentifier, validationErrors] = resourceIdentifierResult
-    if (includeFilter && fieldName in includeFilter && !validationErrors.length) {
+    const result = decodeResourceIdentifier([formatter], data as any, pointer.concat(fieldName))
+    const [identifier, identifierErrors] = result
+    if (
+      identifierErrors.length === 0 &&
+      includeFilter &&
+      Object.hasOwnProperty.call(includeFilter, fieldName)
+    ) {
       return decodeIncludedRelationship(
         field,
         fieldName,
-        resourceIdentifier,
+        identifier,
         included,
         fieldsFilter,
         includeFilter,
-        pointer,
+        pointer.concat(fieldName),
       )
     }
-    return resourceIdentifierResult
+
+    return result
   }
 
   return field.matches(ResourceFieldFlag.GetOptional)
@@ -54,8 +57,8 @@ export const decodeToOneRelationship = (
     : failure([
         createValidationErrorObject(
           ValidationErrorMessage.MissingRequiredField,
-          `To-One relationship "${fieldName}" on resource of type ${resourceObject.type} is required.`,
-          pointer.concat([fieldName]),
+          `To-One relationship "${fieldName}" on resource of type "${resourceObject.type}" is required`,
+          pointer.concat(fieldName),
         ),
       ])
 }

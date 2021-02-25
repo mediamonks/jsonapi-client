@@ -19,6 +19,7 @@ export const decodeResourceIdentifier = (
   pointer: ReadonlyArray<string>,
 ): Validation<ResourceIdentifier<any>, ResourceValidationErrorObject> => {
   const validationErrors = resourceIdentifier.validate(identifier)
+
   if (validationErrors.length) {
     return failure(
       validationErrors.map((detail) =>
@@ -30,14 +31,16 @@ export const decodeResourceIdentifier = (
       ),
     )
   }
+
   if (!formatters.some((formatter) => formatter.type === (identifier as any).type)) {
     return failure([
       createValidationErrorObject(
         ValidationErrorMessage.InvalidResourceType,
         `Resource type must match the type of its formatter (${formatters})`,
-        pointer,
+        pointer.concat('type'),
       ),
     ])
   }
+
   return success(new ResourceIdentifier(identifier.type, identifier.id))
 }

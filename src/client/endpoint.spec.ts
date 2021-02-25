@@ -12,10 +12,6 @@ const fetchAdapter = createMockFetch({
 const MOCK_URL = new URL('https://example.com/api/')
 
 describe('Endpoint', () => {
-  describe('constructor', () => {
-    it.todo('is an Endpoint constructor')
-  })
-
   describe('getOne', () => {
     it.todo('throws an error if an invalid resource is retrieved')
   })

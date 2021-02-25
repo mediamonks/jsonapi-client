@@ -36,10 +36,10 @@ export const decodeIncludedRelationship = (
     ])
   }
 
-  const relatedResourceFormatters = field.getFormatter()
+  const relatedResourceFormatter = field.getFormatter()
   const childIncludeFilter = (includeFilter || EMPTY_OBJECT)[fieldName]
   return decodeResourceObject(
-    relatedResourceFormatters,
+    [relatedResourceFormatter],
     includedResourceObject,
     included,
     fieldsFilter,

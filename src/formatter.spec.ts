@@ -3,7 +3,7 @@ import { optionalStringAttribute } from '../test/fields'
 import { ResourceIdentifier } from './resource/identifier'
 import { Attribute } from './resource/field/attribute'
 import { string } from './util/validators'
-import { Relationship, RelationshipField } from './resource/field/relationship'
+import { Relationship } from './resource/field/relationship'
 
 describe('ResourceFormatter', () => {
   describe('constructor', () => {
