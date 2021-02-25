@@ -1,4 +1,8 @@
 import { formatterA } from '../../test/formatters'
+import { ErrorMessage } from '../data/enum'
+import { ResourceFormatter } from '../formatter'
+import { Attribute } from '../resource/field/attribute'
+import { string } from '../util/validators'
 import { decodeResourceObject } from './decodeResourceObject'
 
 describe('decodeRelationship', () => {
@@ -64,7 +68,7 @@ describe('decodeRelationship', () => {
   })
 
   it('throws an error when a field is included that does not exist', () => {
-    expect(() =>
+    try {
       decodeResourceObject(
         [formatterA],
         {
@@ -80,9 +84,40 @@ describe('decodeRelationship', () => {
         },
         {},
         [],
-      ),
-    ).toThrow()
+      )
+    } catch (error) {
+      expect(error).toBeInstanceOf(TypeError)
+      expect(error.message).toBe(
+        `Field "non_existing_field" does not exist on resource of type "a"`,
+      )
+    }
   })
 
-  it.todo('throws an error when a field is included that is not allowed')
+  it('throws an error when a field is included that is not allowed', () => {
+    const formatter = new ResourceFormatter('foo', {
+      writeOnly: Attribute.requiredWriteOnly(string),
+    })
+
+    try {
+      decodeResourceObject(
+        [formatter],
+        {
+          type: 'a',
+          id: '<some-id>',
+          attributes: {
+            requiredString: 'abc',
+          },
+        },
+        [],
+        {
+          a: ['writeOnly'],
+        },
+        {},
+        [],
+      )
+    } catch (error) {
+      expect(error).toBeInstanceOf(TypeError)
+      expect(error.message).toBe(ErrorMessage.ResourceFieldNotAllowed)
+    }
+  })
 })

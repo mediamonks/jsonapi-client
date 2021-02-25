@@ -7,6 +7,7 @@ import {
   ResourceFieldsQuery,
   ResourceIncludeQuery,
   Resource,
+  ResourceType,
 } from '../types'
 import { EMPTY_OBJECT } from '../data/constants'
 import { RelationshipField } from '../resource/field/relationship'
@@ -16,7 +17,9 @@ import { decodeResourceIdentifier } from './decodeResourceIdentifier'
 import { failure, success, Validation } from '../util/validation'
 import type { ResourceFormatter } from '../formatter'
 
-export type ToManyRelationshipData = Array<Resource> | Array<ResourceIdentifier>
+export type ToManyRelationshipData =
+  | ReadonlyArray<Resource>
+  | ReadonlyArray<ResourceIdentifier<any>>
 
 export const decodeToManyRelationship = (
   field: RelationshipField<any, RelationshipFieldType.ToMany, any>,
@@ -26,9 +29,9 @@ export const decodeToManyRelationship = (
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
-): Validation<Array<ResourceIdentifier>, ResourceValidationErrorObject> => {
+): Validation<ReadonlyArray<ResourceIdentifier<any>>, ResourceValidationErrorObject> => {
   const value = (resourceObject.relationships || EMPTY_OBJECT)[fieldName]
-  const data: ReadonlyArray<ResourceIdentifier> = (value || EMPTY_OBJECT).data
+  const data: ReadonlyArray<ResourceIdentifier<any>> = (value || EMPTY_OBJECT).data
 
   if (isUndefined(data)) {
     return field.matches(ResourceFieldFlag.GetOptional)
@@ -101,5 +104,5 @@ export const decodeToManyRelationship = (
     resourceIdentifiers.push(resourceIdentifier)
     validationErrors.forEach((error) => errors.push(error))
     return result
-  }, result as Validation<Array<ResourceIdentifier>, ResourceValidationErrorObject>)
+  }, result as Validation<Array<ResourceIdentifier<ResourceType>>, ResourceValidationErrorObject>)
 }

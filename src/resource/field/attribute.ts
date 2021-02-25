@@ -21,6 +21,10 @@ const defaultAttributeFormatter: AttributeValueFormatter<any, any> = {
   deserialize: reflect,
 }
 
+type AnyGuard<T, U = never> = Extract<T extends never ? 1 : 0, 1> extends never ? T : U
+
+type Y = AnyGuard<any>
+
 export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>(...rules: T) => <
   U extends AttributeValue,
   V = U
@@ -28,7 +32,7 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
   validator: AttributeFieldValidator<U>,
   formatter: AttributeValueFormatter<U, V> = defaultAttributeFormatter,
 ): AttributeField<
-  V,
+  AnyGuard<V, U>,
   U,
   | ResourceFieldMaskIndex[ResourceFieldMethod.Get][T[ResourceFieldMethod.Get]]
   | ResourceFieldMaskIndex[ResourceFieldMethod.Post][T[ResourceFieldMethod.Post]]
@@ -36,7 +40,7 @@ export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>
 > => {
   const maskRules = resourceFieldMaskIndex.map((masks, index) => masks[rules[index]])
   const flag = maskRules.reduce((flag, mask) => flag | mask, 0 as ResourceFieldFlag)
-  return new AttributeField(flag as any, validator, formatter)
+  return new AttributeField(flag as any, validator, formatter as any)
 }
 
 export class AttributeField<

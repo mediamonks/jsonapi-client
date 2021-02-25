@@ -13,22 +13,16 @@ import {
   RelationshipFieldResourceFormatter,
   ToOneRelationshipFieldNameWithFlag,
   JSONAPISearchParams,
-  JSONAPIDocument,
-  JSONAPIMetaObject,
-  JSONAPILinksObject,
-  JSONAPIPaginationLinks,
   ToManyRelationshipPatchData,
   RelationshipFieldNameWithFlag,
   RelationshipPatchData,
   ResourceIncludeQuery,
   ResourceFieldsQuery,
-  JSONAPIRequestMethod,
 } from '../types'
 import { createURL } from '../util/url'
 import { Client } from '../client'
-import { EMPTY_OBJECT } from '../data/constants'
-import { DOCUMENT_CONTEXT_STORE, decodeDocument } from '../formatter/decodeDocument'
-import { RESOURCE_CONTEXT_STORE } from '../formatter/decodeResourceObject'
+import { EMPTY_OBJECT, JSONAPIRequestMethod } from '../data/constants'
+import { decodeDocument } from '../formatter/decodeDocument'
 import { ResourceIdentifier } from '../resource/identifier'
 import { parseResourceFilter } from '../formatter/parseResourceFilter'
 import { encodeResourceCreateData } from '../formatter/encodeResourceCreateData'
@@ -104,7 +98,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     >
   >(id: ResourceId, fieldName: V, data: RelationshipPatchData<U['fields'][V]>): Promise<void> {
     const field = this.formatter.getRelationshipField(fieldName)
-    const fieldPath = this.toRelationshipFieldPath(fieldName)
+    const fieldPath = this.toRelationshipFieldPath(fieldName as any)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldPath])
     // TODO: Validate data before request
     await this.client.request(url, JSONAPIRequestMethod.Patch, { data })
@@ -122,7 +116,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     >
   >(id: ResourceId, fieldName: V): Promise<void> {
     const field: RelationshipField<any, any, any> = this.formatter.getRelationshipField(fieldName)
-    const fieldPath = this.toRelationshipFieldPath(fieldName)
+    const fieldPath = this.toRelationshipFieldPath(fieldName as any)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldPath])
     await this.client.request(url, JSONAPIRequestMethod.Patch, {
       data: field.isToManyRelationshipField() ? [] : null,
@@ -146,7 +140,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     resourceIdentifiers: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
     const field = this.formatter.getRelationshipField(fieldName)
-    const fieldPath = this.toRelationshipFieldPath(fieldName)
+    const fieldPath = this.toRelationshipFieldPath(fieldName as any)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldPath])
     await this.client.request(url, JSONAPIRequestMethod.Post, { data: resourceIdentifiers })
   }
@@ -168,7 +162,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     resourceIdentifiers: ToManyRelationshipPatchData<U['fields'][V]>,
   ): Promise<void> {
     const field = this.formatter.getField(fieldName)
-    const fieldPath = this.toRelationshipFieldPath(fieldName)
+    const fieldPath = this.toRelationshipFieldPath(fieldName as any)
     const url = createURL(this.client.url, [this.path, id, field.root, fieldPath])
     await this.client.request(url, JSONAPIRequestMethod.Delete, {
       data: resourceIdentifiers,
@@ -180,13 +174,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     resourceFilter: V = EMPTY_OBJECT,
   ): Promise<Resource<U, V>> {
     const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
-    const data = await this.client.request(url, JSONAPIRequestMethod.Get)
+    const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-    return decodeDocument(
-      [this.formatter],
-      data as JSONAPIDocument,
-      resourceFilter as any,
-    ) as Resource<U, V>
+    return decodeDocument([this.formatter], document, resourceFilter as any) as Resource<U, V>
   }
 
   async getMany<V extends ResourceFilter<U>>(
@@ -200,13 +190,11 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       searchParams || EMPTY_OBJECT,
     )
 
-    const data = await this.client.request(url, JSONAPIRequestMethod.Get)
+    const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-    return decodeDocument(
-      [this.formatter],
-      data as JSONAPIDocument,
-      resourceFilter as any,
-    ) as Array<Resource<U, V>>
+    return decodeDocument([this.formatter], document, resourceFilter as any) as Array<
+      Resource<U, V>
+    >
   }
 
   getToOne<
@@ -254,10 +242,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
 
     return async (id: ResourceId) => {
       const url = createURL(this.client.url, [this.path, id, fieldPath], resourceFilter as any)
+      const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-      const data = await this.client.request(url, JSONAPIRequestMethod.Get)
-
-      return decodeDocument([fieldFormatter], data as JSONAPIDocument, resourceFilter as any) as any
+      return decodeDocument([fieldFormatter], document, resourceFilter as any) as any
     }
   }
 
@@ -282,54 +269,58 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
         searchParams as any,
       )
 
-      const data = await this.client.request(url, JSONAPIRequestMethod.Get)
+      const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-      return decodeDocument([fieldFormatter], data as JSONAPIDocument, resourceFilter as any) as any
+      return decodeDocument([fieldFormatter], document, resourceFilter as any) as any
     }
   }
 
-  getResourceMeta(resource: ResourceIdentifier<U['type']>): JSONAPIMetaObject {
-    return RESOURCE_CONTEXT_STORE.getMeta(resource)
-  }
+  // getResourceMeta(resource: ResourceIdentifier<U['type']>): JSONAPIMetaObject {
+  //   return RESOURCE_CONTEXT_STORE.getMeta(resource)
+  // }
 
-  getResourceLinks(resource: ResourceIdentifier<U['type']>): JSONAPILinksObject {
-    return RESOURCE_CONTEXT_STORE.getLinks(resource) as any
-  }
+  // getResourceLinks(resource: ResourceIdentifier<U['type']>): JSONAPILinksObject {
+  //   return RESOURCE_CONTEXT_STORE.getLinks(resource) as any
+  // }
 
-  getDocumentMeta(
-    document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
-  ): JSONAPIMetaObject {
-    return DOCUMENT_CONTEXT_STORE.getMeta(document)
-  }
+  // getDocumentMeta(
+  //   document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
+  // ): JSONAPIMetaObject {
+  //   return DOCUMENT_CONTEXT_STORE.getMeta(document)
+  // }
 
-  getOneDocumentLinks(
-    document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
-  ): JSONAPILinksObject {
-    return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
-  }
+  // getOneDocumentLinks(
+  //   document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
+  // ): JSONAPILinksObject {
+  //   return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
+  // }
 
-  getManyDocumentLinks(
-    document: ReadonlyArray<ResourceIdentifier<U['type']>>,
-  ): JSONAPIPaginationLinks {
-    return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
-  }
+  // getManyDocumentLinks(
+  //   document: ReadonlyArray<ResourceIdentifier<U['type']>>,
+  // ): JSONAPIPaginationLinks {
+  //   return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
+  // }
 
-  hasNext(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
-    return isString(this.getManyDocumentLinks(document).next)
-  }
+  // hasNext(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
+  //   return isString(this.getManyDocumentLinks(document).next)
+  // }
 
   // getNext() {}
 
-  hasPrev(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
-    return isString(this.getManyDocumentLinks(document).prev)
-  }
+  // hasPrev(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
+  //   return isString(this.getManyDocumentLinks(document).prev)
+  // }
 
   // getPrev() {}
 
-  private toRelationshipFieldPath(fieldName: string): string {
+  private toRelationshipFieldPath(fieldName: EndpointRelationshipFieldName<this>): string {
     return this.client.setup.transformRelationshipPath(fieldName, this.formatter)
   }
 }
+
+type EndpointRelationshipFieldName<T extends Endpoint<any, any>> =
+  | EndpointToManyFieldName<T>
+  | EndpointToOneFieldName<T>
 
 type EndpointToManyFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
   ? {

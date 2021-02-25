@@ -1,7 +1,7 @@
 import { ResourceId, ResourceType } from '../types'
 import { resourceId, resourceType } from '../util/validators'
 
-export class ResourceIdentifier<T extends ResourceType = any> {
+export class ResourceIdentifier<T extends ResourceType> {
   readonly type: T
   readonly id: ResourceId
 

@@ -15,9 +15,9 @@ import type { ResourceFormatter } from '../formatter'
  */
 export const decodeResourceIdentifier = (
   formatters: ReadonlyArray<ResourceFormatter>,
-  identifier: ResourceIdentifier,
+  identifier: ResourceIdentifier<any>,
   pointer: ReadonlyArray<string>,
-): Validation<ResourceIdentifier, ResourceValidationErrorObject> => {
+): Validation<ResourceIdentifier<any>, ResourceValidationErrorObject> => {
   const validationErrors = resourceIdentifier.validate(identifier)
   if (validationErrors.length) {
     return failure(

@@ -1,4 +1,4 @@
-import { Serializable, SerializableObject, isString, isObject, isSome, Predicate } from 'isntnt'
+import { SerializableObject, isString, isObject, isSome, isNone } from 'isntnt'
 
 import {
   AbsolutePathRoot,
@@ -8,19 +8,13 @@ import {
   ValidationErrorMessage,
 } from './data/enum'
 import { ResourceFormatter } from './formatter'
-import {
-  JSONAPIDocument,
-  JSONAPIRequestMethod,
-  ResourcePath,
-  JSONAPIFailureDocument,
-  JSONAPISuccessDocument,
-} from './types'
+import { JSONAPIDocument, ResourcePath } from './types'
 import { Endpoint } from './client/endpoint'
 import { Type } from './util/type'
 import { jsonapiFailureDocument, jsonapiSuccessDocument, urlString, url } from './util/validators'
 import { reflect, windowFetch } from './util/helpers'
 import { ResourceDocumentError } from './error'
-import { InternalErrorCode, JSON_API_MIME_TYPE } from './data/constants'
+import { InternalErrorCode, JSONAPIRequestMethod, JSON_API_MIME_TYPE } from './data/constants'
 
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
@@ -76,12 +70,14 @@ export class Client<T extends Partial<ClientSetup>> {
 
   async request<U extends JSONAPIRequestMethod = JSONAPIRequestMethod.Get>(
     url: URL,
-    method: U = JSONAPIRequestMethod.Get as U,
+    method: U,
     body?: SerializableObject,
-  ): Promise<JSONAPIDocument<any> | null> {
+  ): Promise<
+    U extends JSONAPIRequestMethod.Get ? JSONAPIDocument<any> : JSONAPIDocument<any> | null
+  > {
     return this.beforeRequest(url, method, body).then((request) =>
       this.setup.fetchAdapter!(request).then((response) => this.afterRequest(response, request)),
-    )
+    ) as any
   }
 
   private async beforeRequest(
@@ -124,37 +120,25 @@ export class Client<T extends Partial<ClientSetup>> {
     response: Response,
     request: Request,
   ): Promise<JSONAPIDocument<any> | null> {
-    return Promise.resolve(this.setup.afterRequest!(response))
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((data: Serializable) => {
-            // console.log('FAILURE RESPONSE DATA', data)
-            if (!(jsonapiFailureDocument.predicate as Predicate<JSONAPIFailureDocument>)(data)) {
-              throw new ResourceDocumentError(
-                ValidationErrorMessage.InvalidResourceDocument,
-                data,
-                [],
-              )
-            }
-            throw new ResourceDocumentError(response.statusText, data, data.errors)
-          })
-        }
-        if (request.method === JSONAPIRequestMethod.Post && response.status === 204) {
-          // See see https://jsonapi.org/format/#crud-creating-responses-204
-          return null
-        }
-        return response.json()
-      })
-      .then((data: Serializable) => {
-        // console.log('SUCCESS RESPONSE DATA', data)
-        if (
-          isSome(data) &&
-          !(jsonapiSuccessDocument.predicate as Predicate<JSONAPISuccessDocument>)(data)
-        ) {
-          throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
-        }
-        return data
-      })
+    const afterRequestResponse = await this.setup.afterRequest!(response)
+    const data = await afterRequestResponse.json()
+
+    if (!afterRequestResponse.ok) {
+      if (!jsonapiFailureDocument.predicate(data)) {
+        throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
+      }
+      throw new ResourceDocumentError(afterRequestResponse.statusText, data, data.errors as any)
+    }
+
+    if (isNone(data) && request.method !== JSONAPIRequestMethod.Get) {
+      return null
+    }
+
+    if (!jsonapiSuccessDocument.predicate(data)) {
+      throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
+    }
+
+    return data as JSONAPIDocument<any>
   }
 }
 

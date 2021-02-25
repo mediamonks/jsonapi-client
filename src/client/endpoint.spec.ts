@@ -103,6 +103,7 @@ describe('Endpoint', () => {
           return {
             ok: true,
             status: 204,
+            async json() {},
           } as any
         },
       })

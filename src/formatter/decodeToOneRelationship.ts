@@ -16,7 +16,7 @@ import { decodeResourceIdentifier } from './decodeResourceIdentifier'
 import { failure, success, Validation } from '../util/validation'
 import type { ResourceFormatter } from '../formatter'
 
-export type ToOneRelationshipData = Resource | ResourceIdentifier | null
+export type ToOneRelationshipData = Resource | ResourceIdentifier<any> | null
 
 export const decodeToOneRelationship = (
   field: RelationshipField<any, RelationshipFieldType.ToOne, any>,
@@ -29,7 +29,7 @@ export const decodeToOneRelationship = (
 ): Validation<ToOneRelationshipData, ResourceValidationErrorObject> => {
   const resourceFormatters: ReadonlyArray<ResourceFormatter> = field.getFormatter()
   const value = (resourceObject.relationships || EMPTY_OBJECT)[fieldName]
-  const data: ResourceIdentifier | null = (value || EMPTY_OBJECT).data
+  const data: ResourceIdentifier<any> | null = (value || EMPTY_OBJECT).data
 
   if (isSome(data)) {
     const resourceIdentifierResult = decodeResourceIdentifier(resourceFormatters, data, pointer)

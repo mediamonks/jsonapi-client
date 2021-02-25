@@ -16,7 +16,7 @@ import { failure, Validation } from '../util/validation'
 export const decodeIncludedRelationship = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
-  resourceIdentifier: ResourceIdentifier,
+  resourceIdentifier: ResourceIdentifier<any>,
   included: ReadonlyArray<JSONAPIResourceObject>,
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any>,

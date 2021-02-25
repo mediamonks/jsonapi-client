@@ -11,11 +11,13 @@ import { resourceTypeNotFoundDetail, onResourceOfTypeMessage } from '../util/for
 import { resourceIdentifier, resourcePatchData } from '../util/validators'
 import type { ResourceFormatter } from '../formatter'
 
-export const encodeResourcePatchData = (
-  formatters: ReadonlyArray<ResourceFormatter>,
-  data: ResourcePatchData<ResourceFormatter>,
+export const encodeResourcePatchData = <T extends ResourceFormatter>(
+  formatters: ReadonlyArray<T>,
+  data: ResourcePatchData<T>,
 ): { data: JSONAPIResourceObject } => {
-  resourcePatchData.assert(data)
+  if (!resourcePatchData.predicate(data)) {
+    throw new ResourceValidationError(ValidationErrorMessage.InvalidResourcePatchData, data, [])
+  }
 
   const formatter = formatters.find((formatter) => formatter.type === data.type)
   if (!formatter) {
@@ -39,7 +41,7 @@ export const encodeResourcePatchData = (
       errors.push(
         createValidationErrorObject(
           ValidationErrorMessage.FieldNotFound,
-          `Field "${key}" does not exist on resource of type "${formatter}"`,
+          onResourceOfTypeMessage([formatter], `Field "${key}" does not exist`),
           [key],
         ),
       )
@@ -47,7 +49,7 @@ export const encodeResourcePatchData = (
   })
 
   Object.keys(formatter.fields).forEach((fieldName) => {
-    const field: ResourceFields[any] = formatter.getField(fieldName)
+    const field: ResourceFields[any] = formatter.getField(fieldName as any)
     const value = data[fieldName as keyof typeof data]
 
     if (!isUndefined(value)) {
@@ -68,12 +70,11 @@ export const encodeResourcePatchData = (
           ),
         )
       } else if (field.isAttributeField()) {
-        const attributes: Record<string, any> = body.attributes || (body.attributes = {})
+        const attributes: Record<string, any> = (body.attributes ||= {})
         if (isNull(value)) {
           attributes[fieldName] = value
         } else {
-          const serializedValue = field.serialize(value)
-          attributes[fieldName] = serializedValue
+          const serializedValue = (attributes[fieldName] = field.serialize(value))
           field.validate(serializedValue).forEach((detail) => {
             errors.push(
               createValidationErrorObject(ValidationErrorMessage.InvalidAttributeValue, detail, [
@@ -83,11 +84,11 @@ export const encodeResourcePatchData = (
           })
         }
       } else if (field.isRelationshipField()) {
-        const relationships: Record<string, any> = body.relationships || (body.relationships = {})
-        const formatter = field.getFormatter()
+        const relationships: Record<string, any> = (body.relationships ||= {})
+        const relationshipFormatter = field.getFormatter()
         if (field.isToOneRelationshipField()) {
           if (isNull(value)) {
-            relationships[fieldName] = value
+            relationships[fieldName] = { data: value }
           } else {
             if (!resourceIdentifier.predicate(value)) {
               resourceIdentifier.validate(value).forEach((detail) => {
@@ -99,11 +100,14 @@ export const encodeResourcePatchData = (
                   ),
                 )
               })
-            } else if (formatter.type !== value.type) {
+            } else if (relationshipFormatter.type !== value.type) {
+              relationships[fieldName] = { data: value }
               errors.push(
-                createValidationErrorObject(ValidationErrorMessage.InvalidResourceType, `todo`, [
-                  fieldName,
-                ]),
+                createValidationErrorObject(
+                  ValidationErrorMessage.InvalidResourceType,
+                  `To-One relationship "${fieldName}" must be a resource identifier of type "${relationshipFormatter}"`,
+                  [fieldName],
+                ),
               )
             } else {
               relationships[fieldName] = {
@@ -116,11 +120,12 @@ export const encodeResourcePatchData = (
           }
         } else {
           if (!isArray(value)) {
+            relationships[fieldName] = { data: value }
             errors.push(
               createValidationErrorObject(
                 ValidationErrorMessage.InvalidToManyRelationshipData,
                 onResourceOfTypeMessage(
-                  [formatter],
+                  [relationshipFormatter],
                   `To-Many relationship "${fieldName}" must be an Array`,
                 ),
                 [fieldName],
@@ -128,7 +133,7 @@ export const encodeResourcePatchData = (
             )
           } else {
             relationships[fieldName] = {
-              data: value.map((item) => {
+              data: value.map((item: unknown) => {
                 if (!resourceIdentifier.predicate(item)) {
                   resourceIdentifier.validate(item).forEach((detail) => {
                     errors.push(
@@ -140,11 +145,11 @@ export const encodeResourcePatchData = (
                     )
                   })
                   return item
-                } else if (!formatters.some((formatter) => formatter.type === item.type)) {
+                } else if (relationshipFormatter.type !== item.type) {
                   errors.push(
                     createValidationErrorObject(
                       ValidationErrorMessage.InvalidResourceType,
-                      resourceTypeNotFoundDetail(formatters),
+                      resourceTypeNotFoundDetail([relationshipFormatter]),
                       [fieldName],
                     ),
                   )

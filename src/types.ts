@@ -24,13 +24,6 @@ export type ReadonlyRecord<K extends keyof any, T> = {
   readonly [P in K]: T
 }
 
-type WithOptional<T, K extends keyof T = keyof T> = {
-  [P in K]?: T[K]
-} &
-  {
-    [P in Exclude<keyof T, K>]: T[K]
-  }
-
 // Resource
 export type ResourceType = string
 export type ResourceId = string
@@ -91,25 +84,35 @@ export type ResourceConstructorData<T extends ResourceType, U extends ResourceFi
   ResourceFormatter<T, U>
 >
 
-export type ResourceCreateData<T extends ResourceFormatter> = WithOptional<
-  ResourceIdentifier<T['type']>,
-  'id'
-> &
-  Pick<
-    {
-      [P in keyof T['fields']]: ResourceFieldCreateValue<T['fields'][P]>
-    },
-    ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.PostRequired>
-  > &
-  Pick<
-    {
-      [P in keyof T['fields']]?: ResourceFieldCreateValue<T['fields'][P]>
-    },
-    ResourceFieldNameWithFlag<T['fields'], ResourceFieldFlag.PostOptional>
-  >
+type BaseResourceCreateData<T extends ResourceFormatter> = {
+  type: T['type']
+  id?: ResourceId
+} & {
+  [P in ResourceFieldNameWithFlag<
+    T['fields'],
+    ResourceFieldFlag.PostRequired
+  >]: ResourceFieldCreateValue<T['fields'][P]>
+} &
+  {
+    [P in ResourceFieldNameWithFlag<
+      T['fields'],
+      ResourceFieldFlag.PostOptional
+    >]?: ResourceFieldCreateValue<T['fields'][P]>
+  }
 
-export type ResourcePatchData<T extends ResourceFormatter> = ResourceIdentifier<T['type']> &
-  Pick<
+export type ResourceCreateData<T extends ResourceFormatter> = T extends ResourceFormatter<
+  infer R,
+  any
+>
+  ? {
+      [P in R]: BaseResourceCreateData<Extract<T, { type: P }>>
+    }[R]
+  : never
+
+type BaseResourcePatchData<T extends ResourceFormatter> = {
+  type: T['type']
+  id: ResourceId
+} & Pick<
     {
       [P in keyof T['fields']]?: ResourceFieldPatchValue<T['fields'][P]>
     },
@@ -118,6 +121,10 @@ export type ResourcePatchData<T extends ResourceFormatter> = ResourceIdentifier<
       ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
     >
   >
+
+export type ResourcePatchData<T extends ResourceFormatter> = T extends ResourceFormatter<infer R, any> ? {
+  [P in R]: BaseResourcePatchData<Extract<T, { type: P }>>
+}[R] :  never
 
 //
 export type ExperimentalResourceQuery<
@@ -247,7 +254,7 @@ export type ResourceFieldNameWithFlag<
   string
 >
 
-export type ResourceFieldFactoryRules = [ResourceFieldRule, ResourceFieldRule, ResourceFieldRule]
+export type ResourceFieldFactoryRules = [get: ResourceFieldRule, post: ResourceFieldRule, patch:ResourceFieldRule]
 
 export type ResourceFieldGetMask =
   | ResourceFieldFlag.GetForbidden
@@ -681,13 +688,3 @@ export type JSONAPIFilterParams =
   | {
       [name: string]: Serializable
     }
-
-/**
- * {@link https://jsonapi.org/faq/#wheres-put|JSON:API Reference}
- */
-export enum JSONAPIRequestMethod {
-  Get = 'GET',
-  Post = 'POST',
-  Patch = 'PATCH',
-  Delete = 'DELETE',
-}
