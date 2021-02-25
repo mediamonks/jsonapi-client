@@ -1,3 +1,4 @@
+import { FilteredResource } from '../'
 import {
   asset,
   competitor,
@@ -35,7 +36,7 @@ const eventFilter = event.createQuery(
       'irm',
       'pool',
     ],
-    [medal.type]: ['medalType'],
+    [medal.type]: ['medalType', 'event'],
     [participant.type]: ['participantType', 'name', 'individual', 'participants', 'organisation'],
     [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'],
     [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'],
@@ -45,35 +46,43 @@ const eventFilter = event.createQuery(
   {
     stages: {
       competitors: {
-        medals: true,
-        results: true,
+        medals: null,
+        results: null,
         participant: {
-          participants: false,
-          individual: true,
+          participants: null,
+          individual: null,
           organisation: {
-            country: true,
-            flag: true,
+            country: null,
+            flag: null,
           },
         },
       },
       phases: {
         eventUnits: {
-          competitors: true,
+          competitors: null,
         },
       },
     },
     competitors: {
-      results: false,
-      medals: true,
+      results: null,
+      medals: null,
       participant: {
-        individual: true,
+        individual: null,
         organisation: {
-          country: true,
-          flag: true,
+          country: null,
+          flag: null,
         },
       },
     },
   },
 )
 
-const eventIncludeFilter = eventFilter.include.competitors
+const eventIncludeFilter = eventFilter.include
+
+type X = FilteredResource<typeof event, typeof eventFilter>
+
+const x = {} as X
+
+type Y = X['stages'][number]['competitors'][number]['medals'][number]
+
+console.log(x.stages[0].competitors[1].medals[0].event)
