@@ -1,5 +1,5 @@
 {
-  "name": "jsonapi-client",
+  "name": "@mediamonks/jsonapi-client",
   "version": "3.0.0-beta.0",
   "description": "TypeScript JSON:API formatter and client with type safe sparse fieldsets and compound documents",
   "main": "dist/index.js",
@@ -12,6 +12,17 @@
     "test": "NODE_ENV=development jest",
     "test:ci": "NODE_ENV=development jest",
     "prepublishOnly": "yarn build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": false,
+  "bugs": {
+    "url": "https://github.com/mediamonks/jsonapi-client/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mediamonks/jsonapi-client.git"
   },
   "dependencies": {
     "isntnt": "^1.4.5"
