@@ -21,7 +21,7 @@ export const decodeIncludedRelationship = (
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any>,
   pointer: ReadonlyArray<string>,
-): Validation<Resource, ResourceValidationErrorObject> => {
+): Validation<Resource<any>, ResourceValidationErrorObject> => {
   const includedResourceObject = included.find(
     (item) => item.type === resourceIdentifier.type && item.id === resourceIdentifier.id,
   )

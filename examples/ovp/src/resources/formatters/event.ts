@@ -1,5 +1,4 @@
 import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
-
 import { string } from '../attributes/primitive'
 import { rsc, RSC } from '../attributes/rsc'
 import { competitor, CompetitorResource } from './competitor'

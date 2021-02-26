@@ -4,7 +4,6 @@ import {
   ResourceType,
   ResourceFilter,
   JSONAPIDocument,
-  Resource,
   ResourceCreateData,
   JSONAPIResourceObject,
   ResourcePatchData,
@@ -12,6 +11,10 @@ import {
   ResourceFieldName,
   RelationshipFieldName,
   AttributeFieldName,
+  ResourceFieldsFilterLimited,
+  ResourceIncludeFilter,
+  ResourceFilterLimited,
+  Resource,
 } from './types'
 import { EMPTY_OBJECT } from './data/constants'
 import { resourceType } from './util/validators'
@@ -21,6 +24,7 @@ import { ResourceIdentifier } from './resource/identifier'
 import { encodeResourceCreateData } from './formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from './formatter/encodeResourcePatchData'
 import { onResourceOfTypeMessage } from './util/formatting'
+import { parseResourceFilter } from './formatter/parseResourceFilter'
 
 export class ResourceFormatter<T extends ResourceType = any, U extends ResourceFields = any> {
   readonly type: T
@@ -35,10 +39,20 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
     return new ResourceIdentifier(this.type, id)
   }
 
-  decode<V extends ResourceFilter<this> = {}>(
+  createFilter<
+    V extends ResourceFieldsFilterLimited<this>,
+    W extends ResourceIncludeFilter<ResourceFormatter<T, U>, V> = null
+  >(fields: V, include: W = null as W) {
+    return parseResourceFilter([this], fields, include as any) as {
+      fields: V
+      include: W
+    }
+  }
+
+  decode<V extends ResourceFilterLimited<this> = {}>(
     resourceDocument: JSONAPIDocument<this>,
     resourceFilter: V = EMPTY_OBJECT,
-  ): Resource<this, V> | Array<Resource<this, V>> {
+  ): Resource<this, V> | ReadonlyArray<Resource<this, V>> {
     return decodeDocument([this], resourceDocument, resourceFilter as any) as any
   }
 

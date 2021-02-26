@@ -1,7 +1,11 @@
 import { isArray, isString, isNull, isPlainObject } from 'isntnt'
-
 import { ResourceFieldFlag } from '../data/enum'
-import type { ResourceFieldsQuery, ResourceIncludeQuery, ResourceFilter } from '../types'
+import type {
+  ResourceFieldsQuery,
+  ResourceIncludeQuery,
+  ResourceFieldsFilterLimited,
+  ResourceIncludeFilter,
+} from '../types'
 import { EMPTY_OBJECT, EMPTY_ARRAY } from '../data/constants'
 import {
   invalidFieldsFilterMessage,
@@ -20,22 +24,30 @@ import type { ResourceFormatter } from '../formatter'
  * @throws If an invalid `resourceFilter` is provided
  * @returns A ResourceFilter
  */
-export const parseResourceFilter = <T extends ResourceFilter>(
-  formatters: ReadonlyArray<ResourceFormatter>,
-  resourceFilter: T,
-): T => {
+export const parseResourceFilter = <
+  T extends ResourceFormatter<any, any>,
+  U extends ResourceFieldsFilterLimited<T>,
+  W extends ResourceIncludeFilter<T, U>
+>(
+  formatters: ReadonlyArray<T>,
+  fields: U,
+  include: W,
+) => {
   // First, assert the includeFilter and gather all (included) formatters...
   const includedFormatters = assertIncludeFilterAndGetNestedFormatters(
     formatters,
-    resourceFilter.fields || EMPTY_OBJECT,
-    resourceFilter.include || EMPTY_OBJECT,
+    fields || (EMPTY_OBJECT as any),
+    include || EMPTY_OBJECT,
     [],
   )
 
   // ...then assert the fieldsFilter using each possible formatter included
-  assertFieldsFilter(includedFormatters, resourceFilter.fields || EMPTY_OBJECT)
+  assertFieldsFilter(includedFormatters, fields || (EMPTY_OBJECT as any))
 
-  return resourceFilter
+  return {
+    fields,
+    include,
+  }
 }
 
 export const assertFieldsFilter = (
@@ -78,8 +90,8 @@ export const assertFieldsFilter = (
 
 export const assertIncludeFilterAndGetNestedFormatters = (
   formatters: ReadonlyArray<ResourceFormatter>,
-  fieldsFilter: ResourceFieldsQuery,
-  includeFilter: ResourceIncludeQuery | null,
+  fieldsFilter: ResourceFieldsFilterLimited<any>,
+  includeFilter: ResourceIncludeQuery<any> | null,
   pointer: ReadonlyArray<string>,
 ): ReadonlyArray<ResourceFormatter> => {
   if (isNull(includeFilter)) {

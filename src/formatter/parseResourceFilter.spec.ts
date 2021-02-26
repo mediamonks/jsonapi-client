@@ -34,7 +34,7 @@ describe('parseResourceFilter', () => {
       },
     } as const
 
-    expect(parseResourceFilter([baz], filter)).toEqual(filter)
+    expect(parseResourceFilter([baz], filter.fields, filter.include)).toEqual(filter)
   })
 
   it('returns an unmodified resource filter if its valid for a polymorphic formatter', () => {
@@ -59,7 +59,7 @@ describe('parseResourceFilter', () => {
       },
     } as const
 
-    expect(parseResourceFilter([foo, bar, baz], filter)).toEqual(filter)
+    expect(parseResourceFilter([foo, bar, baz], filter.fields, filter.include)).toEqual(filter)
   })
 })
 

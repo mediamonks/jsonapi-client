@@ -1,11 +1,8 @@
-import { isString } from 'isntnt'
-
 import { ResourceFieldFlag } from '../data/enum'
 import { ResourceFormatter } from '../formatter'
 import {
   ResourcePath,
   ResourceId,
-  ResourceFilter,
   Resource,
   ResourceCreateData,
   ResourcePatchData,
@@ -16,14 +13,12 @@ import {
   ToManyRelationshipPatchData,
   RelationshipFieldNameWithFlag,
   RelationshipPatchData,
-  ResourceIncludeQuery,
-  ResourceFieldsQuery,
+  ResourceFilterLimited,
 } from '../types'
 import { createURL } from '../util/url'
 import { Client } from '../client'
 import { EMPTY_OBJECT, JSONAPIRequestMethod } from '../data/constants'
 import { decodeDocument } from '../formatter/decodeDocument'
-import { parseResourceFilter } from '../formatter/parseResourceFilter'
 import { encodeResourceCreateData } from '../formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from '../formatter/encodeResourcePatchData'
 import { RelationshipField } from '../resource/field/relationship'
@@ -37,13 +32,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     this.client = client
     this.path = path
     this.formatter = formatter
-  }
-
-  createFilter<V extends ResourceFieldsQuery<U>, W extends ResourceIncludeQuery<U> | null = null>(
-    fields: V,
-    include: W = null as W,
-  ): { fields: V; include: W } {
-    return parseResourceFilter([this.formatter], { fields, include } as any)
   }
 
   /**
@@ -168,91 +156,84 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     })
   }
 
-  async getOne<V extends ResourceFilter<U>>(
+  async getOne<V extends ResourceFilterLimited<U>>(
     id: ResourceId,
-    resourceFilter: V = EMPTY_OBJECT,
+    filter: V = EMPTY_OBJECT as V,
   ): Promise<Resource<U, V>> {
-    const url = createURL(this.client.url, [this.path, id], resourceFilter as any)
+    const url = createURL(this.client.url, [this.path, id], filter as any)
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-    return decodeDocument([this.formatter], document, resourceFilter as any) as Resource<U, V>
+    return decodeDocument([this.formatter], document, filter as any) as any
   }
 
-  async getMany<V extends ResourceFilter<U>>(
+  async getMany<V extends ResourceFilterLimited<U>>(
     searchParams: JSONAPISearchParams | null = null,
-    resourceFilter: V = EMPTY_OBJECT,
-  ): Promise<Array<Resource<U, V>>> {
-    const url = createURL(
-      this.client.url,
-      [this.path],
-      resourceFilter as ResourceFilter<any>,
-      searchParams || EMPTY_OBJECT,
-    )
+    filter: V = EMPTY_OBJECT,
+  ): Promise<ReadonlyArray<Resource<U, V>>> {
+    const url = createURL(this.client.url, [this.path], filter as any, searchParams || EMPTY_OBJECT)
 
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-    return decodeDocument([this.formatter], document, resourceFilter as any) as Array<
-      Resource<U, V>
-    >
+    return decodeDocument([this.formatter], document, filter as any) as any
   }
 
   getToOne<
     V extends EndpointToOneFieldName<this>,
-    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
+    W extends ResourceFilterLimited<RelationshipFieldResourceFormatter<U['fields'][V]>>
   >(
     id: ResourceId,
     fieldName: V,
-    resourceFilter?: W,
+    filter: W = EMPTY_OBJECT as W,
   ): Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> {
-    return this.toOne(fieldName, resourceFilter)(id)
+    return this.toOne(fieldName, filter as any)(id) as any
   }
 
   getToMany<
     V extends EndpointToManyFieldName<this>,
-    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
+    W extends ResourceFilterLimited<RelationshipFieldResourceFormatter<U['fields'][V]>> = {}
   >(
     id: ResourceId,
     fieldName: V,
-    resourceFilter?: W,
+    filter: W = EMPTY_OBJECT as W,
     searchParams: JSONAPISearchParams | null = null,
   ): Promise<ReadonlyArray<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> {
-    return this.toMany(fieldName, resourceFilter)(id, searchParams)
+    return this.toMany(fieldName, filter as any)(id, searchParams) as any
   }
 
-  one<V extends ResourceFilter<U>>(resourceFilter?: V) {
-    return async (id: ResourceId): Promise<Resource<U, V>> => this.getOne(id, resourceFilter)
+  one<V extends ResourceFilterLimited<U> = {}>(filter: V = EMPTY_OBJECT as V) {
+    return async (id: ResourceId): Promise<Resource<U, V>> => this.getOne(id, filter)
   }
 
-  many<V extends ResourceFilter<U>>(resourceFilter?: V) {
+  many<V extends ResourceFilterLimited<U> = {}>(filter: V = EMPTY_OBJECT as V) {
     return async (
       searchParams: JSONAPISearchParams | null = null,
-    ): Promise<Array<Resource<U, V>>> => this.getMany(searchParams, resourceFilter)
+    ): Promise<ReadonlyArray<Resource<U, V>>> => this.getMany(searchParams, filter)
   }
 
   toOne<
     V extends EndpointToOneFieldName<this>,
-    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
+    W extends ResourceFilterLimited<RelationshipFieldResourceFormatter<U['fields'][V]>> = {}
   >(
     fieldName: V,
-    resourceFilter?: W,
+    filter: W = EMPTY_OBJECT as W,
   ): (id: ResourceId) => Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> {
     const fieldFormatter = this.formatter.getRelationshipField(fieldName as any).getFormatter()
     const fieldPath = this.toRelationshipFieldPath(fieldName)
 
     return async (id: ResourceId) => {
-      const url = createURL(this.client.url, [this.path, id, fieldPath], resourceFilter as any)
+      const url = createURL(this.client.url, [this.path, id, fieldPath], filter as any)
       const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-      return decodeDocument([fieldFormatter], document, resourceFilter as any) as any
+      return decodeDocument([fieldFormatter], document, filter as any) as any
     }
   }
 
   toMany<
     V extends EndpointToManyFieldName<this>,
-    W extends ResourceFilter<RelationshipFieldResourceFormatter<U['fields'][V]>>
+    W extends ResourceFilterLimited<RelationshipFieldResourceFormatter<U['fields'][V]>> = {}
   >(
     fieldName: V,
-    resourceFilter?: W,
+    filter: W = EMPTY_OBJECT as W,
   ): (
     id: ResourceId,
     searchParams: JSONAPISearchParams | null,
@@ -264,53 +245,15 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
       const url = createURL(
         this.client.url,
         [this.path, id, fieldPath],
-        resourceFilter as any,
+        filter as any,
         searchParams as any,
       )
 
       const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
-      return decodeDocument([fieldFormatter], document, resourceFilter as any) as any
+      return decodeDocument([fieldFormatter], document, filter as any) as any
     }
   }
-
-  // getResourceMeta(resource: ResourceIdentifier<U['type']>): JSONAPIMetaObject {
-  //   return RESOURCE_CONTEXT_STORE.getMeta(resource)
-  // }
-
-  // getResourceLinks(resource: ResourceIdentifier<U['type']>): JSONAPILinksObject {
-  //   return RESOURCE_CONTEXT_STORE.getLinks(resource) as any
-  // }
-
-  // getDocumentMeta(
-  //   document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
-  // ): JSONAPIMetaObject {
-  //   return DOCUMENT_CONTEXT_STORE.getMeta(document)
-  // }
-
-  // getOneDocumentLinks(
-  //   document: ResourceIdentifier<U['type']> | ReadonlyArray<ResourceIdentifier<U['type']>>,
-  // ): JSONAPILinksObject {
-  //   return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
-  // }
-
-  // getManyDocumentLinks(
-  //   document: ReadonlyArray<ResourceIdentifier<U['type']>>,
-  // ): JSONAPIPaginationLinks {
-  //   return DOCUMENT_CONTEXT_STORE.getLinks(document) as any
-  // }
-
-  // hasNext(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
-  //   return isString(this.getManyDocumentLinks(document).next)
-  // }
-
-  // getNext() {}
-
-  // hasPrev(document: ReadonlyArray<ResourceIdentifier<U['type']>>) {
-  //   return isString(this.getManyDocumentLinks(document).prev)
-  // }
-
-  // getPrev() {}
 
   private toRelationshipFieldPath(fieldName: EndpointRelationshipFieldName<this>): string {
     return this.client.setup.transformRelationshipPath(fieldName, this.formatter)

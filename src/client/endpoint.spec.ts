@@ -16,58 +16,6 @@ describe('Endpoint', () => {
     it.todo('throws an error if an invalid resource is retrieved')
   })
 
-  describe('createFilter', () => {
-    const client = new Client(MOCK_URL)
-    const endpoint = new Endpoint(client, 'path-a', formatterA)
-
-    it('returns a parsed resource filter', () => {
-      const filter = {
-        fields: {
-          a: ['requiredString', 'toOneB', 'toManyA'],
-          b: ['requiredString'],
-        },
-        include: {
-          toOneB: null,
-          toManyA: null,
-        },
-      } as const
-
-      expect(endpoint.createFilter(filter.fields, filter.include)).toEqual(filter)
-    })
-
-    it('throws when an invalid filter is provided', () => {
-      expect(() =>
-        endpoint.createFilter({
-          fields: {
-            a: [],
-          },
-        } as any),
-      ).toThrow()
-
-      expect(() =>
-        endpoint.createFilter({
-          fields: {
-            a: ['does not exist'],
-          },
-        } as any),
-      ).toThrow()
-
-      expect(() =>
-        endpoint.createFilter({
-          include: {
-            doesNotExist: null,
-          },
-        } as any),
-      ).toThrow()
-
-      expect(() =>
-        endpoint.createFilter({
-          include: true,
-        } as any),
-      ).toThrow()
-    })
-  })
-
   describe('create', () => {
     it('calls client#request with proper arguments', async () => {
       const client = new Client(MOCK_URL, {

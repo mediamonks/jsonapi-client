@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime'
-import { Client } from '../../../src'
+import { Client, Resource } from '../../../src'
 
 import {
   competitor,
@@ -27,21 +27,13 @@ const client = new Client(url, {
 
 const eventEndpoint = client.endpoint('events', event)
 
-const eventFilter = eventEndpoint.createFilter(
-  // @ts-ignore
+const eventFilterAlt = event.createFilter(
   {
-    [event.type]: ['externalId', 'stages'] as const,
-    [stage.type]: ['externalId', 'phases', 'competitors'] as const,
-    [phase.type]: ['externalId', 'title', 'eventUnits'] as const,
-    [eventUnit.type]: ['externalId', 'title', 'start', 'competitors', 'scheduleStatus'] as const,
-    [competitor.type]: [
-      'externalId',
-      'extendedInfo',
-      'order',
-      'results',
-      'participant',
-      'medals',
-    ] as const,
+    [event.type]: ['externalId', 'stages', 'competitors'],
+    [stage.type]: ['externalId', 'phases', 'competitors'],
+    [phase.type]: ['externalId', 'title', 'eventUnits'],
+    [eventUnit.type]: ['externalId', 'title', 'start', 'competitors', 'scheduleStatus'],
+    [competitor.type]: ['externalId', 'extendedInfo', 'order', 'results', 'participant', 'medals'],
     [result.type]: [
       'resultType',
       'value',
@@ -56,19 +48,13 @@ const eventFilter = eventEndpoint.createFilter(
       'valueType',
       'irm',
       'pool',
-    ] as const,
-    [medal.type]: ['medalType'] as const,
-    [participant.type]: [
-      'participantType',
-      'name',
-      'individual',
-      'participants',
-      'organisation',
-    ] as const,
-    [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'] as const,
-    [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'] as const,
-    [asset.type]: ['source'] as const,
-    [organisation.type]: ['externalId', 'flag', 'country'] as const,
+    ],
+    [medal.type]: ['medalType'],
+    [participant.type]: ['participantType', 'name', 'individual', 'participants', 'organisation'],
+    [individual.type]: ['fullGivenName', 'fullFamilyName', 'gender'],
+    [country.type]: ['iso2Code', 'iso3Code', 'iocCode', 'isoName', 'iocName'],
+    [asset.type]: ['source'],
+    [organisation.type]: ['externalId', 'flag', 'country'],
   },
   {
     stages: {
@@ -105,9 +91,9 @@ const eventFilter = eventEndpoint.createFilter(
 )
 
 eventEndpoint
-  .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilter)
-  .then((eventResource) => {
-    console.log(eventResource.stages[1].phases)
+  .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilterAlt)
+  .then((event) => {
+    console.log(event.stages[1].phases[0].type)
   })
   .catch(console.dir)
 
@@ -123,7 +109,7 @@ const eventFilterDiscipline = {
 
 eventEndpoint
   .getMany(null, eventFilterDiscipline)
-  .then((manyEvents) => {
-    console.log(manyEvents)
+  .then((events) => {
+    console.log(events[1].stages)
   })
   .catch(console.dir)

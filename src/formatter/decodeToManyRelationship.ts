@@ -16,7 +16,7 @@ import { failure, success, validation, Validation } from '../util/validation'
 import type { ResourceFormatter } from '../formatter'
 
 export type ToManyRelationshipData =
-  | ReadonlyArray<Resource>
+  | ReadonlyArray<Resource<any>>
   | ReadonlyArray<ResourceIdentifier<any>>
 
 export const decodeToManyRelationship = (
@@ -55,7 +55,7 @@ export const decodeToManyRelationship = (
 
   const formatter = field.getFormatter()
   const errors: Array<ResourceValidationErrorObject> = []
-  const result: Array<Resource | ResourceIdentifier<any>> = []
+  const result: Array<Resource<any> | ResourceIdentifier<any>> = []
 
   if (includeFilter && Object.hasOwnProperty.call(includeFilter, fieldName)) {
     data.forEach((item: any) => {

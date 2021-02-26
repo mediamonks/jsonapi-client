@@ -1,26 +1,22 @@
+import { isArray } from 'isntnt'
 import { ValidationErrorMessage } from '../data/enum'
 import {
   ResourceDocumentError,
   ResourceValidationErrorObject,
   ResourceValidationError,
 } from '../error'
-import { JSONAPIDocument, ResourceFilter, Resource } from '../types'
+import { JSONAPIDocument, Resource, ResourceFilterLimited } from '../types'
 import { EMPTY_OBJECT } from '../data/constants'
 import { decodeResourceObject } from './decodeResourceObject'
-import { parseResourceFilter } from './parseResourceFilter'
 import type { ResourceFormatter } from '../formatter'
 import { jsonapiDocument } from '../util/validators'
-import { createContextStore } from '../util/createContextStore'
 
 /** @hidden */
-export const DOCUMENT_CONTEXT_STORE = createContextStore()
-
-/** @hidden */
-export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFilter<T>>(
+export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFilterLimited<T>>(
   formatters: ReadonlyArray<T>,
   document: JSONAPIDocument<T>,
-  resourceFilter: U = EMPTY_OBJECT as U,
-): Resource<T, U> | Array<Resource<T, U>> => {
+  filter: U = EMPTY_OBJECT as U,
+): Resource<T, U> | ReadonlyArray<Resource<T, U>> => {
   if (!jsonapiDocument.predicate(document)) {
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceDocument, document, [])
   }
@@ -34,12 +30,8 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
   }
 
   const included = (document.included || []).concat(document.data) as Array<any>
-  const { fields = EMPTY_OBJECT, include = EMPTY_OBJECT } = parseResourceFilter(
-    formatters,
-    resourceFilter as any,
-  )
 
-  if (Array.isArray(document.data)) {
+  if (isArray(document.data)) {
     const data: Array<Resource<T, U>> = []
     const errors: Array<ResourceValidationErrorObject> = []
 
@@ -48,8 +40,8 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
         formatters,
         resource,
         included,
-        fields,
-        include,
+        filter.fields || (EMPTY_OBJECT as any),
+        filter.include || (EMPTY_OBJECT as any),
         [],
       )
       data.push(value as any)
@@ -64,15 +56,14 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       )
     }
 
-    DOCUMENT_CONTEXT_STORE.set(data, document)
     return data
   } else {
     const [resource, errors] = decodeResourceObject(
       formatters,
       document.data,
       included,
-      fields,
-      include,
+      filter.fields || (EMPTY_OBJECT as any),
+      filter.include || (EMPTY_OBJECT as any),
       [],
     )
 
@@ -84,7 +75,6 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       )
     }
 
-    DOCUMENT_CONTEXT_STORE.set(resource, document)
     return resource as any
   }
 }

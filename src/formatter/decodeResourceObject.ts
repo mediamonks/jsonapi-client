@@ -13,10 +13,6 @@ import { resourceObject } from '../util/validators'
 import { decodeAttribute } from './decodeAttribute'
 import { decodeRelationship } from './decodeRelationship'
 import type { ResourceFormatter } from '../formatter'
-import { createContextStore } from '../util/createContextStore'
-
-/** @hidden */
-export const RESOURCE_CONTEXT_STORE = createContextStore()
 
 /**
  *
@@ -35,7 +31,7 @@ export const decodeResourceObject = (
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
-): Validation<Resource, ResourceValidationErrorObject> => {
+): Validation<Resource<any>, ResourceValidationErrorObject> => {
   if (!resourceObject.predicate(resource)) {
     return failure(
       resourceObject
@@ -108,6 +104,5 @@ export const decodeResourceObject = (
     return failure(errors)
   }
 
-  RESOURCE_CONTEXT_STORE.set(data, resource)
   return success(data)
 }

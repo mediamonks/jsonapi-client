@@ -15,7 +15,7 @@ import { decodeResourceIdentifier } from './decodeResourceIdentifier'
 import { failure, success, Validation } from '../util/validation'
 import type { ResourceFormatter } from '../formatter'
 
-export type ToOneRelationshipData = Resource | ResourceIdentifier<any> | null
+export type ToOneRelationshipData = Resource<any> | ResourceIdentifier<any> | null
 
 export const decodeToOneRelationship = (
   field: RelationshipField<ResourceFormatter, RelationshipFieldType.ToOne, any>,

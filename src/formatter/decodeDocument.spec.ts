@@ -1,6 +1,5 @@
-import { decodeDocument, DOCUMENT_CONTEXT_STORE } from './decodeDocument'
+import { decodeDocument } from './decodeDocument'
 import { formatterA } from '../../test/formatters'
-import { RESOURCE_CONTEXT_STORE } from './decodeResourceObject'
 
 type InvalidJSONAPIDocument = any
 
@@ -59,57 +58,9 @@ describe('decodeDocument', () => {
     })
   })
 
-  it('stores document meta/links if document has meta/links', () => {
-    const resource = decodeDocument([formatterA], {
-      data: {
-        type: 'a',
-        id: '<some-id>',
-        attributes: {
-          requiredString: 'foo',
-        },
-      },
-      meta: {
-        foo: 'baz',
-      },
-      links: {
-        self: 'foo',
-      },
-    })
-    expect(DOCUMENT_CONTEXT_STORE.get(resource as any)).toEqual({
-      meta: {
-        foo: 'baz',
-      },
-      links: {
-        self: 'foo',
-      },
-    })
-  })
+  it.todo('stores document meta/links if document has meta/links')
 
-  it('stores resource meta/links if document resource has meta/links', () => {
-    const resource = decodeDocument([formatterA], {
-      data: {
-        type: 'a',
-        id: '<some-id>',
-        attributes: {
-          requiredString: 'foo',
-        },
-        meta: {
-          foo: 'baz',
-        },
-        links: {
-          self: 'foo',
-        },
-      },
-    })
-    expect(RESOURCE_CONTEXT_STORE.get(resource as any)).toEqual({
-      meta: {
-        foo: 'baz',
-      },
-      links: {
-        self: 'foo',
-      },
-    })
-  })
+  it.todo('stores resource meta/links if document resource has meta/links')
 
   it('returns an of-many resource document if data is an array of valid resource objects', () => {
     expect(
