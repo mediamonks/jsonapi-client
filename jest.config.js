@@ -14,7 +14,7 @@ module.exports = {
   coveragePathIgnorePatterns: ['node_modules', 'dist'],
   globals: {
     'ts-jest': {
-      tsConfig: '<rootDir>/test/tsconfig.jest.json',
+      tsconfig: '<rootDir>/test/tsconfig.jest.json',
       isolatedModules: true,
     },
   },
