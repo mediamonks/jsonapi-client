@@ -10,11 +10,11 @@ module.exports = {
   transformIgnorePatterns: [
     'this-is-just-here-to-not-match-anything-and-make-sure-the-node-modules-are-not-ignored-in-the-transforms',
   ],
-  setupFiles: ['<rootDir>/test/setupJest.ts', '<rootDir>/test/fields.ts', '<rootDir>/test/formatters.ts'],
+  setupFiles: ['<rootDir>/test/setupJest.ts'],
+  coveragePathIgnorePatterns: ['node_modules', 'dist'],
   globals: {
     'ts-jest': {
       tsConfig: '<rootDir>/test/tsconfig.jest.json',
-      // babelConfig: true,
       isolatedModules: true,
     },
   },

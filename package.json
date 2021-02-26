@@ -9,7 +9,7 @@
     "start": "yarn && yarn watch",
     "watch": "tsc -w -d --skipLibCheck",
     "build": "rimraf dist && tsc -d --skipLibCheck",
-    "test": "NODE_ENV=development jest --no-cache --watch --coverage",
+    "test": "NODE_ENV=development jest",
     "test:ci": "NODE_ENV=development jest",
     "prepublishOnly": "yarn build"
   },
@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@types/jest": "^26.0.13",
+    "@types/node": "^14.14.31",
     "jest": "^26.4.2",
     "node-fetch": "^2.6.1",
     "prettier": "^2.0.5",

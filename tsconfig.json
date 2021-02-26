@@ -1,6 +1,6 @@
 {
-  "exclude": ["node_modules", "test", "examples"],
-  "include": ["src"],
+  "exclude": ["node_modules", "test", "examples", "**/*.spec.ts"],
+  "include": ["./src/**/*"],
   "compilerOptions": {
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -10,6 +10,7 @@
     "target": "ES2019",
     "module": "es6",
     "esModuleInterop": true,
+    "rootDir": "src",
     "outDir": "dist"
   }
 }
