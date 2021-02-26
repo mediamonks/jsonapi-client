@@ -39,7 +39,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     this.formatter = formatter
   }
 
-  createQuery<V extends ResourceFieldsQuery<U>, W extends ResourceIncludeQuery<U> | null = null>(
+  createFilter<V extends ResourceFieldsQuery<U>, W extends ResourceIncludeQuery<U> | null = null>(
     fields: V,
     include: W = null as W,
   ): { fields: V; include: W } {

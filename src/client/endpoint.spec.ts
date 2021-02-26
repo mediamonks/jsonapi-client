@@ -16,7 +16,7 @@ describe('Endpoint', () => {
     it.todo('throws an error if an invalid resource is retrieved')
   })
 
-  describe('createQuery', () => {
+  describe('createFilter', () => {
     const client = new Client(MOCK_URL)
     const endpoint = new Endpoint(client, 'path-a', formatterA)
 
@@ -32,12 +32,12 @@ describe('Endpoint', () => {
         },
       } as const
 
-      expect(endpoint.createQuery(filter.fields, filter.include)).toEqual(filter)
+      expect(endpoint.createFilter(filter.fields, filter.include)).toEqual(filter)
     })
 
     it('throws when an invalid filter is provided', () => {
       expect(() =>
-        endpoint.createQuery({
+        endpoint.createFilter({
           fields: {
             a: [],
           },
@@ -45,7 +45,7 @@ describe('Endpoint', () => {
       ).toThrow()
 
       expect(() =>
-        endpoint.createQuery({
+        endpoint.createFilter({
           fields: {
             a: ['does not exist'],
           },
@@ -53,7 +53,7 @@ describe('Endpoint', () => {
       ).toThrow()
 
       expect(() =>
-        endpoint.createQuery({
+        endpoint.createFilter({
           include: {
             doesNotExist: null,
           },
@@ -61,7 +61,7 @@ describe('Endpoint', () => {
       ).toThrow()
 
       expect(() =>
-        endpoint.createQuery({
+        endpoint.createFilter({
           include: true,
         } as any),
       ).toThrow()

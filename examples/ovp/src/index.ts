@@ -27,7 +27,7 @@ const client = new Client(url, {
 
 const eventEndpoint = client.endpoint('events', event)
 
-const eventFilter = eventEndpoint.createQuery(
+const eventFilter = eventEndpoint.createFilter(
   // @ts-ignore
   {
     [event.type]: ['externalId', 'stages'] as const,

@@ -13,10 +13,10 @@ JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe 
 - [x] CRUD operations on a relationship
 - [ ] Polymorphic relationships
 - [ ] Polymorphic endpoints
-- [] JSON:API document meta and links
-- [] Resource object meta and links
-- [] Resource relationship links
-- [] Resource identifier meta
+- [ ] JSON:API document meta and links
+- [ ] Resource object meta and links
+- [ ] Resource relationship links
+- [ ] Resource identifier meta
 
 ## Design Goals
 
@@ -41,34 +41,41 @@ JSON:API-Client is a JSON:API formatter and client in TypeScript with type safe 
 
 ## Define a JSON:API Resource
 
+A JSON:API resource is defined with ResourceFormatter, when a resource has a circular reference (i.e. a resource references itself directly or in one of its descendants) you will need to predefine the formatter type to prevent typescript going berserk. Because your model might change in the future it is recommended to always define your type to prevent seemingly random errors in the future.
+
+For example:
+
 ```typescript
-type UserType = 'User'
+type UserFormatter = ResourceFormatter<
+  'User',
+  {
+    emailAddress: Attribute.Required<string>
+    password: Attribute.RequiredWriteOnly<string>
+    userName: Attribute.RequiredStatic<string>
+    dateOfBirth: Attribute.Optional<string, Date>
+    role: Attribute.RequiredReadOnly<'admin' | 'editor' | 'subscriber'>
+    messages: Attribute.ToManyReadOnly<MessageResource>
+    friends: Relationship.ToMany<UserResource>
+  }
+>
 
-type UserFields = {
-  emailAddress: Attribute.Required<string>
-  password: Attribute.RequiredWriteOnly<string>
-  userName: Attribute.RequiredStatic<string>
-  dateOfBirth: Attribute.Optional<string, Date>
-  role: Attribute.RequiredReadOnly<'admin' | 'editor' | 'subscriber'>
-  messages: Attribute.ToManyReadOnly<MessageResource>
-  friends: Relationship.ToMany<UserResource>
-}
-
-type UserFormatter = ResourceFormatter<UserType, UserFields>
-
+// An attribute field can use a type formatter to (de)serialize its values, for example to
+// automatically convert an ISO8601 (date) string to a Date object back and forth.
 const dateStringFormatter = {
   serialize: (value: Date) => value.toISOString(),
   deserialize: (value: string) => new Date(value),
 }
 
-const isUserRole = either('admin', 'editor', 'subscriber')
+// Type is an included composable assertion library to check values against their desired types.
+const string = Type.is('a string', isString)
+const userRole = Type.either('admin', 'editor', 'subscriber')
 
-const user: UserFormatter = JSONAPI.resource('User', {
-  emailAddress: Attribute.required(isString),
-  password: Attribute.requiredWriteOnly(isString),
-  userName: Attribute.requiredStatic(isString),
-  dateOfBirth: Attribute.optional(isString, dateStringFormatter),
-  role: Attribute.requiredReadOnly(isUserRole),
+const userFormatter: UserFormatter = new ResourceFormatter('User', {
+  emailAddress: Attribute.required(string),
+  password: Attribute.requiredWriteOnly(string),
+  userName: Attribute.requiredStatic(string),
+  dateOfBirth: Attribute.optional(string, dateStringFormatter),
+  role: Attribute.requiredReadOnly(userRole),
   messages: Relationship.toMany(() => message),
   friends: Relationship.toMany(() => user),
 })
@@ -79,9 +86,7 @@ const user: UserFormatter = JSONAPI.resource('User', {
 ```typescript
 const url = new URL('https://example.com/api/')
 
-const client = JSONAPI.client(url, {
-  relationshipFieldData: RelationshipFieldData.ResourceIdentifiers,
-})
+const client = new Client(url)
 ```
 
 ## Create an Endpoint
@@ -101,8 +106,8 @@ const myFirstUser = {
   userName: 'jane',
 }
 
-userEndpoint.create(myFirstUser).then((oneUser) => {
-  console.log(oneUser.messages)
+userEndpoint.create(myFirstUser).then((user) => {
+  console.log(user.messages)
 })
 ```
 
@@ -119,14 +124,14 @@ userEndpoint.update('1', myFirstUserUpdate)
 ## Get a Single Resource Using a Filter
 
 ```typescript
-const userEmailFilter = User.filter({
+const userEmailFilter = user.createFilter({
   fields: {
     [user.type]: ['emailAddress', 'dateOfBirth'],
   },
 })
 
-userEndpoint.getOne('12', userEmailFilter).then((oneUser) => {
-  console.log(oneUser)
+userEndpoint.getOne('12', userEmailFilter).then((user) => {
+  console.log(user)
   /* Resource { 
     type: 'User', 
     id: string,
