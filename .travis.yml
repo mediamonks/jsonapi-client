@@ -21,6 +21,7 @@ deploy:
       node: "stable"
     skip_cleanup: true
   - provider: npm
+    tag: next
     edge: true
     email: "devmonk@mediamonks.com"
     api_key: $NPM_TOKEN
