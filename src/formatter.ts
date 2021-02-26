@@ -43,7 +43,7 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
   }
 
   createResourcePostDocument(
-    data: ResourceCreateData<this>,
+    data: ResourceCreateData<ResourceFormatter<T, U>>,
   ): { data: JSONAPIResourceCreateObject<ResourceFormatter<T, U>> } {
     return encodeResourceCreateData([this], data)
   }

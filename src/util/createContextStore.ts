@@ -7,7 +7,7 @@ import {
 } from '../types'
 import { ResourceIdentifier } from '../resource/identifier'
 
-type ContextKey = ResourceIdentifier | ReadonlyArray<ResourceIdentifier>
+type ContextKey = ResourceIdentifier<any> | ReadonlyArray<ResourceIdentifier<any>>
 
 type ContextData =
   | Pick<JSONAPIDocument, 'meta' | 'links'>
