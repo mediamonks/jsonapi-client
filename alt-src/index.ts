@@ -202,8 +202,6 @@ export interface ResourceFilterLimited<T extends ResourceFormatter<any, any>> {
   include?: ResourceIncludeFilter<T, any>
 }
 
-type Xo = ResourceFilterLimited<typeof event>['include']
-
 export namespace Attribute {
   export type Required<T extends AttributeValue, U = T> = AttributeField<
     U,
@@ -336,51 +334,6 @@ type BaseResourceFieldsFilterLimited<R extends ResourceFormatter<any, any>> = Re
 
 type ResourceFieldsFilterLimited<T extends ResourceFormatter<any, any>> = Intersect<BaseResourceFieldsFilterLimited<T>>
 
-type BaseReadableRelationshipFieldNames<T extends ResourceFormatter<any, any>, U extends string = any> = {
-  [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<
-    any, 
-    any, 
-    [ResourceFieldRule.Optional | ResourceFieldRule.Required, ResourceFieldRule, ResourceFieldRule]
-  > ? P extends U
-      ? P 
-      : never
-    : never
-}[keyof T['fields']]
-
-
-type ResourceIncludeFilterLimited<R extends ResourceFormatter<any, any>, T extends ResourceFieldsFilterLimited<R> = any> = null | {
-  [P in BaseReadableRelationshipFieldNames<R, R['type'] extends keyof T ? T[R['type']][number] : any>]?: 
-    R['fields'][P] extends RelationshipField<infer R, any, any>
-      ? boolean | {
-          [P in BaseReadableRelationshipFieldNames<R, R['type'] extends keyof T ? T[R['type']][number] : any>]?: 
-            R['fields'][P] extends RelationshipField<infer R, any, any>
-              ? boolean | {
-                  [P in BaseReadableRelationshipFieldNames<R, R['type'] extends keyof T ? T[R['type']][number] : any>]?: 
-                    R['fields'][P] extends RelationshipField<infer R, any, any>
-                      ? boolean | {
-                          [P in BaseReadableRelationshipFieldNames<R, R['type'] extends keyof T ? T[R['type']][number] : any>]?: 
-                            R['fields'][P] extends RelationshipField<infer R, any, any>
-                              ? boolean | {
-                                  [P in BaseReadableRelationshipFieldNames<R, R['type'] extends keyof T ? T[R['type']][number] : any>]?: 
-                                    R['fields'][P] extends RelationshipField<infer R, any, any>
-                                      ? boolean | {
-                                        [P in BaseReadableRelationshipFieldNames<R, R['type'] extends keyof T ? T[R['type']][number] : any>]?: 
-                                          R['fields'][P] extends RelationshipField<any, any, any>
-                                            ? boolean
-                                            : never
-                                      }
-                                      : never
-                                }
-                              : never
-                        }
-                      : never
-                }
-              : never
-        }
-      : never
-}
-
-
 type BaseResourceIncludeFilter<
   T extends ResourceFormatter<any, any>, 
   U extends ResourceFieldsFilterLimited<T>, 
@@ -420,18 +373,12 @@ type Z = FilteredResource<typeof event, {
 
 type Za = NonNullable<Z['discipline']>['tags'][number]
 
-type ReadableFieldRules = [ResourceFieldRule.Optional | ResourceFieldRule.Required, any, any]
-
-type ReadableResourceFields<T extends ResourceFormatter<any, any>> = {
-  [P in keyof T['fields']]: T['fields'][P] extends ResourceField<any, ReadableFieldRules> ? P : never
-}[keyof T['fields']]
-
 type BaseFilteredResource<
   T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsFilterLimited<T> | undefined,
   V
 > = { type: T['type']; id: string } & { 
-  [P in T['type'] extends keyof U ? U[T['type']][number] : ReadableResourceFields<T>]: 
+  [P in T['type'] extends keyof U ? U[T['type']][number] : ReadableResourceFieldNames<T>]: 
     T['fields'][P] extends AttributeField<infer R, any, [ResourceFieldRule.Optional, any, any]>
     ? R | null
     : T['fields'][P] extends AttributeField<infer R, any, [ResourceFieldRule.Required, any, any]>
@@ -457,7 +404,7 @@ type BaseFilteredResource<
       ? V[P] extends ResourceIncludeFilter<R, any>
         ? FilteredResource<R, { fields: U; include: V[P] }>
         : FilteredResource<R, { fields: U; include: null }>
-      : { type: 2 | R['type']; id: string }
+      : { type:  R['type']; id: string }
     : T['fields'][P] extends RelationshipField<
         infer R, 
         'to-many', 
@@ -467,7 +414,7 @@ type BaseFilteredResource<
       ? V[P] extends ResourceIncludeFilter<R, any>
         ? FilteredResource<R, { fields: U; include: V[P] }>
         : FilteredResource<R, { fields: U; include: null }>
-      : { type: 3 | R['type']; id: string }>
+      : { type: R['type']; id: string }>
     : never
 }
 
