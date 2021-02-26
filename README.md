@@ -70,14 +70,14 @@ const dateStringFormatter = {
 const string = Type.is('a string', isString)
 const userRole = Type.either('admin', 'editor', 'subscriber')
 
-const userFormatter: UserFormatter = new ResourceFormatter('User', {
+const user: UserFormatter = new ResourceFormatter('User', {
   emailAddress: Attribute.required(string),
   password: Attribute.requiredWriteOnly(string),
   userName: Attribute.requiredStatic(string),
   dateOfBirth: Attribute.optional(string, dateStringFormatter),
   role: Attribute.requiredReadOnly(userRole),
   messages: Relationship.toMany(() => message),
-  friends: Relationship.toMany(() => user),
+  friends: Relationship.toMany(() => user), // <- friends has a circular reference to user
 })
 ```
 
