@@ -1,5 +1,5 @@
 import 'regenerator-runtime/runtime'
-import { Client, ResourceFieldsQuery } from '../../../src'
+import { Client } from '../../../src'
 
 import {
   competitor,
