@@ -26,6 +26,5 @@ deploy:
     api_key: $NPM_TOKEN
     on:
       branch: next
-      tags: true
       node: "stable"
     skip_cleanup: true
