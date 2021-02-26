@@ -1810,9 +1810,9 @@ isexe@^2.0.0:
   integrity sha1-6PvzdNxVb/iUehDcsFctYz8s+hA=
 
 isntnt@^1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/isntnt/-/isntnt-1.4.0.tgz#12c555001bbb29e2acbbc3cf679678a2c4d8b547"
-  integrity sha512-otyFwzr4Gp9F56whAbUaHUW1aTH8+wl2b5gZ0PruAT1miIzlarZhdYfGy8dfo18zcmfNIH84CMEGQH1swUCTIQ==
+  version "1.4.5"
+  resolved "https://registry.yarnpkg.com/isntnt/-/isntnt-1.4.5.tgz#8ffb3654c1df6f98d6dc0660b117ad44bfa5f7c5"
+  integrity sha512-oJvZ+dv3GvZdVRROOFKdu3ovNCz35Eqz5QwM9Xcm3W5Z86FlrKTlf5kuFbeAqYXc7igXouEhB9ZQgLGYerwVFg==
 
 isobject@^2.0.0:
   version "2.1.0"
