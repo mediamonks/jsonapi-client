@@ -2,7 +2,6 @@ import {
   ResourceFields,
   ResourceId,
   ResourceType,
-  ResourceFilter,
   JSONAPIDocument,
   ResourceCreateData,
   JSONAPIResourceObject,
@@ -51,9 +50,9 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
 
   decode<V extends ResourceFilterLimited<this> = {}>(
     resourceDocument: JSONAPIDocument<this>,
-    resourceFilter: V = EMPTY_OBJECT,
+    filter: V = EMPTY_OBJECT,
   ): Resource<this, V> | ReadonlyArray<Resource<this, V>> {
-    return decodeDocument([this], resourceDocument, resourceFilter as any) as any
+    return decodeDocument([this], resourceDocument, filter as any) as any
   }
 
   createResourcePostDocument(

@@ -5,6 +5,7 @@ import {
   Intersect,
   Serializable,
   Predicate,
+  Nullable,
 } from 'isntnt'
 
 import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from './data/enum'
@@ -158,7 +159,7 @@ export type ResourceIncludeQuery<T extends ResourceFormatter = any> = {
   >
     ? never
     : T['fields'][P] extends RelationshipField<infer R, any, any>
-    ? ResourceIncludeQuery<R> | null
+    ? Nullable<ResourceIncludeQuery<R>>
     : never
 }
 
@@ -166,20 +167,6 @@ export type ResourceIncludeQuery<T extends ResourceFormatter = any> = {
 export type ResourceFields = {
   [name: string]: AttributeField<any, any, any> | RelationshipField<any, any, any>
 }
-
-// export type ResourceFieldValues<T extends ResourceFields> = {
-//   [P in keyof T]: ResourceFieldValue<T[P]>
-// }
-
-// type ResourceFieldValue<T extends ResourceField<any, any>> = T extends AttributeField<
-//   any,
-//   any,
-//   any
-// >
-//   ? AttributeFieldValue<T>
-//   : T extends RelationshipField<any, any, any>
-//   ? RelationshipFieldValue<T>
-//   : never
 
 export type ResourceFieldCreateValue<
   T extends ResourceField<any, any>
@@ -276,7 +263,7 @@ export type AttributeFieldPatchValue<
   T extends AttributeField<any, any, any>
 > = T extends AttributeField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional
-    ? R | null
+    ? Nullable<R>
     : S extends ResourceFieldFlag.PatchRequired
     ? R
     : never
@@ -347,7 +334,7 @@ export type ToOneRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional
-    ? ResourceIdentifier<R['type']> | null
+    ? Nullable<ResourceIdentifier<R['type']>>
     : S extends ResourceFieldFlag.PatchRequired
     ? ResourceIdentifier<R['type']>
     : never
@@ -357,7 +344,7 @@ export type ToManyRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
-    ? Array<ResourceIdentifier<R['type']>>
+    ? ReadonlyArray<ResourceIdentifier<R['type']>>
     : never
   : never
 
@@ -368,11 +355,9 @@ export type RelationshipFieldResourceFormatter<
 export type RelationshipFieldResourceIdentifier<
   T extends RelationshipField<any, any, any>
 > = T extends RelationshipField<infer R, any, any>
-  ?
-      | {
-          [P in R['type']]: ResourceIdentifier<P>
-        }[R['type']]
-      | null
+  ? Nullable<{
+      [P in R['type']]: ResourceIdentifier<P>
+    }[R['type']]>
   : never
 
 export type RelationshipFieldName<T extends ResourceFields> = {
@@ -509,8 +494,8 @@ export type JSONAPIResourceObjectAttributes<T extends ResourceFields = any> = {
 export type JSONAPIRelationshipData<
   T extends RelationshipField<any, any, any> = any
 > = T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
-  ? (RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }) | null
-  : Array<RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }>
+  ? Nullable<RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }>
+  : ReadonlyArray<RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }>
 
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-relationships|JSON:API Reference}
@@ -557,7 +542,7 @@ export type JSONAPILinksObject = {
  */
 export type JSONAPIPaginationLinks = JSONAPILinksObject &
   {
-    [P in 'first' | 'prev' | 'next' | 'last']?: JSONAPILink | null
+    [P in 'first' | 'prev' | 'next' | 'last']?: Nullable<JSONAPILink>
   }
 
 /**
@@ -702,9 +687,16 @@ type BaseResourceIncludeFilter<
     : never
 }
 
-export type ResourceIncludeFilter<T extends ResourceFormatter<any, any>, U extends ResourceFieldsFilterLimited<T> = any> = null | {
-  [P in T['type']]: BaseResourceIncludeFilter<Extract<T, { type: P }>, U, P extends keyof U ? U[P][number] : keyof T['fields']>
-}[T['type']]
+export type ResourceIncludeFilter<
+  T extends ResourceFormatter<any, any>, 
+  U extends ResourceFieldsFilterLimited<T> = any
+> = Nullable<{
+  [P in T['type']]: BaseResourceIncludeFilter<
+    Extract<T, { type: P }>, 
+    U, 
+    P extends keyof U ? U[P][number] : keyof T['fields']
+  >
+}[T['type']]>
 
 type BaseFilteredResource<
   T extends ResourceFormatter<any, any>,
@@ -713,7 +705,7 @@ type BaseFilteredResource<
 > = { type: T['type']; id: string } & { 
   [P in T['type'] extends keyof U ? U[T['type']][number] : ReadableResourceFieldNames<T>]: 
     T['fields'][P] extends AttributeField<infer R, any, ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired>
-    ? R | null
+    ? Nullable<R>
     : T['fields'][P] extends AttributeField<infer R, any, ReadableFieldFlag>
     ? R
     : T['fields'][P] extends RelationshipField<
@@ -721,13 +713,11 @@ type BaseFilteredResource<
         RelationshipFieldType.ToOne, 
         ResourceFieldFlag.GetOptional
       >
-    ? 
-      | (P extends keyof V 
-        ? V[P] extends ResourceIncludeFilter<R, any>
-          ? Resource<R, { fields: U; include: V[P] }>
-          : Resource<R, { fields: U; include: null }>
-        : { type: R['type']; id: string })
-      | null
+    ? Nullable<P extends keyof V 
+      ? V[P] extends ResourceIncludeFilter<R, any>
+        ? Resource<R, { fields: U; include: V[P] }>
+        : Resource<R, { fields: U; include: null }>
+      : { type: R['type']; id: string }>      
     : T['fields'][P] extends RelationshipField<
         infer R, 
         RelationshipFieldType.ToOne, 

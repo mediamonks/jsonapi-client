@@ -1,3 +1,4 @@
+import { Optional } from 'isntnt'
 import {
   RelationshipFieldType,
   ResourceFieldFlag,
@@ -51,12 +52,12 @@ export class RelationshipField<
   V extends ResourceFieldFlag
 > extends ResourceField<ResourceFieldRoot.Relationships, V> {
   relationshipType: U
-  getFormatter: () => T
+  getFormatters: () => ReadonlyArray<T>
 
-  constructor(flag: V, relationshipType: U, getFormatter: () => T) {
+  constructor(flag: V, relationshipType: U, getFormatters: () => T) {
     super(ResourceFieldRoot.Relationships, flag)
     this.relationshipType = relationshipType
-    this.getFormatter = getFormatter
+    this.getFormatters = () => [getFormatters()]
   }
 }
 

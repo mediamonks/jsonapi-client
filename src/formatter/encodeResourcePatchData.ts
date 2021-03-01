@@ -85,7 +85,7 @@ export const encodeResourcePatchData = <T extends ResourceFormatter>(
         }
       } else if (field.isRelationshipField()) {
         const relationships: Record<string, any> = (body.relationships ||= {})
-        const relationshipFormatter = field.getFormatter()
+        const relationshipFormatters = field.getFormatters()
         if (field.isToOneRelationshipField()) {
           if (isNull(value)) {
             relationships[fieldName] = { data: value }
@@ -100,12 +100,12 @@ export const encodeResourcePatchData = <T extends ResourceFormatter>(
                   ),
                 )
               })
-            } else if (relationshipFormatter.type !== value.type) {
+            } else if (!relationshipFormatters.some(formatter => formatter.type === value.type)) {
               relationships[fieldName] = { data: value }
               errors.push(
                 createValidationErrorObject(
                   ValidationErrorMessage.InvalidResourceType,
-                  `To-One relationship "${fieldName}" must be a resource identifier of type "${relationshipFormatter}"`,
+                  `To-One relationship "${fieldName}" must be a resource identifier of type "${relationshipFormatters}"`,
                   [fieldName],
                 ),
               )
@@ -125,7 +125,7 @@ export const encodeResourcePatchData = <T extends ResourceFormatter>(
               createValidationErrorObject(
                 ValidationErrorMessage.InvalidToManyRelationshipData,
                 onResourceOfTypeMessage(
-                  [relationshipFormatter],
+                  relationshipFormatters,
                   `To-Many relationship "${fieldName}" must be an Array`,
                 ),
                 [fieldName],
@@ -145,11 +145,11 @@ export const encodeResourcePatchData = <T extends ResourceFormatter>(
                     )
                   })
                   return item
-                } else if (relationshipFormatter.type !== item.type) {
+                } else if (!relationshipFormatters.some(formatter => formatter.type === item.type)) {
                   errors.push(
                     createValidationErrorObject(
                       ValidationErrorMessage.InvalidResourceType,
-                      resourceTypeNotFoundDetail([relationshipFormatter]),
+                      resourceTypeNotFoundDetail(relationshipFormatters),
                       [fieldName],
                     ),
                   )

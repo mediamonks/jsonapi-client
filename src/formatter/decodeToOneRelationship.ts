@@ -26,12 +26,12 @@ export const decodeToOneRelationship = (
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
 ): Validation<ToOneRelationshipData, ResourceValidationErrorObject> => {
-  const formatter = field.getFormatter()
+  const formatters = field.getFormatters()
   const { relationships = EMPTY_OBJECT } = resourceObject
   const { data } = relationships[fieldName] || EMPTY_OBJECT
 
   if (isSome(data)) {
-    const result = decodeResourceIdentifier([formatter], data as any, pointer.concat(fieldName))
+    const result = decodeResourceIdentifier(formatters, data as any, pointer.concat(fieldName))
     const [identifier, identifierErrors] = result
     if (
       identifierErrors.length === 0 &&

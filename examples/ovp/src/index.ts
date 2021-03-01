@@ -1,3 +1,4 @@
+import { Nullable } from 'isntnt'
 import 'regenerator-runtime/runtime'
 import { Client } from '../../../src'
 
@@ -97,15 +98,16 @@ eventEndpoint
   })
   .catch(console.dir)
 
-const eventFilterDiscipline = {
-  fields: {
-    [event.type]: ['stages'],
+const eventFilterDiscipline = event.createFilter(
+  {
+    [event.type]: ['stages', 'competitors', 'medals'],
     [stage.type]: ['phases', 'startDate', 'endDate'],
   },
-  include: {
+  {
     stages: null,
+    competitors: null,
   },
-} as const
+)
 
 eventEndpoint
   .getMany(null, eventFilterDiscipline)

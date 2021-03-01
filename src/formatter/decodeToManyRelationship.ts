@@ -53,14 +53,14 @@ export const decodeToManyRelationship = (
     ])
   }
 
-  const formatter = field.getFormatter()
+  const formatters = field.getFormatters()
   const errors: Array<ResourceValidationErrorObject> = []
   const result: Array<Resource<any> | ResourceIdentifier<any>> = []
 
   if (includeFilter && Object.hasOwnProperty.call(includeFilter, fieldName)) {
     data.forEach((item: any) => {
       const [identifier, identifierErrors] = decodeResourceIdentifier(
-        [formatter],
+        formatters,
         item,
         pointer.concat(fieldName),
       )
@@ -88,7 +88,7 @@ export const decodeToManyRelationship = (
 
   data.forEach((item: any) => {
     const [identifier, identifierErrors] = decodeResourceIdentifier(
-      [formatter],
+      formatters,
       item,
       pointer.concat(fieldName),
     )
