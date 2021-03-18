@@ -735,40 +735,30 @@ type BaseFilteredResource<
   V
 > = { type: T['type']; id: string } & { 
   [P in T['type'] extends keyof U ? U[T['type']][number] : ReadableResourceFieldNames<T>]: 
-    T['fields'][P] extends AttributeField<infer R, any, ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired>
-    ? Nullable<R>
-    : T['fields'][P] extends AttributeField<infer R, any, ReadableFieldFlag>
-    ? R
+    T['fields'][P] extends AttributeField<infer R, any, infer S>
+    ? R | (Extract<S, ResourceFieldFlag.GetRequired> extends never ? null : never)
     : T['fields'][P] extends RelationshipField<
         infer R, 
         RelationshipFieldType.ToOne, 
-        ResourceFieldFlag.GetOptional
+        infer S
       >
-    ? Nullable<P extends keyof V 
-      ? V[P] extends ResourceIncludeFilter<R, any>
-        ? Resource<R, { fields: U; include: V[P] }>
-        : Resource<R, { fields: U; include: null }>
-      : { type: R['type']; id: string }>      
-    : T['fields'][P] extends RelationshipField<
-        infer R, 
-        RelationshipFieldType.ToOne, 
-        ResourceFieldFlag.GetRequired
-      >
-    ? P extends keyof V 
-      ? V[P] extends ResourceIncludeFilter<R, any>
-        ? Resource<R, { fields: U; include: V[P] }>
-        : Resource<R, { fields: U; include: null }>
-      : { type:  R['type']; id: string }
+    ? | (P extends keyof V 
+        ? V[P] extends ResourceIncludeFilter<R, any>
+          ? Resource<R, { fields: U; include: V[P] }>
+          : Resource<R, { fields: U; include: null }>
+        : { type: R['type']; id: string }  ) 
+      | (Extract<S, ResourceFieldFlag.GetRequired> extends never ? null : never)    
     : T['fields'][P] extends RelationshipField<
         infer R, 
         RelationshipFieldType.ToMany, 
         any
       >
     ? ReadonlyArray<P extends keyof V 
-      ? V[P] extends ResourceIncludeFilter<R, any>
-        ? Resource<R, { fields: U; include: V[P] }>
-        : Resource<R, { fields: U; include: null }>
-      : { type: R['type']; id: string }>
+        ? V[P] extends ResourceIncludeFilter<R, any>
+          ? Resource<R, { fields: U; include: V[P] }>
+          : Resource<R, { fields: U; include: null }>
+        : { type: R['type']; id: string }
+      >
     : never
 }
 

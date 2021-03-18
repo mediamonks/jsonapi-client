@@ -130,7 +130,7 @@ const renderElement = (element: ViewElement<ViewType, Props>) => {
       } else {
         switch (name) {
           case 'ref':
-            ;(value as any).current = node
+            typeof value === 'function' ? value(node) : ((value as any).current = node)
             break
           case 'children':
             ;(value as Array<unknown>).forEach((child) => {
@@ -176,18 +176,3 @@ export interface Ref<T> {
 export const useRef = <T>(initialValue: T): Ref<T> => ({
   current: initialValue,
 })
-
-type InitialDispatch<T> = T extends Function ? () => T : T | (() => T)
-type Dispatch<T> = T extends Function ? (value: T) => T : T | ((value: T) => T)
-
-export const useState = <T>(initialValue: InitialDispatch<T>) => {
-  const value = typeof initialValue === 'function' ? initialValue() : initialValue
-  const state = [
-    value,
-    (dispatch: Dispatch<T>) => {
-      state[0] = typeof dispatch === 'function' ? (dispatch as any)(state[0]) : dispatch
-    },
-  ]
-
-  return state
-}
