@@ -2,7 +2,6 @@ import {
   ResourceFields,
   ResourceId,
   ResourceType,
-  JSONAPIDocument,
   ResourceCreateData,
   JSONAPIResourceObject,
   ResourcePatchData,
@@ -12,14 +11,13 @@ import {
   AttributeFieldName,
   ResourceFieldsFilterLimited,
   ResourceIncludeFilter,
-  ResourceFilterLimited,
-  Resource,
   JSONAPIMetaObject,
   JSONAPILinksObject,
+  WithMeta,
+  META_ACCESSOR,
+  LINKS_ACCESSOR,
 } from './types'
-import { EMPTY_OBJECT } from './data/constants'
 import { resourceType } from './util/validators'
-import { decodeDocument } from './formatter/decodeDocument'
 import { parseResourceFields } from './formatter/parseResourceFields'
 import { ResourceIdentifier } from './resource/identifier'
 import { encodeResourceCreateData } from './formatter/encodeResourceCreateData'
@@ -67,13 +65,6 @@ export class ResourceFormatter<
     }
   }
 
-  decode<V extends ResourceFilterLimited<this> = {}>(
-    resourceDocument: JSONAPIDocument<this>,
-    filter: V = EMPTY_OBJECT,
-  ): Resource<this, V> | ReadonlyArray<Resource<this, V>> {
-    return decodeDocument([this], resourceDocument, filter as any) as any
-  }
-
   createResourcePostDocument(
     data: ResourceCreateData<ResourceFormatter<T, U>>,
   ): { data: JSONAPIResourceCreateObject<ResourceFormatter<T, U>> } {
@@ -119,27 +110,19 @@ export class ResourceFormatter<
     return field
   }
 
-  hasMeta(resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>): boolean {
-    return this.meta.has(resource)
-  }
-
-  getMeta<W extends JSONAPIMetaObject = JSONAPIMetaObject>(
-    resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>,
-  ): W | null {
-    return (this.meta.get(resource) as any) || null
-  }
-
-  hasLinks(resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>): boolean {
-    return this.links.has(resource)
-  }
-
-  getLinks<W extends JSONAPILinksObject = JSONAPILinksObject>(
-    resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>,
-  ): W | null {
-    return (this.links.get(resource) as W) || null
-  }
-
   toString(): T {
     return this.type
   }
+}
+
+export const getDocumentMeta = <T extends JSONAPIMetaObject = JSONAPIMetaObject>(
+  data: WithMeta<any>,
+): T | null => {
+  return Object.hasOwnProperty.call(data, META_ACCESSOR) ? data[META_ACCESSOR] : null
+}
+
+export const getDocumentLinks = <T extends JSONAPILinksObject = JSONAPILinksObject>(
+  data: WithMeta<any>,
+): T | null => {
+  return Object.hasOwnProperty.call(data, LINKS_ACCESSOR) ? data[LINKS_ACCESSOR] : null
 }

@@ -11,6 +11,10 @@ import {
   ResourceFilterLimited,
   ResourceId,
   ResourceType,
+  META_ACCESSOR,
+  LINKS_ACCESSOR,
+  NaiveResource,
+  WithMeta,
 } from '../types'
 import { EMPTY_OBJECT } from '../data/constants'
 import { decodeResourceObject } from './decodeResourceObject'
@@ -20,11 +24,11 @@ import { jsonapiDocument } from '../util/validators'
 export type BaseIncludedResourceMap = Record<ResourceType, Map<ResourceId, Resource<any>>>
 
 /** @hidden */
-export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFilterLimited<T>>(
+export const decodeDocument = <T extends ResourceFormatter>(
   formatters: ReadonlyArray<T>,
   document: JSONAPIDocument<T>,
-  filter: U = EMPTY_OBJECT as U,
-): Resource<T, U> | ReadonlyArray<Resource<T, U>> => {
+  filter: ResourceFilterLimited<T> = EMPTY_OBJECT,
+): WithMeta<NaiveResource<T>> => {
   if (!jsonapiDocument.predicate(document)) {
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceDocument, document, [])
   }
@@ -37,11 +41,11 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     )
   }
 
-  const { included = [] } = document
+  const { included = [], meta = null, links = null } = document
   const baseIncludedResourceMap: BaseIncludedResourceMap = Object.create(null)
 
   if (isArray(document.data)) {
-    const data: Array<Resource<T, U>> = []
+    const data: Array<NaiveResource<T>> = []
     const errors: Array<ResourceValidationErrorObject> = []
 
     document.data.forEach((resource) => {
@@ -66,9 +70,20 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       )
     }
 
-    return data
+    return Object.defineProperties(data, {
+      [META_ACCESSOR]: {
+        enumerable: false,
+        writable: false,
+        value: document.meta || null,
+      },
+      [LINKS_ACCESSOR]: {
+        enumerable: false,
+        writable: false,
+        value: document.links || null,
+      },
+    })
   } else {
-    const [resource, errors] = decodeResourceObject(
+    const [data, errors] = decodeResourceObject(
       formatters,
       document.data,
       included,
@@ -86,6 +101,17 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       )
     }
 
-    return resource as any
+    return Object.defineProperties(data, {
+      [META_ACCESSOR]: {
+        enumerable: false,
+        writable: false,
+        value: document.meta || null,
+      },
+      [LINKS_ACCESSOR]: {
+        enumerable: false,
+        writable: false,
+        value: document.links || null,
+      },
+    })
   }
 }

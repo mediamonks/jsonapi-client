@@ -14,6 +14,8 @@ import {
   RelationshipFieldNameWithFlag,
   RelationshipPatchData,
   ResourceFilterLimited,
+  JSONAPIMetaObject,
+  WithMeta,
 } from '../types'
 import { createURL } from '../util/url'
 import { Client } from '../client'
@@ -27,6 +29,9 @@ import { DecodeEvent, EventEmitter } from '../event/EventEmitter'
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extends EventEmitter<
   DecodeEvent<U>
 > {
+  private readonly meta = new WeakMap<object, JSONAPIMetaObject | null>()
+  private readonly links = new WeakMap<object, JSONAPIMetaObject | null>()
+
   readonly client: T
   readonly path: ResourcePath
   readonly formatter: U
@@ -42,9 +47,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
    * Create a resource
    * @param data The data for the resource you want to create, resource id is optional
    */
-  async create(data: ResourceCreateData<U>): Promise<Resource<U, {}>> {
+  async create(values: ResourceCreateData<U>): Promise<WithMeta<Resource<U, {}>>> {
     const url = createURL(this.client.url, [this.path])
-    const body = encodeResourceCreateData([this.formatter], data)
+    const body = encodeResourceCreateData([this.formatter], values)
     const document = await this.client.request(url, JSONAPIRequestMethod.Post, body)
 
     if (!document) {
@@ -163,21 +168,19 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   async getOne<V extends ResourceFilterLimited<U>>(
     id: ResourceId,
     filter: V = EMPTY_OBJECT as V,
-  ): Promise<Resource<U, V>> {
+  ): Promise<WithMeta<Resource<U, V>>> {
     const url = createURL(this.client.url, [this.path, id], filter as any)
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-
-    return decodeDocument([this.formatter], document, filter as any) as any
+    return decodeDocument([this.formatter], document, filter) as any
   }
 
   async getMany<V extends ResourceFilterLimited<U>>(
     searchParams: JSONAPISearchParams | null = null,
     filter: V = EMPTY_OBJECT,
-  ): Promise<ReadonlyArray<Resource<U, V>>> {
+  ): Promise<WithMeta<ReadonlyArray<Resource<U, V>>>> {
     const url = createURL(this.client.url, [this.path], filter as any, searchParams || EMPTY_OBJECT)
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-
-    return decodeDocument([this.formatter], document, filter as any) as any
+    return decodeDocument([this.formatter], document, filter) as any
   }
 
   getToOne<
@@ -187,8 +190,8 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
     id: ResourceId,
     fieldName: V,
     filter: W = EMPTY_OBJECT as W,
-  ): Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> {
-    return this.toOne(fieldName, filter as any)(id) as any
+  ): Promise<WithMeta<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> {
+    return this.toOne(fieldName, filter)(id)
   }
 
   getToMany<
@@ -199,8 +202,10 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
     fieldName: V,
     filter: W = EMPTY_OBJECT as W,
     searchParams: JSONAPISearchParams | null = null,
-  ): Promise<ReadonlyArray<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> {
-    return this.toMany(fieldName, filter as any)(id, searchParams) as any
+  ): Promise<
+    WithMeta<ReadonlyArray<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>>
+  > {
+    return this.toMany(fieldName, filter)(id, searchParams)
   }
 
   one<V extends ResourceFilterLimited<U> = {}>(filter: V = EMPTY_OBJECT as V) {
@@ -219,15 +224,16 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   >(
     fieldName: V,
     filter: W = EMPTY_OBJECT as W,
-  ): (id: ResourceId) => Promise<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>> {
+  ): (
+    id: ResourceId,
+  ) => Promise<WithMeta<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> {
     const fieldFormatters = this.formatter.getRelationshipField(fieldName as any).getFormatters()
     const fieldPath = this.toRelationshipFieldPath(fieldName)
 
     return async (id: ResourceId) => {
       const url = createURL(this.client.url, [this.path, id, fieldPath], filter as any)
       const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-
-      return decodeDocument(fieldFormatters, document, filter as any) as any
+      return decodeDocument(fieldFormatters, document, filter) as any
     }
   }
 
@@ -240,7 +246,9 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   ): (
     id: ResourceId,
     searchParams: JSONAPISearchParams | null,
-  ) => Promise<ReadonlyArray<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>> {
+  ) => Promise<
+    WithMeta<ReadonlyArray<Resource<RelationshipFieldResourceFormatter<U['fields'][V]>, W>>>
+  > {
     const fieldFormatters = this.formatter.getRelationshipField(fieldName as any).getFormatters()
     const fieldPath = this.toRelationshipFieldPath(fieldName)
 
@@ -253,8 +261,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
       )
 
       const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-
-      return decodeDocument(fieldFormatters, document, filter as any) as any
+      return decodeDocument(fieldFormatters, document, filter) as any
     }
   }
 

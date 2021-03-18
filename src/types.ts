@@ -762,6 +762,14 @@ type BaseFilteredResource<
     : never
 }
 
+export const LINKS_ACCESSOR = Symbol.for('Links')
+export const META_ACCESSOR = Symbol.for('Meta')
+
+export type WithMeta<T extends NaiveResource<any> | ReadonlyArray<NaiveResource<any>>> = T & {
+  [META_ACCESSOR]: JSONAPIMetaObject | null
+  [LINKS_ACCESSOR]: JSONAPILinksObject | null
+}
+
 export type Resource<
   T extends ResourceFormatter<any, any>, 
   U extends ResourceFilterLimited<T> = {}

@@ -1,13 +1,13 @@
 import { ErrorMessage, ValidationErrorMessage, ResourceFieldFlag } from '../data/enum'
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../error'
 import {
-  Resource as FilteredResource,
   JSONAPIResourceObject,
   ResourceFieldsQuery,
   ResourceIncludeQuery,
   ResourceFields,
   ResourceFieldName,
   ResourceId,
+  NaiveResource,
 } from '../types'
 import { resourceTypeNotFoundDetail } from '../util/formatting'
 import { failure, success, Validation } from '../util/validation'
@@ -31,15 +31,15 @@ import { cloneResource, createBaseResource } from '../util/resource'
  * @param includeFilter
  * @param pointer
  */
-export const decodeResourceObject = (
-  formatters: ReadonlyArray<ResourceFormatter>,
+export const decodeResourceObject = <T extends ResourceFormatter>(
+  formatters: ReadonlyArray<T>,
   resource: JSONAPIResourceObject,
   included: ReadonlyArray<JSONAPIResourceObject>,
   baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<ResourceFieldName | ResourceId>,
-): Validation<FilteredResource<any>, ResourceValidationErrorObject> => {
+): Validation<NaiveResource<T>, ResourceValidationErrorObject> => {
   if (!resourceObject.predicate(resource)) {
     return failure(
       resourceObject
@@ -79,7 +79,7 @@ export const decodeResourceObject = (
 
   if (!includedBaseResource) {
     resourceFieldNames.forEach((fieldName) => {
-      const field: ResourceFields[any] = formatter.getField(fieldName)
+      const field: ResourceFields[any] = formatter.getField(fieldName as any)
       if (field.matches(ResourceFieldFlag.GetForbidden)) {
         throw new TypeError(ErrorMessage.ResourceFieldNotAllowed)
       } else if (field.isAttributeField()) {
@@ -114,7 +114,7 @@ export const decodeResourceObject = (
   const data = cloneResource(baseResource)
 
   Object.keys(includeFilter || EMPTY_OBJECT).forEach((fieldName) => {
-    const relationshipField: RelationshipField<any, any, any> = formatter.getRelationshipField(fieldName)
+    const relationshipField: RelationshipField<any, any, any> = formatter.getRelationshipField(fieldName as any)
     const [value, validationErrors] = decodeRelationship(
       relationshipField,
       fieldName,

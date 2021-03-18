@@ -1,5 +1,11 @@
 import 'regenerator-runtime/runtime'
-import { AbsolutePathRoot, Client, RelationshipFieldData, Resource } from '../../../src'
+import {
+  AbsolutePathRoot,
+  Client,
+  RelationshipFieldData,
+  getDocumentMeta,
+  getDocumentLinks,
+} from '../../../src'
 import { book } from './resources'
 import { createElement, render, useRef } from './view'
 
@@ -12,9 +18,6 @@ const client = new Client(url, {
 
 book.addEventListener('decode-base-resource', (event) => {
   console.log('book decode', event.value)
-
-  const meta = book.getMeta<{ test: 1 }>(event.value)
-  console.log({ meta })
 })
 
 const booksFilter = book.createFilter(
@@ -51,7 +54,10 @@ const App = () => {
       fetchBooksButtonRef.current.disabled = true
       try {
         const books = await booksEndpoint.getMany(null, booksFilter)
-        console.log({ books })
+        const meta = getDocumentMeta(books)
+        const links = getDocumentLinks(books)
+
+        console.log({ books, links, meta })
       } catch (error) {
         console.log(error)
       }
