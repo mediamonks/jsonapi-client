@@ -80,6 +80,37 @@ export type ResourcePatchData<T extends ResourceFormatter> = T extends ResourceF
   [P in R]: BaseResourcePatchData<Extract<T, { type: P }>>
 }[R] :  never
 
+type BaseNaiveIncludedResource<T extends ResourceFormatter> = ResourceIdentifier<T['type']> & {
+  [P in ResourceFieldNameWithFlag<T['fields'], ReadableFieldFlag>]?: T['fields'][P] extends AttributeField<infer R, any, any>
+    ? R
+    : T['fields'][P] extends RelationshipField<infer R, infer S, any>
+    ? S extends 'to-one' 
+      ? Nullable<ResourceIdentifier<R['type']>> 
+      : ReadonlyArray<ResourceIdentifier<R['type']>>
+    : never
+}
+
+export type NaiveIncludedResource<T extends ResourceFormatter> = {
+  [P in T['type']]: BaseNaiveIncludedResource<Extract<T, { type: P }>>
+}[T['type']]
+
+type BaseNaiveResource<T extends ResourceFormatter<any, any>> = {
+  type: T['type']
+  id: ResourceId
+} & {
+  [P in ResourceFieldNameWithFlag<T['fields'], ReadableFieldFlag>]?: T['fields'][P] extends AttributeField<infer R, any, any>
+    ? R
+    : T['fields'][P] extends RelationshipField<infer R, infer S, any>
+    ? S extends 'to-one' 
+      ? Nullable<ResourceIdentifier<R['type']>> | Nullable<NaiveResource<R>>
+      : ReadonlyArray<ResourceIdentifier<R['type']>> | ReadonlyArray<NaiveResource<R>>
+    : never
+}
+
+export type NaiveResource<T extends ResourceFormatter<any, any>> = {
+  [P in T['type']]: BaseNaiveResource<Extract<T, { type: P }>>
+}[T['type']]
+
 //
 export type ExperimentalResourceQuery<
   T extends ResourceFormatter,

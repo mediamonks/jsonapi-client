@@ -4,6 +4,7 @@ import { resourceIdentifier } from '../util/validators'
 import { ResourceIdentifier } from '../resource/identifier'
 import { failure, success, Validation } from '../util/validation'
 import type { ResourceFormatter } from '../formatter'
+import { DecodeResourceIdentifierEvent } from '../event/EventEmitter'
 
 /**
  * Returns a Result with a ResourceIdentifier if `value` is a valid resource identifer for any of the `formatters`
@@ -15,10 +16,10 @@ import type { ResourceFormatter } from '../formatter'
  */
 export const decodeResourceIdentifier = (
   formatters: ReadonlyArray<ResourceFormatter>,
-  identifier: ResourceIdentifier<any>,
+  value: ResourceIdentifier<any>,
   pointer: ReadonlyArray<string>,
 ): Validation<ResourceIdentifier<any>, ResourceValidationErrorObject> => {
-  const validationErrors = resourceIdentifier.validate(identifier)
+  const validationErrors = resourceIdentifier.validate(value)
 
   if (validationErrors.length) {
     return failure(
@@ -32,7 +33,8 @@ export const decodeResourceIdentifier = (
     )
   }
 
-  if (!formatters.some((formatter) => formatter.type === (identifier as any).type)) {
+  const formatter = formatters.find((formatter) => formatter.type === value.type)
+  if (!formatter) {
     return failure([
       createValidationErrorObject(
         ValidationErrorMessage.InvalidResourceType,
@@ -42,5 +44,8 @@ export const decodeResourceIdentifier = (
     ])
   }
 
-  return success(new ResourceIdentifier(identifier.type, identifier.id))
+  const identifier = formatter.identifier(value.id)
+  ;(formatter as any).emit(new DecodeResourceIdentifierEvent(identifier))
+
+  return success(identifier)
 }

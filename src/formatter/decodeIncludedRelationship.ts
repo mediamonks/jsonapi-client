@@ -12,12 +12,14 @@ import { RelationshipField } from '../resource/field/relationship'
 import { ResourceIdentifier } from '../resource/identifier'
 import { decodeResourceObject } from './decodeResourceObject'
 import { failure, Validation } from '../util/validation'
+import { BaseIncludedResourceMap } from './decodeDocument'
 
 export const decodeIncludedRelationship = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
   resourceIdentifier: ResourceIdentifier<any>,
   included: ReadonlyArray<JSONAPIResourceObject>,
+  baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any>,
   pointer: ReadonlyArray<string>,
@@ -42,6 +44,7 @@ export const decodeIncludedRelationship = (
     formatters,
     includedResourceObject,
     included,
+    baseIncludedResourceMap,
     fieldsFilter,
     childIncludeFilter as any,
     pointer,

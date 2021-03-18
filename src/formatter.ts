@@ -14,6 +14,8 @@ import {
   ResourceIncludeFilter,
   ResourceFilterLimited,
   Resource,
+  JSONAPIMetaObject,
+  JSONAPILinksObject,
 } from './types'
 import { EMPTY_OBJECT } from './data/constants'
 import { resourceType } from './util/validators'
@@ -24,12 +26,29 @@ import { encodeResourceCreateData } from './formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from './formatter/encodeResourcePatchData'
 import { onResourceOfTypeMessage } from './util/formatting'
 import { parseResourceFilter } from './formatter/parseResourceFilter'
+import {
+  DecodeBaseResourceEvent,
+  DecodeResourceEvent,
+  DecodeResourceIdentifierEvent,
+  EventEmitter,
+} from './event/EventEmitter'
 
-export class ResourceFormatter<T extends ResourceType = any, U extends ResourceFields = any> {
+type ResourceFormatterEvent<T extends ResourceFormatter> =
+  | DecodeResourceIdentifierEvent<T>
+  | DecodeBaseResourceEvent<T>
+  | DecodeResourceEvent<T>
+
+export class ResourceFormatter<
+  T extends ResourceType = any,
+  U extends ResourceFields = any
+> extends EventEmitter<ResourceFormatterEvent<ResourceFormatter<T, U>>> {
   readonly type: T
   readonly fields: U
+  private readonly meta: WeakMap<object, JSONAPIMetaObject> = new WeakMap()
+  private readonly links: WeakMap<object, JSONAPILinksObject> = new WeakMap()
 
   constructor(type: T, fields: U) {
+    super()
     this.type = resourceType.parse(type) as T
     this.fields = parseResourceFields(fields)
   }
@@ -98,6 +117,26 @@ export class ResourceFormatter<T extends ResourceType = any, U extends ResourceF
       )
     }
     return field
+  }
+
+  hasMeta(resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>): boolean {
+    return this.meta.has(resource)
+  }
+
+  getMeta<W extends JSONAPIMetaObject = JSONAPIMetaObject>(
+    resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>,
+  ): W | null {
+    return (this.meta.get(resource) as any) || null
+  }
+
+  hasLinks(resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>): boolean {
+    return this.links.has(resource)
+  }
+
+  getLinks<W extends JSONAPILinksObject = JSONAPILinksObject>(
+    resource: ResourceIdentifier<T> | ReadonlyArray<ResourceIdentifier<T>>,
+  ): W | null {
+    return (this.links.get(resource) as W) || null
   }
 
   toString(): T {

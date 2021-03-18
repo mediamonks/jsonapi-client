@@ -33,6 +33,7 @@ describe('decodeToManyRelationship', () => {
         },
       ],
       {},
+      {},
       {
         toManyA: null,
       },
@@ -75,6 +76,7 @@ describe('decodeToManyRelationship', () => {
       [],
       {},
       {},
+      {},
       [],
     )
 
@@ -98,6 +100,7 @@ describe('decodeToManyRelationship', () => {
         id: 'foo-id',
       },
       [],
+      {},
       {},
       {},
       ['baz'],
@@ -128,6 +131,7 @@ describe('decodeToManyRelationship', () => {
         },
       },
       [],
+      {},
       {},
       {},
       ['baz'],
@@ -172,6 +176,7 @@ describe('decodeToManyRelationship', () => {
         },
       ],
       {},
+      {},
       {
         toManyA: null,
       },
@@ -208,6 +213,7 @@ describe('decodeToManyRelationship', () => {
         },
       },
       [], // invalid, missing included resource
+      {},
       {},
       {
         toManyA: null,

@@ -6,6 +6,8 @@ import {
   ResourceFieldsQuery,
   ResourceIncludeQuery,
   Resource,
+  ResourceFieldName,
+  ResourceId,
 } from '../types'
 import { EMPTY_OBJECT } from '../data/constants'
 import { RelationshipField } from '../resource/field/relationship'
@@ -14,6 +16,7 @@ import { decodeIncludedRelationship } from './decodeIncludedRelationship'
 import { decodeResourceIdentifier } from './decodeResourceIdentifier'
 import { failure, success, validation, Validation } from '../util/validation'
 import type { ResourceFormatter } from '../formatter'
+import { BaseIncludedResourceMap } from './decodeDocument'
 
 export type ToManyRelationshipData =
   | ReadonlyArray<Resource<any>>
@@ -24,6 +27,7 @@ export const decodeToManyRelationship = (
   fieldName: string,
   resourceObject: JSONAPIResourceObject<any>,
   included: ReadonlyArray<JSONAPIResourceObject>,
+  baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
   pointer: ReadonlyArray<string>,
@@ -71,6 +75,7 @@ export const decodeToManyRelationship = (
           fieldName,
           identifier,
           included,
+          baseIncludedResourceMap,
           fieldsFilter,
           includeFilter,
           pointer.concat(fieldName),
@@ -101,6 +106,59 @@ export const decodeToManyRelationship = (
     }
 
     return result
+  })
+
+  return validation(result, errors)
+}
+
+export const decodeToManyRelationshipValue = (
+  field: RelationshipField<any, any, any>,
+  fieldName: ResourceFieldName,
+  resourceObject: JSONAPIResourceObject<any>,
+  pointer: ReadonlyArray<ResourceFieldName | ResourceId>,
+): Validation<ToManyRelationshipData, ResourceValidationErrorObject> => {
+  const { relationships = EMPTY_OBJECT } = resourceObject
+  const { data } = relationships[fieldName] || EMPTY_OBJECT
+
+  if (isUndefined(data)) {
+    return field.matches(ResourceFieldFlag.GetOptional)
+      ? success([])
+      : failure([
+          createValidationErrorObject(
+            ValidationErrorMessage.MissingRequiredField,
+            `To-Many relationship "${fieldName}" on resource of type "${resourceObject.type}" is required`,
+            pointer.concat(fieldName),
+          ),
+        ])
+  }
+
+  if (!isArray(data)) {
+    return failure([
+      createValidationErrorObject(
+        ValidationErrorMessage.InvalidToManyRelationshipData,
+        `To-Many relationship "${fieldName}" on resource of type "${resourceObject.type}" must be an Array`,
+        pointer.concat(fieldName),
+      ),
+    ])
+  }
+
+  const formatters = field.getFormatters()
+  const errors: Array<ResourceValidationErrorObject> = []
+  const result: Array<Resource<any> | ResourceIdentifier<any>> = []
+
+  data.forEach((item: any) => {
+    const [identifier, validationErrors] = decodeResourceIdentifier(
+      formatters,
+      item,
+      pointer.concat(fieldName),
+    )
+
+    if (!validationErrors.length) {
+      result.push(identifier)
+    } else {
+      result.push(item)
+      validationErrors.forEach((error) => errors.push(error))
+    }
   })
 
   return validation(result, errors)

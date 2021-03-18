@@ -22,13 +22,17 @@ import { decodeDocument } from '../formatter/decodeDocument'
 import { encodeResourceCreateData } from '../formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from '../formatter/encodeResourcePatchData'
 import { RelationshipField } from '../resource/field/relationship'
+import { DecodeEvent, EventEmitter } from '../event/EventEmitter'
 
-export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
+export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extends EventEmitter<
+  DecodeEvent<U>
+> {
   readonly client: T
   readonly path: ResourcePath
   readonly formatter: U
 
   constructor(client: T, path: ResourcePath, formatter: U) {
+    super()
     this.client = client
     this.path = path
     this.formatter = formatter
@@ -171,7 +175,6 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> {
     filter: V = EMPTY_OBJECT,
   ): Promise<ReadonlyArray<Resource<U, V>>> {
     const url = createURL(this.client.url, [this.path], filter as any, searchParams || EMPTY_OBJECT)
-
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
 
     return decodeDocument([this.formatter], document, filter as any) as any

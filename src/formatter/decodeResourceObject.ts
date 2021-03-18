@@ -1,18 +1,25 @@
 import { ErrorMessage, ValidationErrorMessage, ResourceFieldFlag } from '../data/enum'
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../error'
 import {
-  Resource,
+  Resource as FilteredResource,
   JSONAPIResourceObject,
   ResourceFieldsQuery,
   ResourceIncludeQuery,
   ResourceFields,
+  ResourceFieldName,
+  ResourceId,
 } from '../types'
 import { resourceTypeNotFoundDetail } from '../util/formatting'
 import { failure, success, Validation } from '../util/validation'
 import { resourceObject } from '../util/validators'
 import { decodeAttribute } from './decodeAttribute'
-import { decodeRelationship } from './decodeRelationship'
+import { decodeRelationship, decodeRelationshipValue } from './decodeRelationship'
 import type { ResourceFormatter } from '../formatter'
+import { BaseIncludedResourceMap } from './decodeDocument'
+import { RelationshipField } from '../resource/field/relationship'
+import { EMPTY_OBJECT } from '../data/constants'
+import { DecodeBaseResourceEvent, DecodeResourceEvent } from '../event/EventEmitter'
+import { cloneResource, createBaseResource } from '../util/resource'
 
 /**
  *
@@ -28,10 +35,11 @@ export const decodeResourceObject = (
   formatters: ReadonlyArray<ResourceFormatter>,
   resource: JSONAPIResourceObject,
   included: ReadonlyArray<JSONAPIResourceObject>,
+  baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
-  pointer: ReadonlyArray<string>,
-): Validation<Resource<any>, ResourceValidationErrorObject> => {
+  pointer: ReadonlyArray<ResourceFieldName | ResourceId>,
+): Validation<FilteredResource<any>, ResourceValidationErrorObject> => {
   if (!resourceObject.predicate(resource)) {
     return failure(
       resourceObject
@@ -65,44 +73,67 @@ export const decodeResourceObject = (
         )
 
   const errors: Array<ResourceValidationErrorObject> = []
-  const data: Resource<any, any> = {
-    type: resource.type,
-    id: resource.id,
-  }
+  const includedBaseMapOfType = baseIncludedResourceMap[resource.type] ||= new Map()
+  const includedBaseResource = includedBaseMapOfType.get(resource.id)
+  const baseResource = includedBaseResource || createBaseResource(resource.type, resource.id) as any
 
-  resourceFieldNames.forEach((fieldName) => {
-    const field: ResourceFields[any] = formatter.getField(fieldName)
-    if (field.matches(ResourceFieldFlag.GetForbidden)) {
-      throw new TypeError(ErrorMessage.ResourceFieldNotAllowed)
-    } else {
-      if (field.isAttributeField()) {
+  if (!includedBaseResource) {
+    resourceFieldNames.forEach((fieldName) => {
+      const field: ResourceFields[any] = formatter.getField(fieldName)
+      if (field.matches(ResourceFieldFlag.GetForbidden)) {
+        throw new TypeError(ErrorMessage.ResourceFieldNotAllowed)
+      } else if (field.isAttributeField()) {
         const [value, validationErrors] = decodeAttribute(
           field,
           fieldName,
           resource,
           pointer.concat(fieldName),
         )
-        data[fieldName as keyof typeof data] = value
+        baseResource[fieldName] = value
         validationErrors.forEach((error) => errors.push(error))
-      } else if (field.isRelationshipField()) {
-        const [value, validationErrors] = decodeRelationship(
+      } else {
+        const [value, validationErrors] = decodeRelationshipValue(
           field,
           fieldName,
           resource,
-          included,
-          fieldsFilter,
-          includeFilter,
-          pointer.concat([fieldName]),
+          pointer.concat(fieldName),
         )
-        data[fieldName as keyof typeof data] = value
+        baseResource[fieldName] = value
         validationErrors.forEach((error) => errors.push(error))
       }
-    }
-  })
+    })
+  }
 
   if (errors.length) {
     return failure(errors)
   }
+  
+  includedBaseMapOfType.set(baseResource.id, baseResource)
+  ;(formatter as any).emit(new DecodeBaseResourceEvent(baseResource))
+
+  const data = cloneResource(baseResource)
+
+  Object.keys(includeFilter || EMPTY_OBJECT).forEach((fieldName) => {
+    const relationshipField: RelationshipField<any, any, any> = formatter.getRelationshipField(fieldName)
+    const [value, validationErrors] = decodeRelationship(
+      relationshipField,
+      fieldName,
+      resource,
+      included,
+      baseIncludedResourceMap,
+      fieldsFilter,
+      includeFilter,
+      pointer.concat([fieldName]),
+    )
+    data[fieldName] = value
+    validationErrors.forEach((error) => errors.push(error))
+  })   
+
+  if (errors.length) {
+    return failure(errors)
+  }
+  
+  ;(formatter as any).emit(new DecodeResourceEvent(data))
 
   return success(data)
 }

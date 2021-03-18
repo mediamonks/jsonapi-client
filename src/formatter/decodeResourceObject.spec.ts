@@ -7,7 +7,7 @@ import { decodeResourceObject } from './decodeResourceObject'
 
 describe('decodeRelationship', () => {
   it('returns a validation array', () => {
-    const validation = decodeResourceObject([formatterA], {} as any, [], {}, {}, [])
+    const validation = decodeResourceObject([formatterA], {} as any, [], {}, {}, {}, [])
     const [value, errors] = validation
 
     expect(validation).toBeInstanceOf(Array)
@@ -26,6 +26,7 @@ describe('decodeRelationship', () => {
         },
       },
       [],
+      {},
       {},
       {},
       [],
@@ -55,6 +56,7 @@ describe('decodeRelationship', () => {
       [],
       {},
       {},
+      {},
       [],
     )
     expect(value).toBe(null)
@@ -62,7 +64,7 @@ describe('decodeRelationship', () => {
   })
 
   it('returns a failure validation when a resource object is not valid', () => {
-    const [value, errors] = decodeResourceObject([formatterA], null as any, [], {}, {}, [])
+    const [value, errors] = decodeResourceObject([formatterA], null as any, [], {}, {}, {}, [])
     expect(value).toBe(null)
     expect(errors.length > 0).toBe(true)
   })
@@ -79,6 +81,7 @@ describe('decodeRelationship', () => {
           },
         },
         [],
+        {},
         {
           a: ['non_existing_field'],
         },
@@ -109,6 +112,7 @@ describe('decodeRelationship', () => {
           },
         },
         [],
+        {},
         {
           a: ['writeOnly'],
         },

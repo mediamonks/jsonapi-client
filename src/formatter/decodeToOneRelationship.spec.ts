@@ -31,6 +31,7 @@ describe('decodeToOneRelationship', () => {
         },
       ],
       {},
+      {},
       {
         toOneA: null,
       },
@@ -61,6 +62,7 @@ describe('decodeToOneRelationship', () => {
       [],
       {},
       {},
+      {},
       ['baz'],
     )
 
@@ -89,6 +91,7 @@ describe('decodeToOneRelationship', () => {
         },
       },
       [],
+      {},
       {},
       {},
       ['baz'],
@@ -131,6 +134,7 @@ describe('decodeToOneRelationship', () => {
         },
       ],
       {},
+      {},
       {
         toOneA: null,
       },
@@ -165,6 +169,7 @@ describe('decodeToOneRelationship', () => {
         },
       },
       [], // invalid, missing included resource
+      {},
       {},
       {
         toOneA: null,

@@ -5,11 +5,19 @@ import {
   ResourceValidationErrorObject,
   ResourceValidationError,
 } from '../error'
-import { JSONAPIDocument, Resource, ResourceFilterLimited } from '../types'
+import {
+  JSONAPIDocument,
+  Resource,
+  ResourceFilterLimited,
+  ResourceId,
+  ResourceType,
+} from '../types'
 import { EMPTY_OBJECT } from '../data/constants'
 import { decodeResourceObject } from './decodeResourceObject'
 import type { ResourceFormatter } from '../formatter'
 import { jsonapiDocument } from '../util/validators'
+
+export type BaseIncludedResourceMap = Record<ResourceType, Map<ResourceId, Resource<any>>>
 
 /** @hidden */
 export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFilterLimited<T>>(
@@ -29,7 +37,8 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
     )
   }
 
-  const included = (document.included || []).concat(document.data) as Array<any>
+  const { included = [] } = document
+  const baseIncludedResourceMap: BaseIncludedResourceMap = Object.create(null)
 
   if (isArray(document.data)) {
     const data: Array<Resource<T, U>> = []
@@ -40,6 +49,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
         formatters,
         resource,
         included,
+        baseIncludedResourceMap,
         filter.fields || (EMPTY_OBJECT as any),
         filter.include || (EMPTY_OBJECT as any),
         [],
@@ -62,6 +72,7 @@ export const decodeDocument = <T extends ResourceFormatter, U extends ResourceFi
       formatters,
       document.data,
       included,
+      baseIncludedResourceMap,
       filter.fields || (EMPTY_OBJECT as any),
       filter.include || (EMPTY_OBJECT as any),
       [],
