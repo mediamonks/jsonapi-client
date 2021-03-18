@@ -13,9 +13,6 @@
     "test:ci": "NODE_ENV=development jest",
     "prepublishOnly": "yarn build"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "private": false,
   "bugs": {
     "url": "https://github.com/mediamonks/jsonapi-client/issues"
