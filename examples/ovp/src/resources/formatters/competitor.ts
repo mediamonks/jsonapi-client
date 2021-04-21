@@ -14,7 +14,7 @@ import { ResultResource, result } from './result'
 import { StageResource, stage } from './stage'
 import { tag, TagResource } from './tag'
 
-export type CompetitorResource = ResourceFormatter<
+export type CompetitorFormatter = ResourceFormatter<
   'Competitor',
   {
     externalId: Attribute.Required<string>
@@ -31,7 +31,11 @@ export type CompetitorResource = ResourceFormatter<
   }
 >
 
+<<<<<<< HEAD
 export const competitor: CompetitorResource = new ResourceFormatter('Competitor', {
+=======
+export const competitor: CompetitorFormatter = jsonapi.formatter('Competitor', {
+>>>>>>> a8d05a3... Upgrade isntnt
   externalId: Attribute.required(string),
   order: Attribute.optional(number),
   extendedInfo: Attribute.optional(competitorExtendedInfo),
