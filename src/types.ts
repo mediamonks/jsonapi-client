@@ -632,7 +632,10 @@ type BaseSearchParams = {
   [name: string]: SearchParamValue
 } & JSONAPIPageParam &
   JSONAPISortParam &
-  JSONAPIFilterParam
+  JSONAPIFilterParam & {
+    fields?: never
+    include?: never
+  }
 
 /**
  * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
