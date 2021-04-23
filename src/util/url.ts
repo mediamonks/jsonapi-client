@@ -1,14 +1,4 @@
-import {
-  isArray,
-  isObject,
-  isSome,
-  or,
-  isSerializableNumber,
-  and,
-  isString,
-  isBoolean,
-  isTrue,
-} from 'isntnt'
+import { isArray, isObject, isSome, or, isSerializableNumber, and, isString, isTrue } from 'isntnt'
 import { Endpoint } from '../client/endpoint'
 
 import { EMPTY_ARRAY, EMPTY_OBJECT } from '../data/constants'
@@ -114,11 +104,11 @@ export const parseSearchParam = (
 export const parseIncludeParam = (
   value: ResourceIncludeQuery,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value), ',') : []
+  isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value)) : []
 
 /** @hidden */
 export const parseSortParam = (value: JSONAPISortParamValue): ReadonlyArray<URLSearchParamEntry> =>
-  isArray(value) ? parseArrayParam('sort', value, ',') : []
+  isArray(value) ? parseArrayParam('sort', value) : []
 
 /** @hidden */
 export const parseObjectParam = (name: string, value: object): ReadonlyArray<URLSearchParamEntry> =>
@@ -137,11 +127,8 @@ export const parsePrimitiveParam = (
 export const parseArrayParam = (
   name: string,
   value: ReadonlyArray<string | number>,
-  delimiter?: string,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isString(delimiter)
-    ? parsePrimitiveParam(name, value.filter(isPrimitiveParameterValue).join(delimiter))
-    : value.filter(isPrimitiveParameterValue).map((value) => [name, String(value)])
+  parsePrimitiveParam(name, value.filter(isPrimitiveParameterValue).join(','))
 
 /** @hidden */
 export const parseIncludeParamValue = (
