@@ -1,4 +1,5 @@
 import { isArray, isObject, isSome, or, isSerializableNumber, and, isString } from 'isntnt'
+import { Endpoint } from '../client/endpoint'
 
 import { EMPTY_ARRAY, EMPTY_OBJECT } from '../data/constants'
 import {
@@ -6,7 +7,7 @@ import {
   JSONAPISearchParams,
   ResourceIncludeQuery,
   ResourceQueryParams,
-  JSONAPISortParams,
+  JSONAPISortParamValue,
 } from '../types'
 
 type URLSearchParamEntry = [string, string]
@@ -18,56 +19,71 @@ const isPrimitiveParameterValue = or(
 
 /** @hidden */
 export const createURL = (
-  baseUrl: URL,
-  path: ReadonlyArray<string>,
-  resourceQuery: ResourceFilter<any> = EMPTY_OBJECT,
-  searchQuery: JSONAPISearchParams = EMPTY_OBJECT,
+  endpoint: Endpoint<any, any>,
+  path: ReadonlyArray<string> = EMPTY_ARRAY,
+  resourceFilter: ResourceFilter<any> = EMPTY_OBJECT,
+  searchParams: JSONAPISearchParams = EMPTY_OBJECT,
 ): URL =>
-  parseSearchParams({ ...searchQuery, ...resourceQuery }).reduce((url, [name, value]) => {
+  parseSearchParams(resourceFilter, searchParams).reduce((url, [name, value]) => {
     url.searchParams.append(name, value)
     return url
-  }, urlWithPath(baseUrl, path))
+  }, urlWithPath(endpoint.client.url, [endpoint.path, ...path]))
 
 /** @hidden */
 export const urlWithPath = (url: URL, path: ReadonlyArray<string>): URL => {
-  const hasTrailingSlash = url.pathname.endsWith('/')
+  const preserveTrailingSlash = url.pathname.endsWith('/')
   return new URL(
-    `${url.origin}${url.pathname}${(hasTrailingSlash ? path.concat('') : [''].concat(path)).join(
-      '/',
-    )}${url.search}`,
+    `${url.origin}${url.pathname}${(preserveTrailingSlash
+      ? path.concat('')
+      : [''].concat(path)
+    ).join('/')}${url.search}`,
   )
 }
 
+const searchParamEntryComparator = (
+  [aName]: URLSearchParamEntry,
+  [bName]: URLSearchParamEntry,
+): number => (aName === bName ? 0 : aName > bName ? 1 : -1)
+
 /** @hidden */
 export const parseSearchParams = (
-  params: JSONAPISearchParams & ResourceQueryParams,
-): ReadonlyArray<URLSearchParamEntry> =>
-  Object.keys(params)
-    .reduce((parameterEntries, name) => {
-      const value = params[name as keyof typeof params]
-      switch (name) {
-        case 'include': {
-          return parameterEntries.concat(parseIncludeParam(value as any))
+  resourceFilter: ResourceQueryParams,
+  searchParams: JSONAPISearchParams,
+): ReadonlyArray<URLSearchParamEntry> => {
+  return [
+    ...Object.entries(resourceFilter)
+      .reduce((searchParamEntries, [name, value]) => {
+        switch (name) {
+          case 'include':
+            return searchParamEntries.concat(parseIncludeParam(value as any))
+          case 'fields':
+            return searchParamEntries.concat(parseSearchParam(name, value))
+          default:
+            throw new TypeError(`Invalid resourceFilter field, "${name}" is not allowed`)
         }
-        case 'sort': {
-          return parameterEntries.concat(parseSortParam(value as any))
+      }, [] as Array<URLSearchParamEntry>)
+      .sort(searchParamEntryComparator),
+    ...Object.entries(searchParams)
+      .reduce((searchParamEntries, [name, value]) => {
+        switch (name) {
+          case 'fields':
+          case 'include':
+            throw new TypeError(
+              `Invalid searchParam name, "${name}" is reserved for resource params`,
+            )
+          case 'include':
+            return searchParamEntries.concat(parseIncludeParam(value as any))
+          case 'sort':
+            return searchParamEntries.concat(parseSortParam(value as any))
+          case 'page':
+            return searchParamEntries.concat(parseSearchParam(name, value))
+          default:
+            return searchParamEntries.concat(parseSearchParam(name, value))
         }
-        case 'page': {
-          return parameterEntries.concat(parseSearchParam(name, value))
-        }
-        default:
-          return parameterEntries.concat(parseSearchParam(name, value))
-      }
-    }, [] as Array<URLSearchParamEntry>)
-    .sort(([aName, aValue], [bName, bValue]) => {
-      if (aName === bName) {
-        if (aValue === bValue) {
-          return 0
-        }
-        return aValue > bValue ? 1 : -1
-      }
-      return aName > bName ? 1 : -1
-    })
+      }, [] as Array<URLSearchParamEntry>)
+      .sort(searchParamEntryComparator),
+  ]
+}
 
 /** @hidden */
 export const parseSearchParam = (
@@ -87,11 +103,11 @@ export const parseSearchParam = (
 export const parseIncludeParam = (
   value: ResourceIncludeQuery,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value)) : []
+  isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value), ',') : []
 
 /** @hidden */
-export const parseSortParam = (value: JSONAPISortParams): ReadonlyArray<URLSearchParamEntry> =>
-  isArray(value) ? parseArrayParam('sort', value) : []
+export const parseSortParam = (value: JSONAPISortParamValue): ReadonlyArray<URLSearchParamEntry> =>
+  isArray(value) ? parseArrayParam('sort', value, ',') : []
 
 /** @hidden */
 export const parseObjectParam = (name: string, value: object): ReadonlyArray<URLSearchParamEntry> =>
@@ -110,8 +126,11 @@ export const parsePrimitiveParam = (
 export const parseArrayParam = (
   name: string,
   value: ReadonlyArray<string | number>,
+  delimiter?: string,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  parsePrimitiveParam(name, value.filter(isPrimitiveParameterValue).join(','))
+  isString(delimiter)
+    ? parsePrimitiveParam(name, value.filter(isPrimitiveParameterValue).join(delimiter))
+    : value.filter(isPrimitiveParameterValue).map((value) => [name, String(value)])
 
 /** @hidden */
 export const parseIncludeParamValue = (

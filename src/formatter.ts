@@ -30,6 +30,7 @@ import {
   DecodeResourceIdentifierEvent,
   EventEmitter,
 } from './event/EventEmitter'
+import { Nullable } from 'isntnt'
 
 type ResourceFormatterEvent<T extends ResourceFormatter> =
   | DecodeResourceIdentifierEvent<T>
@@ -117,12 +118,12 @@ export class ResourceFormatter<
 
 export const getDocumentMeta = <T extends JSONAPIMetaObject = JSONAPIMetaObject>(
   data: WithMeta<any>,
-): T | null => {
+): Nullable<Partial<T>> => {
   return Object.hasOwnProperty.call(data, META_ACCESSOR) ? data[META_ACCESSOR] : null
 }
 
 export const getDocumentLinks = <T extends JSONAPILinksObject = JSONAPILinksObject>(
   data: WithMeta<any>,
-): T | null => {
+): Nullable<Partial<T>> => {
   return Object.hasOwnProperty.call(data, LINKS_ACCESSOR) ? data[LINKS_ACCESSOR] : null
 }

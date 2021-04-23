@@ -1,4 +1,3 @@
-import { Nullable } from 'isntnt'
 import 'regenerator-runtime/runtime'
 import { Client } from '../../../src'
 
@@ -110,7 +109,12 @@ const eventFilterDiscipline = event.createFilter(
 )
 
 eventEndpoint
-  .getMany(null, eventFilterDiscipline)
+  .getMany(
+    {
+      test: 1,
+    },
+    eventFilterDiscipline,
+  )
   .then((events) => {
     console.log(events[1].stages)
   })

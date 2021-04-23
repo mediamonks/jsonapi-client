@@ -80,7 +80,7 @@ export class Client<T extends Partial<ClientSetup>> {
     ) as any
   }
 
-  private async beforeRequest(
+  protected async beforeRequest(
     initialUrl: URL,
     method: JSONAPIRequestMethod,
     body?: SerializableObject,
@@ -116,7 +116,7 @@ export class Client<T extends Partial<ClientSetup>> {
     )
   }
 
-  private async afterRequest(
+  protected async afterRequest(
     response: Response,
     request: Request,
   ): Promise<JSONAPIDocument<any> | null> {

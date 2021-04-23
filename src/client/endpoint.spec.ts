@@ -349,7 +349,7 @@ describe('Endpoint', () => {
       const client = new Client(MOCK_URL)
       const endpoint = client.endpoint('path-a', formatterA)
 
-      expect(() => endpoint.toMany('invalidFieldName' as any)).toThrow()
+      expect(() => endpoint.toMany('invalidFieldName' as never)).toThrow()
     })
   })
 

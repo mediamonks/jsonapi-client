@@ -6,6 +6,7 @@ import {
   Serializable,
   Predicate,
   Nullable,
+  Maybe,
 } from 'isntnt'
 
 import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from './data/enum'
@@ -17,8 +18,7 @@ import { ResourceIdentifier } from './resource/identifier'
 
 // Util
 
-/** @hidden */
-export type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
+type NonEmptyReadonlyArray<T> = ReadonlyArray<T> & { 0: T }
 
 /** @hidden */
 export type ReadonlyRecord<K extends keyof any, T> = {
@@ -31,12 +31,7 @@ export type ResourceId = string
 
 export type ResourcePath = string
 
-export type ResourceFieldName<T extends ResourceFormatter = any> = Extract<
-  keyof T['fields'],
-  string
->
-
-export type ResourceIdentifierKey = keyof ResourceIdentifier<any>
+export type ResourceIdentifierKey = 'type' | 'id'
 
 type BaseResourceCreateData<T extends ResourceFormatter> = {
   type: T['type']
@@ -67,28 +62,37 @@ type BaseResourcePatchData<T extends ResourceFormatter> = {
   type: T['type']
   id: ResourceId
 } & Pick<
-    {
-      [P in keyof T['fields']]?: ResourceFieldPatchValue<T['fields'][P]>
-    },
-    ResourceFieldNameWithFlag<
-      T['fields'],
-      ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
-    >
+  {
+    [P in keyof T['fields']]?: ResourceFieldPatchValue<T['fields'][P]>
+  },
+  ResourceFieldNameWithFlag<
+    T['fields'],
+    ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
   >
+>
 
-export type ResourcePatchData<T extends ResourceFormatter> = T extends ResourceFormatter<infer R, any> ? {
-  [P in R]: BaseResourcePatchData<Extract<T, { type: P }>>
-}[R] :  never
+export type ResourcePatchData<T extends ResourceFormatter> = T extends ResourceFormatter<
+  infer R,
+  any
+>
+  ? {
+      [P in R]: BaseResourcePatchData<Extract<T, { type: P }>>
+    }[R]
+  : never
 
-type BaseNaiveIncludedResource<T extends ResourceFormatter> = ResourceIdentifier<T['type']> & {
-  [P in ResourceFieldNameWithFlag<T['fields'], ReadableFieldFlag>]?: T['fields'][P] extends AttributeField<infer R, any, any>
-    ? R
-    : T['fields'][P] extends RelationshipField<infer R, infer S, any>
-    ? S extends 'to-one' 
-      ? Nullable<ResourceIdentifier<R['type']>> 
-      : ReadonlyArray<ResourceIdentifier<R['type']>>
-    : never
-}
+type BaseNaiveIncludedResource<T extends ResourceFormatter> = ResourceIdentifier<T['type']> &
+  {
+    [P in ResourceFieldNameWithFlag<
+      T['fields'],
+      ReadableFieldFlag
+    >]?: T['fields'][P] extends AttributeField<infer R, any, any>
+      ? R
+      : T['fields'][P] extends RelationshipField<infer R, infer S, any>
+      ? S extends 'to-one'
+        ? Nullable<ResourceIdentifier<R['type']>>
+        : ReadonlyArray<ResourceIdentifier<R['type']>>
+      : never
+  }
 
 export type NaiveIncludedResource<T extends ResourceFormatter> = {
   [P in T['type']]: BaseNaiveIncludedResource<Extract<T, { type: P }>>
@@ -98,10 +102,13 @@ type BaseNaiveResource<T extends ResourceFormatter<any, any>> = {
   type: T['type']
   id: ResourceId
 } & {
-  [P in ResourceFieldNameWithFlag<T['fields'], ReadableFieldFlag>]?: T['fields'][P] extends AttributeField<infer R, any, any>
+  [P in ResourceFieldNameWithFlag<
+    T['fields'],
+    ReadableFieldFlag
+  >]?: T['fields'][P] extends AttributeField<infer R, any, any>
     ? R
     : T['fields'][P] extends RelationshipField<infer R, infer S, any>
-    ? S extends 'to-one' 
+    ? S extends 'to-one'
       ? Nullable<ResourceIdentifier<R['type']>> | Nullable<NaiveResource<R>>
       : ReadonlyArray<ResourceIdentifier<R['type']>> | ReadonlyArray<NaiveResource<R>>
     : never
@@ -195,9 +202,10 @@ export type ResourceIncludeQuery<T extends ResourceFormatter = any> = {
 }
 
 // Fields
-export type ResourceFields = {
-  [name: string]: AttributeField<any, any, any> | RelationshipField<any, any, any>
-}
+export type ResourceFields = Record<
+  string,
+  AttributeField<any, any, any> | RelationshipField<any, any, any>
+>
 
 export type ResourceFieldCreateValue<
   T extends ResourceField<any, any>
@@ -225,7 +233,11 @@ export type ResourceFieldNameWithFlag<
   string
 >
 
-export type ResourceFieldFactoryRules = [get: ResourceFieldRule, post: ResourceFieldRule, patch:ResourceFieldRule]
+export type ResourceFieldFactoryRules = [
+  get: ResourceFieldRule,
+  post: ResourceFieldRule,
+  patch: ResourceFieldRule,
+]
 
 export type ResourceFieldGetMask =
   | ResourceFieldFlag.GetForbidden
@@ -300,14 +312,14 @@ export type AttributeFieldPatchValue<
     : never
   : never
 
-export type AttributeFieldName<T extends ResourceFields> = {
+export type AttributeFieldName<T extends ResourceFormatter<any, any>> = {
   [P in keyof T]: T[P] extends AttributeField<any, any, any> ? P : never
 }[keyof T]
 
 export type AttributeFieldNameWithFlag<
-  T extends ResourceFields,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldFlag
-> = ResourceFieldNameWithFlag<Pick<T, AttributeFieldName<T>>, U>
+> = ResourceFieldNameWithFlag<Pick<T['fields'], AttributeFieldName<T>>, U>
 
 export type AttributeFieldFactory = (
   type: AttributeFieldValidator<any>,
@@ -386,45 +398,47 @@ export type RelationshipFieldResourceFormatter<
 export type RelationshipFieldResourceIdentifier<
   T extends RelationshipField<any, any, any>
 > = T extends RelationshipField<infer R, any, any>
-  ? Nullable<{
-      [P in R['type']]: ResourceIdentifier<P>
-    }[R['type']]>
+  ? Nullable<
+      {
+        [P in R['type']]: ResourceIdentifier<P>
+      }[R['type']]
+    >
   : never
 
-export type RelationshipFieldName<T extends ResourceFields> = {
-  [P in keyof T]: T[P] extends RelationshipField<any, any, any> ? P : never
-}[keyof T]
+export type RelationshipFieldName<T extends ResourceFormatter<any, any>> = {
+  [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<any, any, any> ? P : never
+}[keyof T['fields']]
 
 export type RelationshipFieldNameWithFlag<
-  T extends ResourceFields,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldFlag
-> = ResourceFieldNameWithFlag<Pick<T, RelationshipFieldName<T>>, U>
+> = ResourceFieldNameWithFlag<Pick<T['fields'], RelationshipFieldName<T>>, U>
 
-export type ToOneRelationshipFieldNames<T extends ResourceFields> = {
-  [P in keyof T]: T[P] extends RelationshipField<any, infer R, any>
+export type ToOneRelationshipFieldName<T extends ResourceFormatter<any, any>> = {
+  [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<any, infer R, any>
     ? R extends RelationshipFieldType.ToOne
       ? P
       : never
     : never
-}[keyof T]
+}[keyof T['fields']]
 
 export type ToOneRelationshipFieldNameWithFlag<
-  T extends ResourceFields,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldFlag = any
-> = ResourceFieldNameWithFlag<Pick<T, ToOneRelationshipFieldNames<T>>, U>
+> = ResourceFieldNameWithFlag<Pick<T['fields'], ToOneRelationshipFieldName<T>>, U>
 
-export type ToManyRelationshipFieldName<T extends ResourceFields> = {
-  [P in keyof T]: T[P] extends RelationshipField<any, infer R, any>
+export type ToManyRelationshipFieldName<T extends ResourceFormatter<any, any>> = {
+  [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<any, infer R, any>
     ? R extends RelationshipFieldType.ToMany
       ? P
       : never
     : never
-}[keyof T]
+}[keyof T['fields']]
 
 export type ToManyRelationshipFieldNameWithFlag<
-  T extends ResourceFields,
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldFlag
-> = ResourceFieldNameWithFlag<Pick<T, ToManyRelationshipFieldName<T>>, U>
+> = ResourceFieldNameWithFlag<Pick<T['fields'], ToManyRelationshipFieldName<T>>, U>
 
 export type RelationshipFieldFactory = (
   getFormatter: () => ResourceFormatter,
@@ -466,16 +480,16 @@ export type JSONAPIDocument<T extends ResourceFormatter = any> =
   | JSONAPISuccessDocument<T>
   | JSONAPIFailureDocument
 
-export type JSONAPISuccessOfManyDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument<
-  JSONAPIPaginationLinks
-> & {
+export type JSONAPISuccessOfManyDocument<
+  T extends ResourceFormatter = any
+> = BaseJSONAPIDocument<JSONAPIPaginationLinks> & {
   data: Array<JSONAPIResourceObject<T>>
   included?: Array<JSONAPIResourceObject<ResourceRelatedResources<T>>>
 }
 
-export type JSONAPISuccessOfOneDocument<T extends ResourceFormatter = any> = BaseJSONAPIDocument<
-  JSONAPILinksObject
-> & {
+export type JSONAPISuccessOfOneDocument<
+  T extends ResourceFormatter = any
+> = BaseJSONAPIDocument<JSONAPILinksObject> & {
   data: JSONAPIResourceObject<T>
   included?: Array<JSONAPIResourceObject<ResourceRelatedResources<T>>>
 }
@@ -515,7 +529,7 @@ export type JSONAPIResourceCreateObject<T extends ResourceFormatter = any> = {
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-attributes|JSON:API Reference}
  */
-export type JSONAPIResourceObjectAttributes<T extends ResourceFields = any> = {
+export type JSONAPIResourceObjectAttributes<T extends ResourceFormatter<any, any> = any> = {
   [P in AttributeFieldName<T>]?: RawAttributeFieldValue<T[P]>
 }
 
@@ -531,7 +545,7 @@ export type JSONAPIRelationshipData<
 /**
  * {@link https://jsonapi.org/format/#document-resource-object-relationships|JSON:API Reference}
  */
-export type JSONAPIResourceObjectRelationships<T extends ResourceFields = any> = {
+export type JSONAPIResourceObjectRelationships<T extends ResourceFormatter<any, any> = any> = {
   [P in RelationshipFieldName<T>]?: {
     data?: JSONAPIRelationshipData<T[P]>
     links?: JSONAPIResourceLinks
@@ -607,157 +621,192 @@ export type JSONAPIErrorObject = {
   }
 }
 
+export type GenericSearchParamValue = Maybe<string | number | ReadonlyArray<Maybe<string | number>>>
+
+type BaseJSONAPISearchParams = JSONAPIPageParam &
+  JSONAPISortParam &
+  JSONAPIFilterParam & {
+    [name: string]: GenericSearchParamValue
+  }
+
 /**
  * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
  */
-export type JSONAPISearchParams = {
-  page?: JSONAPIPageParams
-  sort?: JSONAPISortParams
-  filter?: JSONAPIFilterParams
-}
+export type JSONAPISearchParams<T extends BaseJSONAPISearchParams = BaseJSONAPISearchParams> = T
+
+export type JSONAPIPageParamValue = Maybe<string | number> | Record<string, string | number>
 
 /**
  * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
  */
-export type JSONAPIPageParams =
-  | string
-  | number
-  | {
-      [name: string]: string | number | JSONAPIPageParams
-    }
+export interface JSONAPIPageParam<T extends JSONAPIPageParamValue = JSONAPIPageParamValue> {
+  page?: T
+}
+
+export type JSONAPISortParamValue = ReadonlyArray<string>
 
 /**
  * {@link https://jsonapi.org/format/#fetching-sorting|JSON:API Reference}
  */
-export type JSONAPISortParams = ReadonlyArray<string>
+export interface JSONAPISortParam {
+  sort?: ReadonlyArray<string>
+}
+
+export type JSONAPIFilterParamValue = Maybe<string> | Record<string, Serializable>
 
 /**
  * {@link https://jsonapi.org/format/#fetching-filtering|JSON:API Reference}
  */
-export type JSONAPIFilterParams =
-  | string
-  | {
-      [name: string]: Serializable
-    }
-
+export interface JSONAPIFilterParam<T extends JSONAPIFilterParamValue = JSONAPIFilterParamValue> {
+  filter?: T
+}
 
 // Experimental
 type ReadableFieldFlag = ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
 
-type BaseResourceFieldNamesWithFlag<
+type BaseResourceFieldNameOfFlag<
   T extends ResourceFormatter<any, any>,
   U extends ResourceFieldFlag
 > = {
-  [P in keyof T['fields']]: T['fields'][P] extends ResourceField<any, infer R> 
-    ? R extends U 
+  [P in keyof T['fields']]: T['fields'][P] extends ResourceField<any, infer R>
+    ? R extends U
       ? P
       : never
     : never
 }[keyof T['fields']]
 
-export type ResourceFieldNames<
-  T extends ResourceFormatter<any, any>,
-  U extends ResourceFieldFlag = never
-> =  U extends never
-  ? keyof T['fields']
-  : {
-      [P in T['type']]: BaseResourceFieldNamesWithFlag<Extract<T, { type: P }>, U>
-    }[T['type']]
+export type ResourceFieldName<
+  T extends ResourceFormatter<any, any> = any,
+  U extends ResourceFieldFlag = any
+> = Extract<
+  {
+    [P in T['type']]: BaseResourceFieldNameOfFlag<Extract<T, { type: P }>, U>
+  }[T['type']],
+  string
+>
 
-export type ReadableResourceFieldNames<T extends ResourceFormatter<any, any>> = ResourceFieldNames<
+export type ReadableResourceFieldName<T extends ResourceFormatter<any, any>> = ResourceFieldName<
   T,
   ReadableFieldFlag
 >
 
-type ResourceFieldsFilterValue<T extends ResourceFormatter<any, any>> = { 
-  [P in T['type']]?: ReadonlyArray<ReadableResourceFieldNames<T>> 
+type ResourceFieldsFilterValue<T extends ResourceFormatter<any, any>> = {
+  [P in T['type']]?: ReadonlyArray<ReadableResourceFieldName<T>>
 }
 
-type BaseResourceFieldsFilterLimited<R extends ResourceFormatter<any, any>> = ResourceFieldsFilterValue<R> | {
-  [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
-    ? ResourceFieldsFilterValue<R> | {
-        [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
-          ? ResourceFieldsFilterValue<R> | {
-            [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
-              ? ResourceFieldsFilterValue<R> | {
-                [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
-                  ? ResourceFieldsFilterValue<R> | {
-                    [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
-                      ? ResourceFieldsFilterValue<R> | {
-                        [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
-                          ? ResourceFieldsFilterValue<R>
-                          : never
+type BaseResourceFieldsFilterLimited<R extends ResourceFormatter<any, any>> =
+  | ResourceFieldsFilterValue<R>
+  | {
+      [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<infer R, any, any>
+        ?
+            | ResourceFieldsFilterValue<R>
+            | {
+                [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<
+                  infer R,
+                  any,
+                  any
+                >
+                  ?
+                      | ResourceFieldsFilterValue<R>
+                      | {
+                          [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<
+                            infer R,
+                            any,
+                            any
+                          >
+                            ?
+                                | ResourceFieldsFilterValue<R>
+                                | {
+                                    [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<
+                                      infer R,
+                                      any,
+                                      any
+                                    >
+                                      ?
+                                          | ResourceFieldsFilterValue<R>
+                                          | {
+                                              [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<
+                                                infer R,
+                                                any,
+                                                any
+                                              >
+                                                ?
+                                                    | ResourceFieldsFilterValue<R>
+                                                    | {
+                                                        [P in keyof R['fields']]: R['fields'][P] extends RelationshipField<
+                                                          infer R,
+                                                          any,
+                                                          any
+                                                        >
+                                                          ? ResourceFieldsFilterValue<R>
+                                                          : never
+                                                      }[keyof R['fields']]
+                                                : never
+                                            }[keyof R['fields']]
+                                      : never
+                                  }[keyof R['fields']]
+                            : never
                         }[keyof R['fields']]
-                      : never
-                    }[keyof R['fields']]
                   : never
-                }[keyof R['fields']]
-              : never
-            }[keyof R['fields']]
-          : never
-      }[keyof R['fields']]
-    : never
-}[keyof R['fields']]
+              }[keyof R['fields']]
+        : never
+    }[keyof R['fields']]
 
-export type ResourceFieldsFilterLimited<T extends ResourceFormatter<any, any>> = Intersect<BaseResourceFieldsFilterLimited<T>>
+export type ResourceFieldsFilterLimited<T extends ResourceFormatter<any, any>> = Intersect<
+  BaseResourceFieldsFilterLimited<T>
+>
 
 type BaseResourceIncludeFilter<
-  T extends ResourceFormatter<any, any>, 
-  U extends ResourceFieldsFilterLimited<T>, 
+  T extends ResourceFormatter<any, any>,
+  U extends ResourceFieldsFilterLimited<T>,
   V extends keyof T['fields']
 > = {
   [P in keyof T['fields']]?: P extends V
-    ? T['fields'][P] extends RelationshipField<
-        infer R, 
-        any,
-        infer S
-      > ? S extends ReadableFieldFlag
-          ? ResourceIncludeFilter<R, U>
-          : never
+    ? T['fields'][P] extends RelationshipField<infer R, any, infer S>
+      ? S extends ReadableFieldFlag
+        ? ResourceIncludeFilter<R, U>
         : never
+      : never
     : never
 }
 
 export type ResourceIncludeFilter<
-  T extends ResourceFormatter<any, any>, 
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsFilterLimited<T> = any
-> = Nullable<{
-  [P in T['type']]: BaseResourceIncludeFilter<
-    Extract<T, { type: P }>, 
-    U, 
-    P extends keyof U ? U[P][number] : keyof T['fields']
-  >
-}[T['type']]>
+> = Nullable<
+  {
+    [P in T['type']]: BaseResourceIncludeFilter<
+      Extract<T, { type: P }>,
+      U,
+      P extends keyof U ? U[P][number] : keyof T['fields']
+    >
+  }[T['type']]
+>
 
 type BaseFilteredResource<
   T extends ResourceFormatter<any, any>,
   U extends ResourceFieldsFilterLimited<T> | undefined,
   V
-> = { type: T['type']; id: string } & { 
-  [P in T['type'] extends keyof U ? U[T['type']][number] : ReadableResourceFieldNames<T>]: 
-    T['fields'][P] extends AttributeField<infer R, any, infer S>
+> = { type: T['type']; id: string } & {
+  [P in T['type'] extends keyof U
+    ? U[T['type']][number]
+    : ReadableResourceFieldName<T>]: T['fields'][P] extends AttributeField<infer R, any, infer S>
     ? R | (Extract<S, ResourceFieldFlag.GetRequired> extends never ? null : never)
-    : T['fields'][P] extends RelationshipField<
-        infer R, 
-        RelationshipFieldType.ToOne, 
-        infer S
-      >
-    ? | (P extends keyof V 
-        ? V[P] extends ResourceIncludeFilter<R, any>
-          ? Resource<R, { fields: U; include: V[P] }>
-          : Resource<R, { fields: U; include: null }>
-        : { type: R['type']; id: string }  ) 
-      | (Extract<S, ResourceFieldFlag.GetRequired> extends never ? null : never)    
-    : T['fields'][P] extends RelationshipField<
-        infer R, 
-        RelationshipFieldType.ToMany, 
-        any
-      >
-    ? ReadonlyArray<P extends keyof V 
-        ? V[P] extends ResourceIncludeFilter<R, any>
-          ? Resource<R, { fields: U; include: V[P] }>
-          : Resource<R, { fields: U; include: null }>
-        : { type: R['type']; id: string }
+    : T['fields'][P] extends RelationshipField<infer R, RelationshipFieldType.ToOne, infer S>
+    ?
+        | (P extends keyof V
+            ? V[P] extends ResourceIncludeFilter<R, any>
+              ? Resource<R, { fields: U; include: V[P] }>
+              : Resource<R, { fields: U; include: null }>
+            : { type: R['type']; id: string })
+        | (Extract<S, ResourceFieldFlag.GetRequired> extends never ? null : never)
+    : T['fields'][P] extends RelationshipField<infer R, RelationshipFieldType.ToMany, any>
+    ? ReadonlyArray<
+        P extends keyof V
+          ? V[P] extends ResourceIncludeFilter<R, any>
+            ? Resource<R, { fields: U; include: V[P] }>
+            : Resource<R, { fields: U; include: null }>
+          : { type: R['type']; id: string }
       >
     : never
 }
@@ -771,7 +820,7 @@ export type WithMeta<T extends NaiveResource<any> | ReadonlyArray<NaiveResource<
 }
 
 export type Resource<
-  T extends ResourceFormatter<any, any>, 
+  T extends ResourceFormatter<any, any>,
   U extends ResourceFilterLimited<T> = {}
 > = {
   [P in T['type']]: BaseFilteredResource<Extract<T, { type: P }>, U['fields'], U['include']>
@@ -781,3 +830,13 @@ export interface ResourceFilterLimited<T extends ResourceFormatter<any, any>> {
   fields?: ResourceFieldsFilterLimited<T>
   include?: ResourceIncludeFilter<T, any>
 }
+
+export type OneResourceDocument<
+  T extends ResourceFormatter<any, any>,
+  U extends ResourceFilterLimited<T>
+> = WithMeta<Resource<T, U>>
+
+export type ManyResourceDocument<
+  T extends ResourceFormatter<any, any>,
+  U extends ResourceFilterLimited<T>
+> = WithMeta<ReadonlyArray<Resource<T, U>>>
