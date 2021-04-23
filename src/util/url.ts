@@ -1,4 +1,14 @@
-import { isArray, isObject, isSome, or, isSerializableNumber, and, isString } from 'isntnt'
+import {
+  isArray,
+  isObject,
+  isSome,
+  or,
+  isSerializableNumber,
+  and,
+  isString,
+  isBoolean,
+  isTrue,
+} from 'isntnt'
 import { Endpoint } from '../client/endpoint'
 
 import { EMPTY_ARRAY, EMPTY_OBJECT } from '../data/constants'
@@ -13,6 +23,7 @@ import {
 type URLSearchParamEntry = [string, string]
 
 const isPrimitiveParameterValue = or(
+  isTrue,
   isSerializableNumber,
   and(isString, (value: any): value is string => value.length > 0),
 )
@@ -120,7 +131,7 @@ export const parsePrimitiveParam = (
   name: string,
   value: unknown,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isPrimitiveParameterValue(value) ? [[name, String(value)]] : EMPTY_ARRAY
+  isPrimitiveParameterValue(value) ? [[name, value === true ? '' : String(value)]] : EMPTY_ARRAY
 
 /** @hidden */
 export const parseArrayParam = (

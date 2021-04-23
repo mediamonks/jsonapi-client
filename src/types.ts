@@ -621,18 +621,23 @@ export type JSONAPIErrorObject = {
   }
 }
 
-export type GenericSearchParamValue = Maybe<string | number | ReadonlyArray<Maybe<string | number>>>
+export type SearchParamValue =
+  | SerializablePrimitive
+  | ReadonlyArray<SerializablePrimitive>
+  | {
+      [name: string]: SearchParamValue
+    }
 
-type BaseJSONAPISearchParams = JSONAPIPageParam &
+type BaseSearchParams = {
+  [name: string]: SearchParamValue
+} & JSONAPIPageParam &
   JSONAPISortParam &
-  JSONAPIFilterParam & {
-    [name: string]: GenericSearchParamValue
-  }
+  JSONAPIFilterParam
 
 /**
  * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
  */
-export type JSONAPISearchParams<T extends BaseJSONAPISearchParams = BaseJSONAPISearchParams> = T
+export type JSONAPISearchParams<T extends BaseSearchParams = BaseSearchParams> = T
 
 export type JSONAPIPageParamValue = Maybe<string | number> | Record<string, string | number>
 
@@ -640,7 +645,7 @@ export type JSONAPIPageParamValue = Maybe<string | number> | Record<string, stri
  * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
  */
 export interface JSONAPIPageParam<T extends JSONAPIPageParamValue = JSONAPIPageParamValue> {
-  page?: T
+  page?: Maybe<T>
 }
 
 export type JSONAPISortParamValue = ReadonlyArray<string>
@@ -658,7 +663,7 @@ export type JSONAPIFilterParamValue = Maybe<string> | Record<string, Serializabl
  * {@link https://jsonapi.org/format/#fetching-filtering|JSON:API Reference}
  */
 export interface JSONAPIFilterParam<T extends JSONAPIFilterParamValue = JSONAPIFilterParamValue> {
-  filter?: T
+  filter?: Maybe<T>
 }
 
 // Experimental
