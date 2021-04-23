@@ -313,8 +313,8 @@ export type AttributeFieldPatchValue<
   : never
 
 export type AttributeFieldName<T extends ResourceFormatter<any, any>> = {
-  [P in keyof T]: T[P] extends AttributeField<any, any, any> ? P : never
-}[keyof T]
+  [P in keyof T['fields']]: T['fields'][P] extends AttributeField<any, any, any> ? P : never
+}[keyof T['fields']]
 
 export type AttributeFieldNameWithFlag<
   T extends ResourceFormatter<any, any>,
