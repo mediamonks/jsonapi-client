@@ -112,7 +112,6 @@ const eventFilterDiscipline = event.createFilter(
 
 eventEndpoint
   .getMany(eventFilterDiscipline, {
-    sort: ['je vader'],
     test: 1,
     ola: {
       foo: true,
@@ -125,5 +124,3 @@ eventEndpoint
     console.log(events[1].stages)
   })
   .catch(console.dir)
-
-eventEndpoint.on('decode-base-resource', ({ value }) => {})
