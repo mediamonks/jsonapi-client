@@ -41,7 +41,7 @@ const assertionModeDetailMap: Record<TypeAssertionMode, string> = ['and', 'or']
 export class Type<T> implements TypeMeta {
   private readonly mode: TypeAssertionMode
   readonly predicate: Predicate<T>
-  readonly rules: Array<Type<T>> = []
+  readonly rules: ReadonlyArray<Type<T>> = []
   readonly code: string | null
   readonly label: string | null
   readonly description: string
@@ -49,7 +49,7 @@ export class Type<T> implements TypeMeta {
 
   private constructor(
     predicate: Predicate<T>,
-    rules: Array<Type<T>>,
+    rules: ReadonlyArray<Type<T>>,
     mode: TypeAssertionMode,
     meta: TypeMeta,
   ) {
@@ -165,7 +165,7 @@ export class Type<T> implements TypeMeta {
     })
   }
 
-  static shape<T extends TypeShape>(description: string, types: T): Type<StaticShapeType<T>> {
+  static shape<T extends TypeRecord>(description: string, types: T): Type<StaticShapeType<T>> {
     const rules = [Type.object, ...Object.keys(types).map((key) => Type.at(key, types[key]))]
     const predicate = (value: unknown) => rules.every((type) => type.predicate(value))
 
@@ -177,8 +177,7 @@ export class Type<T> implements TypeMeta {
     }) as any
   }
 
-  static array<T>(type: Type<T>): Type<Array<T>> {
-    const rules = type.rules.map((type) => array(type.predicate))
+  static array<T>(type: Type<T>): Type<Array<T> | ReadonlyArray<T>> {
     return new Type(array(type.predicate), [], TypeAssertionMode.Union, {
       description: `an Array where each element is ${type.description}`,
       label: null,
@@ -258,7 +257,7 @@ const typeDescriptionFormatter = (types: Array<Type<any>>, mode: TypeAssertionMo
   }
 }
 
-const flattenAndRules = (types: Array<Type<any>>, result: Array<Type<any>> = []) => {
+const flattenAndRules = (types: ReadonlyArray<Type<any>>, result: Array<Type<any>> = []) => {
   types.forEach((type) => {
     if ((type as any).mode === 'intersect' && type.rules.length) {
       flattenAndRules(type.rules, result)
@@ -269,7 +268,7 @@ const flattenAndRules = (types: Array<Type<any>>, result: Array<Type<any>> = [])
   return result
 }
 
-const flattenOrRules = (types: Array<Type<any>>, result: Array<Type<any>> = []) => {
+const flattenOrRules = (types: ReadonlyArray<Type<any>>, result: Array<Type<any>> = []) => {
   types.forEach((type) => {
     if ((type as any).mode === 'union' && type.rules.length) {
       flattenOrRules(type.rules, result)
@@ -280,9 +279,9 @@ const flattenOrRules = (types: Array<Type<any>>, result: Array<Type<any>> = []) 
   return result
 }
 
-type TypeShape = { [key: string]: Type<any> }
+type TypeRecord = Record<string, Type<any>>
 
-type StaticShapeType<T extends TypeShape> = InferredPartial<
+type StaticShapeType<T extends TypeRecord> = InferredPartial<
   {
     [P in keyof T]: StaticType<T[P]>
   }
