@@ -313,8 +313,8 @@ export type AttributeFieldPatchValue<
   : never
 
 export type AttributeFieldName<T extends ResourceFormatter<any, any>> = {
-  [P in keyof T]: T[P] extends AttributeField<any, any, any> ? P : never
-}[keyof T]
+  [P in keyof T['fields']]: T['fields'][P] extends AttributeField<any, any, any> ? P : never
+}[keyof T['fields']]
 
 export type AttributeFieldNameWithFlag<
   T extends ResourceFormatter<any, any>,
@@ -621,18 +621,26 @@ export type JSONAPIErrorObject = {
   }
 }
 
-export type GenericSearchParamValue = Maybe<string | number | ReadonlyArray<Maybe<string | number>>>
+export type SearchParamValue =
+  | SerializablePrimitive
+  | ReadonlyArray<SerializablePrimitive>
+  | {
+      [name: string]: SearchParamValue
+    }
 
-type BaseJSONAPISearchParams = JSONAPIPageParam &
+type BaseSearchParams = {
+  [name: string]: SearchParamValue
+} & JSONAPIPageParam &
   JSONAPISortParam &
   JSONAPIFilterParam & {
-    [name: string]: GenericSearchParamValue
+    fields?: never
+    include?: never
   }
 
 /**
  * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
  */
-export type JSONAPISearchParams<T extends BaseJSONAPISearchParams = BaseJSONAPISearchParams> = T
+export type JSONAPISearchParams<T extends BaseSearchParams = BaseSearchParams> = T
 
 export type JSONAPIPageParamValue = Maybe<string | number> | Record<string, string | number>
 
@@ -640,7 +648,7 @@ export type JSONAPIPageParamValue = Maybe<string | number> | Record<string, stri
  * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
  */
 export interface JSONAPIPageParam<T extends JSONAPIPageParamValue = JSONAPIPageParamValue> {
-  page?: T
+  page?: Maybe<T>
 }
 
 export type JSONAPISortParamValue = ReadonlyArray<string>
@@ -658,7 +666,7 @@ export type JSONAPIFilterParamValue = Maybe<string> | Record<string, Serializabl
  * {@link https://jsonapi.org/format/#fetching-filtering|JSON:API Reference}
  */
 export interface JSONAPIFilterParam<T extends JSONAPIFilterParamValue = JSONAPIFilterParamValue> {
-  filter?: T
+  filter?: Maybe<T>
 }
 
 // Experimental

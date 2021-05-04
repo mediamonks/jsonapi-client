@@ -89,7 +89,7 @@ export class ResourceFormatter<
     return this.fields[fieldName]
   }
 
-  getAttributeField<V extends AttributeFieldName<this['fields']>>(fieldName: V): this['fields'][V] {
+  getAttributeField<V extends AttributeFieldName<this>>(fieldName: V): this['fields'][V] {
     const field = this.getField(fieldName as any)
     if (!field.isAttributeField()) {
       throw new TypeError(
@@ -99,9 +99,7 @@ export class ResourceFormatter<
     return field
   }
 
-  getRelationshipField<V extends RelationshipFieldName<this['fields']>>(
-    fieldName: V,
-  ): this['fields'][V] {
+  getRelationshipField<V extends RelationshipFieldName<this>>(fieldName: V): this['fields'][V] {
     const field = this.getField(fieldName as any)
     if (!field.isRelationshipField()) {
       throw new TypeError(

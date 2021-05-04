@@ -91,7 +91,9 @@ const eventFilterAlt = event.createFilter(
 )
 
 eventEndpoint
-  .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilterAlt)
+  .getOne('005307f1-9761-3210-9302-8d8bda7dc533', eventFilterAlt, {
+    foo: 1,
+  })
   .then((event) => {
     console.log(event.stages[1].phases[0].type)
   })
@@ -109,12 +111,16 @@ const eventFilterDiscipline = event.createFilter(
 )
 
 eventEndpoint
-  .getMany(
-    {
-      test: 1,
+  .getMany(eventFilterDiscipline, {
+    sort: ['je vader'],
+    test: 1,
+    ola: {
+      foo: true,
     },
-    eventFilterDiscipline,
-  )
+    page: {
+      number: 0,
+    },
+  })
   .then((events) => {
     console.log(events[1].stages)
   })

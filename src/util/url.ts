@@ -1,4 +1,4 @@
-import { isArray, isObject, isSome, or, isSerializableNumber, and, isString } from 'isntnt'
+import { isArray, isObject, isSome, or, isSerializableNumber, and, isString, isTrue } from 'isntnt'
 import { Endpoint } from '../client/endpoint'
 
 import { EMPTY_ARRAY, EMPTY_OBJECT } from '../data/constants'
@@ -13,6 +13,7 @@ import {
 type URLSearchParamEntry = [string, string]
 
 const isPrimitiveParameterValue = or(
+  isTrue,
   isSerializableNumber,
   and(isString, (value: any): value is string => value.length > 0),
 )
@@ -103,11 +104,11 @@ export const parseSearchParam = (
 export const parseIncludeParam = (
   value: ResourceIncludeQuery,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value), ',') : []
+  isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value)) : []
 
 /** @hidden */
 export const parseSortParam = (value: JSONAPISortParamValue): ReadonlyArray<URLSearchParamEntry> =>
-  isArray(value) ? parseArrayParam('sort', value, ',') : []
+  isArray(value) ? parseArrayParam('sort', value) : []
 
 /** @hidden */
 export const parseObjectParam = (name: string, value: object): ReadonlyArray<URLSearchParamEntry> =>
@@ -120,17 +121,14 @@ export const parsePrimitiveParam = (
   name: string,
   value: unknown,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isPrimitiveParameterValue(value) ? [[name, String(value)]] : EMPTY_ARRAY
+  isPrimitiveParameterValue(value) ? [[name, value === true ? '' : String(value)]] : EMPTY_ARRAY
 
 /** @hidden */
 export const parseArrayParam = (
   name: string,
   value: ReadonlyArray<string | number>,
-  delimiter?: string,
 ): ReadonlyArray<URLSearchParamEntry> =>
-  isString(delimiter)
-    ? parsePrimitiveParam(name, value.filter(isPrimitiveParameterValue).join(delimiter))
-    : value.filter(isPrimitiveParameterValue).map((value) => [name, String(value)])
+  parsePrimitiveParam(name, value.filter(isPrimitiveParameterValue).join(','))
 
 /** @hidden */
 export const parseIncludeParamValue = (
