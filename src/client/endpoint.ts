@@ -1,5 +1,5 @@
 import { ResourceFieldFlag } from '../data/enum'
-import { ResourceFormatter } from '../formatter'
+import { ResourceFormatter, ResourceFormatterEvent } from '../formatter'
 import {
   ResourcePath,
   ResourceId,
@@ -16,6 +16,7 @@ import {
   ManyResourceDocument,
   OneResourceDocument,
   ResourceFilter,
+  ResourceFields,
 } from '../types'
 import { createURL } from '../util/url'
 import { Client } from '../client'
@@ -24,10 +25,10 @@ import { decodeDocument } from '../formatter/decodeDocument'
 import { encodeResourceCreateData } from '../formatter/encodeResourceCreateData'
 import { encodeResourcePatchData } from '../formatter/encodeResourcePatchData'
 import { RelationshipField } from '../resource/field/relationship'
-import { DecodeEvent, EventEmitter } from '../event/EventEmitter'
+import { EventEmitter } from '../event/EventEmitter'
 
 export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extends EventEmitter<
-  DecodeEvent<U>
+  ResourceFormatterEvent<ResourceFormatter<ResponseType, ResourceFields>>
 > {
   readonly client: T
   readonly path: ResourcePath
@@ -38,6 +39,10 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
     this.client = client
     this.path = path
     this.formatter = formatter
+
+    getIncludedResourceFormatters(formatter).forEach((formatter) =>
+      formatter.listen((event) => this.emit(event)),
+    )
   }
 
   /**
@@ -296,3 +301,23 @@ type EndpointToOneFieldName<T extends Endpoint<any, any>> = T extends Endpoint<a
       >
     }[R['type']]
   : never
+
+const getIncludedResourceFormatters = (
+  formatter: ResourceFormatter,
+  target: Array<ResourceFormatter> = [],
+): ReadonlyArray<ResourceFormatter> => {
+  if (!target.includes(formatter)) {
+    target.push(formatter)
+
+    getValues(formatter.fields)
+      .filter((field): field is RelationshipField<any, any, any> => field.isRelationshipField())
+      .flatMap((relationshipField) => relationshipField.getFormatters())
+      .forEach((formatter) => {
+        getIncludedResourceFormatters(formatter, target)
+      })
+  }
+
+  return target
+}
+
+const getValues = Object.values as <T>(value: T) => Array<T[keyof T]>

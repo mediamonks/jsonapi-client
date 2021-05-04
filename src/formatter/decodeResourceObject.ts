@@ -73,9 +73,10 @@ export const decodeResourceObject = <T extends ResourceFormatter>(
         )
 
   const errors: Array<ResourceValidationErrorObject> = []
-  const includedBaseMapOfType = baseIncludedResourceMap[resource.type] ||= new Map()
+  const includedBaseMapOfType = (baseIncludedResourceMap[resource.type] ||= new Map())
   const includedBaseResource = includedBaseMapOfType.get(resource.id)
-  const baseResource = includedBaseResource || createBaseResource(resource.type, resource.id) as any
+  const baseResource =
+    includedBaseResource || (createBaseResource(resource.type, resource.id) as any)
 
   if (!includedBaseResource) {
     resourceFieldNames.forEach((fieldName) => {
@@ -107,14 +108,16 @@ export const decodeResourceObject = <T extends ResourceFormatter>(
   if (errors.length) {
     return failure(errors)
   }
-  
+
   includedBaseMapOfType.set(baseResource.id, baseResource)
-  ;(formatter as any).emit(new DecodeBaseResourceEvent(baseResource))
+  formatter.emit(new DecodeBaseResourceEvent(baseResource))
 
   const data = cloneResource(baseResource)
 
   Object.keys(includeFilter || EMPTY_OBJECT).forEach((fieldName) => {
-    const relationshipField: RelationshipField<any, any, any> = formatter.getRelationshipField(fieldName as any)
+    const relationshipField: RelationshipField<any, any, any> = formatter.getRelationshipField(
+      fieldName as any,
+    )
     const [value, validationErrors] = decodeRelationship(
       relationshipField,
       fieldName,
@@ -127,13 +130,13 @@ export const decodeResourceObject = <T extends ResourceFormatter>(
     )
     data[fieldName] = value
     validationErrors.forEach((error) => errors.push(error))
-  })   
+  })
 
   if (errors.length) {
     return failure(errors)
   }
-  
-  ;(formatter as any).emit(new DecodeResourceEvent(data))
+
+  formatter.emit(new DecodeResourceEvent(data))
 
   return success(data)
 }

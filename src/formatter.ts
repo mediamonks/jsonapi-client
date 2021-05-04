@@ -32,7 +32,7 @@ import {
 } from './event/EventEmitter'
 import { Nullable } from 'isntnt'
 
-type ResourceFormatterEvent<T extends ResourceFormatter> =
+export type ResourceFormatterEvent<T extends ResourceFormatter> =
   | DecodeResourceIdentifierEvent<T>
   | DecodeBaseResourceEvent<T>
   | DecodeResourceEvent<T>
@@ -43,8 +43,6 @@ export class ResourceFormatter<
 > extends EventEmitter<ResourceFormatterEvent<ResourceFormatter<T, U>>> {
   readonly type: T
   readonly fields: U
-  private readonly meta: WeakMap<object, JSONAPIMetaObject> = new WeakMap()
-  private readonly links: WeakMap<object, JSONAPILinksObject> = new WeakMap()
 
   constructor(type: T, fields: U) {
     super()

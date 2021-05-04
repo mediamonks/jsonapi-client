@@ -107,7 +107,7 @@ export class EventEmitter<T extends JSONAPIEvent<any, any>> {
     )
   }
 
-  protected emit(event: T) {
+  emit(event: T): void {
     this.subscriptions.forEach((subscription) => {
       if (subscription.type === null || subscription.type === event.type) {
         subscription.listener.call(this as any, event as any)

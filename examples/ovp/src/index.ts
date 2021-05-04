@@ -125,3 +125,5 @@ eventEndpoint
     console.log(events[1].stages)
   })
   .catch(console.dir)
+
+eventEndpoint.on('decode-base-resource', ({ value }) => {})

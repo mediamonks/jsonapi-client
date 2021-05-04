@@ -45,7 +45,7 @@ export const decodeResourceIdentifier = (
   }
 
   const identifier = formatter.identifier(value.id)
-  ;(formatter as any).emit(new DecodeResourceIdentifierEvent(identifier))
+  formatter.emit(new DecodeResourceIdentifierEvent(identifier))
 
   return success(identifier)
 }

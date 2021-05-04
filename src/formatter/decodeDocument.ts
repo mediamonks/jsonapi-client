@@ -105,12 +105,12 @@ export const decodeDocument = <T extends ResourceFormatter>(
       [META_ACCESSOR]: {
         enumerable: false,
         writable: false,
-        value: document.meta || null,
+        value: meta,
       },
       [LINKS_ACCESSOR]: {
         enumerable: false,
         writable: false,
-        value: document.links || null,
+        value: meta,
       },
     })
   }
