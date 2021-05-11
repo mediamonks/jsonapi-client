@@ -1,7 +1,7 @@
 import { Attribute, Relationship, ResourceFormatter } from '@mediamonks/jsonapi-client'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
-// import { string } from '../attributes/string'
+import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
 import { author, AuthorFormatter } from './author'
 import { chapter, ChapterFormatter } from './chapter'
@@ -12,7 +12,7 @@ import { store, StoreFormatter } from './store'
 export type BookFormatter = ResourceFormatter<
   'books',
   {
-    title: Attribute.Required<number>
+    title: Attribute.Required<string>
     date_published: Attribute.Required<string, Date>
     isbn: Attribute.Required<number>
     author: Relationship.ToOne<AuthorFormatter>
@@ -24,7 +24,7 @@ export type BookFormatter = ResourceFormatter<
 >
 
 export const book: BookFormatter = new ResourceFormatter('books', {
-  title: Attribute.required(uint),
+  title: Attribute.required(string),
   date_published: Attribute.required(dateString, dateStringFormatter),
   isbn: Attribute.required(uint),
   author: Relationship.toOne(() => author),

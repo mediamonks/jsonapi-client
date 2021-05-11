@@ -34,10 +34,14 @@ export const decodeDocument = <T extends ResourceFormatter>(
   }
 
   if ('errors' in document) {
+    if (__DEV__) {
+      console.error(`Received document with errors`, document.errors)
+    }
+
     throw new ResourceDocumentError(
       ValidationErrorMessage.JSONAPIDocumentWithErrors,
       document,
-      document.errors!,
+      document.errors,
     )
   }
 

@@ -280,11 +280,11 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   }
 }
 
-type EndpointRelationshipFieldName<T extends Endpoint<any, any>> =
+export type EndpointRelationshipFieldName<T extends Endpoint<any, any>> =
   | EndpointToManyFieldName<T>
   | EndpointToOneFieldName<T>
 
-type EndpointToManyFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
+export type EndpointToManyFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
   ? {
       [P in R['type']]: ToManyRelationshipFieldNameWithFlag<
         Extract<R, { type: P }>,
@@ -293,7 +293,7 @@ type EndpointToManyFieldName<T extends Endpoint<any, any>> = T extends Endpoint<
     }[R['type']]
   : never
 
-type EndpointToOneFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
+export type EndpointToOneFieldName<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
   ? {
       [P in R['type']]: ToOneRelationshipFieldNameWithFlag<
         Extract<R, { type: P }>,
