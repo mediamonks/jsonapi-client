@@ -1,21 +1,21 @@
-import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '@mediamonks/jsonapi-client'
 
 import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
-import { book } from './book'
-import { photo } from './photo'
+import { book, BookFormatter } from './book'
+import { photo, PhotoFormatter } from './photo'
 
-type ChapterResource = ResourceFormatter<
+export type ChapterFormatter = ResourceFormatter<
   'chapters',
   {
     title: Attribute.Required<string>
     ordering: Attribute.Required<number>
-    photos: Relationship.ToMany<typeof photo>
-    book: Relationship.ToOne<typeof book>
+    photos: Relationship.ToMany<PhotoFormatter>
+    book: Relationship.ToOne<BookFormatter>
   }
 >
 
-export const chapter: ChapterResource = new ResourceFormatter('chapters', {
+export const chapter: ChapterFormatter = new ResourceFormatter('chapters', {
   title: Attribute.required(string),
   ordering: Attribute.required(uint),
   photos: Relationship.toMany(() => photo),

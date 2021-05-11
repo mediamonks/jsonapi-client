@@ -1,4 +1,4 @@
-import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '@mediamonks/jsonapi-client'
 
 import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
@@ -6,7 +6,7 @@ import { book } from './book'
 import { country } from './country'
 import { photo } from './photo'
 
-type StoreResource = ResourceFormatter<
+export type StoreFormatter = ResourceFormatter<
   'stores',
   {
     name: Attribute.Required<string>
@@ -18,7 +18,7 @@ type StoreResource = ResourceFormatter<
   }
 >
 
-export const store: StoreResource = new ResourceFormatter('stores', {
+export const store: StoreFormatter = new ResourceFormatter('stores', {
   name: Attribute.required(string),
   address: Attribute.requiredStatic(string),
   created_by: Attribute.requiredReadonly(uint),

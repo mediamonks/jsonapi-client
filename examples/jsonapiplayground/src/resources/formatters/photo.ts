@@ -1,9 +1,9 @@
-import { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '@mediamonks/jsonapi-client'
 
 import { string } from '../attributes/string'
 import { url, urlFormatter } from '../attributes/url'
 
-type PhotoResource = ResourceFormatter<
+export type PhotoFormatter = ResourceFormatter<
   'photos',
   {
     title: Attribute.Required<string>
@@ -11,7 +11,7 @@ type PhotoResource = ResourceFormatter<
   }
 >
 
-export const photo: PhotoResource = new ResourceFormatter('photos', {
+export const photo: PhotoFormatter = new ResourceFormatter('photos', {
   title: Attribute.required(string),
   uri: Attribute.required(url, urlFormatter),
 })

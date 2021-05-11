@@ -1,5 +1,5 @@
 import { test } from 'isntnt'
-import { Type } from '../../../../../src'
+import { Type } from '@mediamonks/jsonapi-client'
 
 const serializeYearMonthDayDate = (date: Date): string =>
   [

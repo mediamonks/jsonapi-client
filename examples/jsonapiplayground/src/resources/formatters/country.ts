@@ -1,4 +1,4 @@
-import { Attribute, ResourceFormatter } from '../../../../../src'
+import { Attribute, ResourceFormatter } from '@mediamonks/jsonapi-client'
 
 import { string } from '../attributes/string'
 

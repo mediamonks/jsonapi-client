@@ -1,30 +1,30 @@
-import { Attribute, Relationship, ResourceFormatter } from '../../../../../src'
+import { Attribute, Relationship, ResourceFormatter } from '@mediamonks/jsonapi-client'
 
 import { dateString, dateStringFormatter } from '../attributes/date'
-import { string } from '../attributes/string'
+// import { string } from '../attributes/string'
 import { uint } from '../attributes/uint'
-import { author } from './author'
-import { chapter } from './chapter'
-import { photo } from './photo'
-import { series } from './series'
-import { store } from './store'
+import { author, AuthorFormatter } from './author'
+import { chapter, ChapterFormatter } from './chapter'
+import { photo, PhotoFormatter } from './photo'
+import { series, SeriesFormatter } from './series'
+import { store, StoreFormatter } from './store'
 
-type BookResource = ResourceFormatter<
+export type BookFormatter = ResourceFormatter<
   'books',
   {
-    title: Attribute.Required<string>
+    title: Attribute.Required<number>
     date_published: Attribute.Required<string, Date>
     isbn: Attribute.Required<number>
-    author: Relationship.ToOne<typeof author>
-    chapters: Relationship.ToManyReadOnly<typeof chapter>
-    photos: Relationship.ToMany<typeof photo>
-    series: Relationship.ToOne<typeof series>
-    stores: Relationship.ToMany<typeof store>
+    author: Relationship.ToOne<AuthorFormatter>
+    chapters: Relationship.ToManyReadOnly<ChapterFormatter>
+    photos: Relationship.ToMany<PhotoFormatter>
+    series: Relationship.ToOne<SeriesFormatter>
+    stores: Relationship.ToMany<StoreFormatter>
   }
 >
 
-export const book: BookResource = new ResourceFormatter('books', {
-  title: Attribute.required(string),
+export const book: BookFormatter = new ResourceFormatter('books', {
+  title: Attribute.required(uint),
   date_published: Attribute.required(dateString, dateStringFormatter),
   isbn: Attribute.required(uint),
   author: Relationship.toOne(() => author),

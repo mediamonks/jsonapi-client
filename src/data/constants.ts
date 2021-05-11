@@ -1,5 +1,7 @@
 import { ReadonlyRecord } from '../types'
 
+export const __DEV__ = process.env.NODE_ENV !== 'production'
+
 /**
  * {@link https://jsonapi.org/format/#introduction|JSON:API Reference}
  */

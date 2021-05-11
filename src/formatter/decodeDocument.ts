@@ -16,7 +16,7 @@ import {
   NaiveResource,
   WithMeta,
 } from '../types'
-import { EMPTY_OBJECT } from '../data/constants'
+import { EMPTY_OBJECT, __DEV__ } from '../data/constants'
 import { decodeResourceObject } from './decodeResourceObject'
 import type { ResourceFormatter } from '../formatter'
 import { jsonapiDocument } from '../util/validators'
@@ -94,6 +94,10 @@ export const decodeDocument = <T extends ResourceFormatter>(
     )
 
     if (errors.length) {
+      if (__DEV__) {
+        console.error(`Decoded document with errors`, errors)
+      }
+
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,
