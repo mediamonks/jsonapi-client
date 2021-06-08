@@ -21,7 +21,7 @@ describe('getResourceIdentifierResult', () => {
     const [, validationErrors] = decodeResourceIdentifier([foo], null as any, ['baz'])
 
     expect(validationErrors.length).toBe(3)
-    expect(validationErrors[0]).toEqual({
+    expect(validationErrors[0]).toMatchObject({
       title: ValidationErrorMessage.InvalidResourceIdentifier,
       detail: 'Value must be an object',
       source: {
@@ -40,7 +40,7 @@ describe('getResourceIdentifierResult', () => {
     const [, validationErrors] = decodeResourceIdentifier([foo], identifier, ['baz'])
 
     expect(validationErrors.length).toBe(1)
-    expect(validationErrors[0]).toEqual({
+    expect(validationErrors[0]).toMatchObject({
       title: ValidationErrorMessage.InvalidResourceType,
       detail: 'Resource type must match the type of its formatter (foo)',
       source: {

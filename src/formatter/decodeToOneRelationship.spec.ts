@@ -67,7 +67,7 @@ describe('decodeToOneRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.MissingRequiredField,
       detail: `To-One relationship "toOneA" on resource of type "foo" is required`,
       source: {
@@ -98,7 +98,7 @@ describe('decodeToOneRelationship', () => {
     )
 
     expect(errors.length).toBe(3)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.InvalidResourceIdentifier,
       detail: `Value must be an object`,
       source: {
@@ -142,7 +142,7 @@ describe('decodeToOneRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.MissingRequiredField,
       detail: 'Attribute "requiredString" on resource of type "a" is required.',
       source: {
@@ -178,7 +178,7 @@ describe('decodeToOneRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.IncludedResourceNotFound,
       detail: 'Resource object of type "a" with id "a-id" is not included.',
       source: {

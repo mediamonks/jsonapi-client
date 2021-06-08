@@ -107,7 +107,7 @@ describe('decodeToManyRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.MissingRequiredField,
       detail: `To-Many relationship "toManyA" on resource of type "foo" is required`,
       source: {
@@ -138,7 +138,7 @@ describe('decodeToManyRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.InvalidToManyRelationshipData,
       detail: `To-Many relationship "toManyA" on resource of type "foo" must be an Array`,
       source: {
@@ -184,7 +184,7 @@ describe('decodeToManyRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.MissingRequiredField,
       detail: 'Attribute "requiredString" on resource of type "a" is required.',
       source: {
@@ -222,7 +222,7 @@ describe('decodeToManyRelationship', () => {
     )
 
     expect(errors.length).toBe(1)
-    expect(errors[0]).toEqual({
+    expect(errors[0]).toMatchObject({
       title: ValidationErrorMessage.IncludedResourceNotFound,
       detail: 'Resource object of type "a" with id "a-id" is not included.',
       source: {

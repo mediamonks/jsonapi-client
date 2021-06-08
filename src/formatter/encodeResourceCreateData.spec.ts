@@ -100,7 +100,7 @@ describe('encodeResourceCreateData', () => {
       serializableField: 12,
     })
 
-    expect(data.data.attributes?.serializableField).toBe('12')
+    expect((data.data.attributes as any)?.serializableField).toBe('12')
   })
 
   it('throws when attempting to create with invalid data', () => {
@@ -124,7 +124,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceType,
         detail: `Resource type must equal "a"`,
         source: {
@@ -146,7 +146,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.FieldNotFound,
         detail: `Field "nonExistingField" does not exist on resource of type "a"`,
         source: {
@@ -170,7 +170,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceField,
         detail: `Field "forbiddenField" must be omitted on resource of type "foo"`,
         source: {
@@ -194,7 +194,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceField,
         detail: `Field "requiredField" is required on resource of type "foo"`,
         source: {
@@ -213,7 +213,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceField,
         detail: `Field "requiredField" is required on resource of type "foo"`,
         source: {
@@ -238,7 +238,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidAttributeValue,
         detail: `Value must be a string`,
         source: {
@@ -263,7 +263,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(3)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceIdentifier,
         detail: `Value must be an object`,
         source: {
@@ -285,7 +285,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceType,
         detail: `To-One relationship "toOne" must be a resource identifier of type "a"`,
         source: {
@@ -310,7 +310,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidToManyRelationshipData,
         detail: `To-Many relationship "toMany" must be an Array on resource of type "a"`,
         source: {
@@ -329,7 +329,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(3)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceIdentifier,
         detail: `Value must be an object`,
         source: {
@@ -353,7 +353,7 @@ describe('encodeResourceCreateData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourceCreateData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceType,
         detail: `Resource type must equal "a"`,
         source: {

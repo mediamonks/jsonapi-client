@@ -126,28 +126,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
-        title: ValidationErrorMessage.InvalidResourceType,
-        detail: `Resource type must equal "a"`,
-        source: {
-          pointer: ['type'],
-        },
-      })
-    }
-  })
-
-  it('throws when attempting to patch data with non-existing type', () => {
-    try {
-      encodeResourcePatchData([formatterA], {
-        type: 'foo',
-        id: 'test',
-        requiredString: 'foo',
-      } as any)
-    } catch (error) {
-      expect(error).toBeInstanceOf(ResourceValidationError)
-      expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
-      expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceType,
         detail: `Resource type must equal "a"`,
         source: {
@@ -169,7 +148,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.FieldNotFound,
         detail: `Field "nonExistingField" does not exist on resource of type "a"`,
         source: {
@@ -193,7 +172,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceField,
         detail: `Field "forbiddenField" must be omitted on resource of type "foo"`,
         source: {
@@ -218,7 +197,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidAttributeValue,
         detail: `Field "requiredField" is required on resource of type "foo"`,
         source: {
@@ -243,7 +222,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidAttributeValue,
         detail: `Value must be a string`,
         source: {
@@ -268,7 +247,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(3)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceIdentifier,
         detail: `Value must be an object`,
         source: {
@@ -290,7 +269,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceType,
         detail: `To-One relationship "toOne" must be a resource identifier of type "a"`,
         source: {
@@ -315,7 +294,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidToManyRelationshipData,
         detail: `To-Many relationship "toMany" must be an Array on resource of type "a"`,
         source: {
@@ -334,7 +313,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(3)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceIdentifier,
         detail: `Value must be an object`,
         source: {
@@ -358,7 +337,7 @@ describe('encodeResourcePatchData', () => {
       expect(error).toBeInstanceOf(ResourceValidationError)
       expect(error.message).toBe(ValidationErrorMessage.InvalidResourcePatchData)
       expect(error.details.length).toBe(1)
-      expect(error.details[0]).toEqual({
+      expect(error.details[0]).toMatchObject({
         title: ValidationErrorMessage.InvalidResourceType,
         detail: `Resource type must equal "a"`,
         source: {

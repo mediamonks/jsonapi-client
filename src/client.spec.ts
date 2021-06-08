@@ -252,7 +252,7 @@ describe('Client', () => {
         )
       } catch (error) {
         expect(error).toBeInstanceOf(ResourceDocumentError)
-        expect(error.message).toBe('Invalid JSON:API Document')
+        expect(error.message).toBe('Invalid JSON:API document')
       }
     })
 
@@ -287,7 +287,7 @@ describe('Client', () => {
         })
       } catch (error) {
         expect(error).toBeInstanceOf(ResourceDocumentError)
-        expect(error.message).toBe('Invalid JSON:API Document')
+        expect(error.message).toBe('Invalid JSON:API document')
       }
     })
   })
