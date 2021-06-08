@@ -59,24 +59,24 @@ export enum ResourceFieldFlag {
 }
 
 export enum ErrorMessage {
-  UnexpectedError = 'Unexpected Error',
-  FetchNotFound = 'Fetch Not Found',
-  ResourceFieldNotAllowed = 'Resource Field Not Allowed',
+  UnexpectedError = 'Unexpected error',
+  FetchNotFound = 'Fetch not found',
+  ResourceFieldNotAllowed = 'Resource field not allowed',
 }
 
 export enum ValidationErrorMessage {
-  JSONAPIDocumentWithErrors = 'JSON:API Document Has Errors',
-  FieldNotFound = 'Field Not Found',
-  IncludedResourceNotFound = 'Included Resource Not Found',
-  InvalidResourceDocument = 'Invalid JSON:API Document',
-  InvalidResourceIdentifier = 'Invalid Resource Identifier Object',
-  InvalidResourceObject = 'Invalid Resource Object',
-  InvalidResourceType = 'Invalid Resource Type',
-  InvalidResourceId = 'Invalid Resource Id',
-  InvalidResourceField = 'Invalid Resource Field',
-  InvalidAttributeValue = 'Invalid Attribute Value',
-  InvalidToManyRelationshipData = 'Invalid To-Many Relationship Data',
-  InvalidResourceCreateData = 'Invalid Resource Create Data',
-  InvalidResourcePatchData = 'Invalid Resource Patch Data',
-  MissingRequiredField = 'Missing Required Field',
+  JSONAPIDocumentWithErrors = 'JSON:API document has errors',
+  FieldNotFound = 'Field not found',
+  IncludedResourceNotFound = 'Included resource not found',
+  InvalidResourceDocument = 'Invalid JSON:API document',
+  InvalidResourceIdentifier = 'Invalid resource identifier object',
+  InvalidResourceObject = 'Invalid resource Ooject',
+  InvalidResourceType = 'Invalid resource type',
+  InvalidResourceId = 'Invalid resource id',
+  InvalidResourceField = 'Invalid resource field',
+  InvalidAttributeValue = 'Invalid attribute value',
+  InvalidToManyRelationshipData = 'Invalid to-Many relationship data',
+  InvalidResourceCreateData = 'Invalid resource create data',
+  InvalidResourcePatchData = 'Invalid resource patch data',
+  MissingRequiredField = 'Missing required field',
 }

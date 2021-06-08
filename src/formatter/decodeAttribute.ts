@@ -32,6 +32,7 @@ export const decodeAttribute = (
             ValidationErrorMessage.InvalidAttributeValue,
             detail,
             pointer,
+            resource,
           ),
         ),
       )
@@ -45,6 +46,7 @@ export const decodeAttribute = (
           ValidationErrorMessage.MissingRequiredField,
           `Attribute "${fieldName}" on resource of type "${resource.type}" is required.`,
           pointer,
+          resource,
         ),
       ])
 }

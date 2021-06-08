@@ -43,6 +43,7 @@ export const decodeToManyRelationship = (
             ValidationErrorMessage.MissingRequiredField,
             `To-Many relationship "${fieldName}" on resource of type "${resourceObject.type}" is required`,
             pointer.concat(fieldName),
+            resourceObject,
           ),
         ])
   }
@@ -53,6 +54,7 @@ export const decodeToManyRelationship = (
         ValidationErrorMessage.InvalidToManyRelationshipData,
         `To-Many relationship "${fieldName}" on resource of type "${resourceObject.type}" must be an Array`,
         pointer.concat(fieldName),
+        resourceObject,
       ),
     ])
   }
@@ -128,6 +130,7 @@ export const decodeToManyRelationshipValue = (
             ValidationErrorMessage.MissingRequiredField,
             `To-Many relationship "${fieldName}" on resource of type "${resourceObject.type}" is required`,
             pointer.concat(fieldName),
+            resourceObject,
           ),
         ])
   }
@@ -138,6 +141,7 @@ export const decodeToManyRelationshipValue = (
         ValidationErrorMessage.InvalidToManyRelationshipData,
         `To-Many relationship "${fieldName}" on resource of type "${resourceObject.type}" must be an Array`,
         pointer.concat(fieldName),
+        resourceObject,
       ),
     ])
   }

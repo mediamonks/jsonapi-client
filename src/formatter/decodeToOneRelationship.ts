@@ -64,6 +64,7 @@ export const decodeToOneRelationship = (
           ValidationErrorMessage.MissingRequiredField,
           `To-One relationship "${fieldName}" on resource of type "${resourceObject.type}" is required`,
           pointer.concat(fieldName),
+          resourceObject,
         ),
       ])
 }
@@ -89,6 +90,7 @@ export const decodeToOneRelationshipValue = (
           ValidationErrorMessage.MissingRequiredField,
           `To-One relationship "${fieldName}" on resource of type "${resourceObject.type}" is required`,
           pointer.concat(fieldName),
+          resourceObject,
         ),
       ])
 }

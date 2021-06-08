@@ -34,6 +34,7 @@ export const decodeIncludedRelationship = (
         ValidationErrorMessage.IncludedResourceNotFound,
         `Resource object of type "${resourceIdentifier.type}" with id "${resourceIdentifier.id}" is not included.`,
         pointer,
+        included,
       ),
     ])
   }

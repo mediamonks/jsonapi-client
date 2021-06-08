@@ -52,6 +52,7 @@ export type ResourceValidationErrorObject = {
   title: string
   detail: string
   source: {
+    value: unknown
     pointer: ErrorObjectPointer
   }
 }
@@ -61,12 +62,14 @@ export const createValidationErrorObject = (
   title: string,
   detail: string,
   pointer: ErrorObjectPointer,
+  value: unknown,
 ): ResourceValidationErrorObject => {
   return {
     title,
     detail,
     source: {
       pointer,
+      value,
     },
   }
 }

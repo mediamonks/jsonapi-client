@@ -16,16 +16,19 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
   data: ResourceCreateData<T>,
 ): { data: JSONAPIResourceCreateObject<T> } => {
   if (!resourceCreateData.predicate(data)) {
+    console.error(ValidationErrorMessage.InvalidResourceCreateData, data)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceCreateData, data, [])
   }
 
   const formatter = formatters.find((formatter) => formatter.type === data.type)
   if (!formatter) {
+    console.error(ValidationErrorMessage.InvalidResourceCreateData, data)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceCreateData, data, [
       createValidationErrorObject(
         ValidationErrorMessage.InvalidResourceType,
         resourceTypeNotFoundDetail(formatters),
         ['type'],
+        data,
       ),
     ])
   }
@@ -48,6 +51,7 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
           ValidationErrorMessage.FieldNotFound,
           onResourceOfTypeMessage([formatter], `Field "${key}" does not exist`),
           [key],
+          data,
         ),
       )
     }
@@ -61,11 +65,9 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
       errors.push(
         createValidationErrorObject(
           ValidationErrorMessage.InvalidResourceField,
-          onResourceOfTypeMessage(
-            [formatter],
-            `Field "${fieldName}" must be omitted`,
-          ),
+          onResourceOfTypeMessage([formatter], `Field "${fieldName}" must be omitted`),
           [fieldName],
+          data,
         ),
       )
       // check for undefined only for to-many relationship field because null is an invalid value
@@ -74,11 +76,9 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
         errors.push(
           createValidationErrorObject(
             ValidationErrorMessage.InvalidResourceField,
-            onResourceOfTypeMessage(
-              [formatter],
-              `Field "${fieldName}" is required`,
-            ),
+            onResourceOfTypeMessage([formatter], `Field "${fieldName}" is required`),
             [fieldName],
+            data,
           ),
         )
       }
@@ -87,9 +87,12 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
       const serializedValue = (attributes[fieldName] = field.serialize(value))
       field.validate(serializedValue).forEach((detail) => {
         errors.push(
-          createValidationErrorObject(ValidationErrorMessage.InvalidAttributeValue, detail, [
-            fieldName,
-          ]),
+          createValidationErrorObject(
+            ValidationErrorMessage.InvalidAttributeValue,
+            detail,
+            [fieldName],
+            data,
+          ),
         )
       })
     } else if (field.isRelationshipField()) {
@@ -103,18 +106,21 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
                 ValidationErrorMessage.InvalidResourceIdentifier,
                 detail,
                 [fieldName],
+                data,
               ),
             )
           })
         } else {
-          if (!relationshipFormatters.some(formatter => formatter.type === value.type)) {
+          if (!relationshipFormatters.some((formatter) => formatter.type === value.type)) {
             relationships[fieldName] = { data: value }
             errors.push(
-              createValidationErrorObject(ValidationErrorMessage.InvalidResourceType, 
-                `To-One relationship "${fieldName}" must be a resource identifier of type "${relationshipFormatters}"`, [
-                fieldName,
-              ]),
-            )            
+              createValidationErrorObject(
+                ValidationErrorMessage.InvalidResourceType,
+                `To-One relationship "${fieldName}" must be a resource identifier of type "${relationshipFormatters}"`,
+                [fieldName],
+                data,
+              ),
+            )
           } else {
             relationships[fieldName] = {
               data: {
@@ -135,6 +141,7 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
                 `To-Many relationship "${fieldName}" must be an Array`,
               ),
               [fieldName],
+              data,
             ),
           )
         } else {
@@ -147,16 +154,20 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
                       ValidationErrorMessage.InvalidResourceIdentifier,
                       detail,
                       [fieldName],
+                      data,
                     ),
                   )
                 })
                 return item
-              } else if (!relationshipFormatters.some(formatter => formatter.type === item.type)) {
+              } else if (
+                !relationshipFormatters.some((formatter) => formatter.type === item.type)
+              ) {
                 errors.push(
                   createValidationErrorObject(
                     ValidationErrorMessage.InvalidResourceType,
                     resourceTypeNotFoundDetail(relationshipFormatters),
                     [fieldName],
+                    data,
                   ),
                 )
                 return item
@@ -173,6 +184,7 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
   })
 
   if (errors.length) {
+    console.error(ValidationErrorMessage.InvalidResourceCreateData, errors)
     throw new ResourceValidationError(
       ValidationErrorMessage.InvalidResourceCreateData,
       data,

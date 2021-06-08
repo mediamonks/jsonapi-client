@@ -28,6 +28,7 @@ export const decodeResourceIdentifier = (
           ValidationErrorMessage.InvalidResourceIdentifier,
           detail,
           pointer,
+          value,
         ),
       ),
     )
@@ -40,6 +41,7 @@ export const decodeResourceIdentifier = (
         ValidationErrorMessage.InvalidResourceType,
         `Resource type must match the type of its formatter (${formatters})`,
         pointer.concat('type'),
+        value,
       ),
     ])
   }

@@ -30,14 +30,12 @@ export const decodeDocument = <T extends ResourceFormatter>(
   filter: ResourceFilterLimited<T> = EMPTY_OBJECT,
 ): WithMeta<NaiveResource<T>> => {
   if (!jsonapiDocument.predicate(document)) {
+    console.error(ValidationErrorMessage.InvalidResourceDocument, document)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceDocument, document, [])
   }
 
   if ('errors' in document) {
-    if (__DEV__) {
-      console.error(`Received document with errors`, document.errors)
-    }
-
+    console.error(ValidationErrorMessage.JSONAPIDocumentWithErrors, document)
     throw new ResourceDocumentError(
       ValidationErrorMessage.JSONAPIDocumentWithErrors,
       document,
@@ -52,21 +50,23 @@ export const decodeDocument = <T extends ResourceFormatter>(
     const data: Array<NaiveResource<T>> = []
     const errors: Array<ResourceValidationErrorObject> = []
 
-    document.data.forEach((resource) => {
-      const [value, resourceErrors] = decodeResourceObject(
+    document.data.forEach((resourceObject) => {
+      const [resource, resourceErrors] = decodeResourceObject(
         formatters,
-        resource,
+        resourceObject,
         included,
         baseIncludedResourceMap,
         filter.fields || (EMPTY_OBJECT as any),
         filter.include || (EMPTY_OBJECT as any),
         [],
       )
-      data.push(value as any)
+      data.push(resource as any)
       resourceErrors.forEach((error) => errors.push(error))
     })
 
     if (errors.length) {
+      console.error(ValidationErrorMessage.InvalidResourceDocument, errors)
+
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,
@@ -98,10 +98,7 @@ export const decodeDocument = <T extends ResourceFormatter>(
     )
 
     if (errors.length) {
-      if (__DEV__) {
-        console.error(`Decoded document with errors`, errors)
-      }
-
+      console.error(ValidationErrorMessage.InvalidResourceDocument, errors)
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,

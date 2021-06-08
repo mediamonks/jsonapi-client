@@ -125,8 +125,11 @@ export class Client<T extends Partial<ClientSetup>> {
 
     if (!afterRequestResponse.ok) {
       if (!jsonapiFailureDocument.predicate(data)) {
+        console.error(ValidationErrorMessage.InvalidResourceDocument, data)
         throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
       }
+
+      console.error(afterRequestResponse.statusText, data)
       throw new ResourceDocumentError(afterRequestResponse.statusText, data, data.errors as any)
     }
 
@@ -135,6 +138,7 @@ export class Client<T extends Partial<ClientSetup>> {
     }
 
     if (!jsonapiSuccessDocument.predicate(data)) {
+      console.error(ValidationErrorMessage.InvalidResourceDocument, data)
       throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
     }
 
