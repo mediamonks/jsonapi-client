@@ -287,21 +287,21 @@ type StaticShapeType<T extends TypeRecord> = InferredPartial<
   }
 >
 
-type InferredPartial<T> = {
+type InferredPartial<T extends object> = {
   [P in RequiredKey<T>]: T[P]
 } &
   {
     [P in OptionalKey<T>]?: T[P]
   }
 
-type RequiredKey<T extends {}> = Exclude<
+type RequiredKey<T extends object> = Exclude<
   {
     [P in keyof T]: Extract<T[P], undefined> extends never ? P : never
   }[keyof T],
   undefined
 >
 
-type OptionalKey<T extends {}> = Exclude<
+type OptionalKey<T extends object> = Exclude<
   {
     [P in keyof T]: Extract<T[P], undefined> extends never ? never : P
   }[keyof T],

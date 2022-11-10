@@ -1,14 +1,8 @@
 import { isArray, isUndefined } from 'isntnt'
 import { RelationshipFieldType, ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../error'
-import {
-  JSONAPIResourceObject,
-  ResourceFieldsQuery,
-  ResourceIncludeQuery,
-  Resource,
-  ResourceFieldName,
-  ResourceId,
-} from '../types'
+import { ResourceFieldsQuery, ResourceIncludeQuery, Resource, ResourceFieldName } from '../types'
+import { ResourceObject, ResourceId } from '../types/jsonapi'
 import { EMPTY_OBJECT } from '../data/constants'
 import { RelationshipField } from '../resource/field/relationship'
 import { ResourceIdentifier } from '../resource/identifier'
@@ -25,8 +19,8 @@ export type ToManyRelationshipData =
 export const decodeToManyRelationship = (
   field: RelationshipField<ResourceFormatter, RelationshipFieldType.ToMany, any>,
   fieldName: string,
-  resourceObject: JSONAPIResourceObject<any>,
-  included: ReadonlyArray<JSONAPIResourceObject>,
+  resourceObject: ResourceObject<any>,
+  included: ReadonlyArray<ResourceObject>,
   baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
@@ -116,7 +110,7 @@ export const decodeToManyRelationship = (
 export const decodeToManyRelationshipValue = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
-  resourceObject: JSONAPIResourceObject<any>,
+  resourceObject: ResourceObject<any>,
   pointer: ReadonlyArray<ResourceFieldName | ResourceId>,
 ): Validation<ToManyRelationshipData, ResourceValidationErrorObject> => {
   const { relationships = EMPTY_OBJECT } = resourceObject

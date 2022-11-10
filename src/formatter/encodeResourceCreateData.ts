@@ -1,12 +1,12 @@
 import { isArray, isNone, isUndefined } from 'isntnt'
-
 import { ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import {
   createValidationErrorObject,
   ResourceValidationError,
   ResourceValidationErrorObject,
 } from '../error'
-import type { ResourceFields, JSONAPIResourceCreateObject, ResourceCreateData } from '../types'
+import type { ResourceFields, ResourceCreateData } from '../types'
+import type { ResourceCreateObject } from '../types/jsonapi'
 import { resourceTypeNotFoundDetail, onResourceOfTypeMessage } from '../util/formatting'
 import { resourceCreateData, resourceIdentifier } from '../util/validators'
 import type { ResourceFormatter } from '../formatter'
@@ -14,7 +14,7 @@ import type { ResourceFormatter } from '../formatter'
 export const encodeResourceCreateData = <T extends ResourceFormatter>(
   formatters: ReadonlyArray<T>,
   data: ResourceCreateData<T>,
-): { data: JSONAPIResourceCreateObject<T> } => {
+): { data: ResourceCreateObject<T> } => {
   if (!resourceCreateData.predicate(data)) {
     console.error(ValidationErrorMessage.InvalidResourceCreateData, data)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceCreateData, data, [])
@@ -34,7 +34,7 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
   }
 
   const errors: Array<ResourceValidationErrorObject> = []
-  const body: JSONAPIResourceCreateObject =
+  const body: ResourceCreateObject =
     'id' in data
       ? {
           type: data.type,
@@ -62,14 +62,16 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
     const value = data[fieldName as keyof typeof data]
 
     if (field.matches(ResourceFieldFlag.PostForbidden)) {
-      errors.push(
-        createValidationErrorObject(
-          ValidationErrorMessage.InvalidResourceField,
-          onResourceOfTypeMessage([formatter], `Field "${fieldName}" must be omitted`),
-          [fieldName],
-          data,
-        ),
-      )
+      if (!isUndefined(value)) {
+        errors.push(
+          createValidationErrorObject(
+            ValidationErrorMessage.InvalidResourceField,
+            onResourceOfTypeMessage([formatter], `Field "${fieldName}" must be omitted`),
+            [fieldName],
+            data,
+          ),
+        )
+      }
       // check for undefined only for to-many relationship field because null is an invalid value
     } else if (field.isToManyRelationshipField() ? isUndefined(value) : isNone(value)) {
       if (field.matches(ResourceFieldFlag.PostRequired)) {

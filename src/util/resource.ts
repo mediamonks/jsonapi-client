@@ -1,5 +1,5 @@
 import { ResourceIdentifier } from '../resource/identifier'
-import { ResourceId, ResourceType } from '../types'
+import { ResourceId, ResourceType } from '../types/jsonapi'
 
 class Resource<T extends ResourceType> extends ResourceIdentifier<T> {}
 

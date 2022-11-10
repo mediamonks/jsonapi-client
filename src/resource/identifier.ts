@@ -1,7 +1,5 @@
-import { ResourceId, ResourceType } from '../types'
+import { ResourceId, ResourceType } from '../types/jsonapi'
 import { resourceId, resourceType } from '../util/validators'
-
-const META_ACCESSOR = Symbol('Meta')
 
 export class ResourceIdentifier<T extends ResourceType> {
   readonly type: T

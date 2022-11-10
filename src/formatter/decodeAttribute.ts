@@ -2,7 +2,8 @@ import { isSome } from 'isntnt'
 
 import { ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import { createValidationErrorObject, ResourceValidationErrorObject } from '../error'
-import type { AttributeValue, JSONAPIResourceObject, ResourceFieldName } from '../types'
+import type { AttributeValue, ResourceFieldName } from '../types'
+import type { ResourceObject } from '../types/jsonapi'
 import { EMPTY_OBJECT } from '../data/constants'
 import type { AttributeField } from '../resource/field/attribute'
 import { failure, success, Validation } from '../util/validation'
@@ -19,7 +20,7 @@ import { failure, success, Validation } from '../util/validation'
 export const decodeAttribute = (
   field: AttributeField<any, any, any>,
   fieldName: ResourceFieldName,
-  resource: JSONAPIResourceObject<any>,
+  resource: ResourceObject<any>,
   pointer: ReadonlyArray<string>,
 ): Validation<AttributeValue, ResourceValidationErrorObject> => {
   const value = (resource.attributes || EMPTY_OBJECT)[fieldName]

@@ -3,18 +3,14 @@ import { ResourceIdentifier } from '../resource/identifier'
 import { RelationshipFieldType, ResourceFieldFlag } from '../data/enum'
 import { RelationshipField } from '../resource/field/relationship'
 import { AttributeField } from '../resource/field/attribute'
-import {
-  JSONAPIMetaObject,
-  JSONAPIResourceObject,
-  ResourceFields,
-  JSONAPISuccessOfManyDocument,
-  JSONAPISuccessOfOneDocument,
-} from '../types'
+import { MetaObject, ResourceObject } from '../types/jsonapi'
 import { reflect } from '../util/helpers'
+import { ManyResourceDocument, OneResourceDocument, ResourceFields } from '../types'
+import { doc } from 'prettier'
 
 export type MockResource<
   T extends ResourceFormatter,
-  U extends JSONAPIMetaObject = {}
+  U extends MetaObject = {}
 > = ResourceIdentifier<T['type']> & {
   data: {
     [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<infer R, infer S, any>
@@ -34,21 +30,21 @@ export type MockResource<
 
 export type ResourceMockToOneRelationship<T extends ResourceFormatter> = (
   url: URL,
-  included: Array<JSONAPIResourceObject>,
-) => JSONAPIResourceObject<T> | null
+  included: Array<ResourceObject>,
+) => ResourceObject<T> | null
 
 export type ResourceMockToManyRelationship<T extends ResourceFormatter> = (
   url: URL,
-  included: Array<JSONAPIResourceObject>,
-) => Array<JSONAPIResourceObject<T>>
+  included: Array<ResourceObject>,
+) => Array<ResourceObject<T>>
 
 export type FilterToManyRelationship<T extends ResourceFormatter> = (
-  resources: Array<JSONAPIResourceObject<T>>,
-) => Array<JSONAPIResourceObject<T>>
+  resources: Array<ResourceObject<T>>,
+) => Array<ResourceObject<T>>
 
 export type FindToOneRelationship<T extends ResourceFormatter> = (
-  resources: ReadonlyArray<JSONAPIResourceObject<T>>,
-) => JSONAPIResourceObject<T> | null
+  resources: ReadonlyArray<ResourceObject<T>>,
+) => ResourceObject<T> | null
 
 export type MockResourceRepositorySetup<T extends ResourceFormatter> = {
   createMockResource: (index: number) => MockResource<T>
@@ -70,22 +66,25 @@ export class MockResourceRepository<T extends ResourceFormatter> {
     this.mocks = arrayOfLength(setup.amount || 100, (index) => setup.createMockResource(index))
   }
 
-  getMany(url: URL): JSONAPISuccessOfManyDocument<T> {
+  getMany(url: URL): ManyResourceDocument<T, {}> {
     const { filterManyRequest } = this.setup
     const mockData = filterManyRequest ? filterManyRequest(url, this) : this.mocks
     return this.resolveOfManyMockDocument(url, mockData)
   }
 
-  getOne(url: URL, id: string): JSONAPISuccessOfOneDocument<T> | null {
+  getOne(url: URL, id: string): OneResourceDocument<T, any> {
     const mockResource = this.mocks.find((item) => item.id === id)
-    return mockResource ? this.resolveOfOneMockDocument(url, mockResource) : null
+    if (!mockResource) {
+      throw new ReferenceError(`Mock Resource Not Found`)
+    }
+    return this.resolveOfOneMockDocument(url, mockResource)
   }
 
   static toMany<T extends ResourceFormatter>(
     getRepository: () => MockResourceRepository<T>,
     filterResources?: FilterToManyRelationship<T>,
   ) {
-    return (url: URL, included: Array<JSONAPIResourceObject>): Array<JSONAPIResourceObject> => {
+    return (url: URL, included: Array<ResourceObject>): Array<ResourceObject> => {
       const repository = getRepository()
       const resources = repository.mocks.map((item) =>
         repository.resolveMockResource(url, item, included),
@@ -98,7 +97,7 @@ export class MockResourceRepository<T extends ResourceFormatter> {
     getRepository: () => MockResourceRepository<T>,
     findResource: FindToOneRelationship<T> = (resources) => resources[0] || null,
   ) {
-    return (url: URL, included: Array<JSONAPIResourceObject>): JSONAPIResourceObject | null => {
+    return (url: URL, included: Array<ResourceObject>): ResourceObject | null => {
       const repository = getRepository()
       return findResource(
         repository.mocks.map((item) => repository.resolveMockResource(url, item, included)),
@@ -109,8 +108,8 @@ export class MockResourceRepository<T extends ResourceFormatter> {
   private resolveOfManyMockDocument<T extends ResourceFormatter>(
     url: URL,
     mockData: Array<MockResource<T>>,
-  ): JSONAPISuccessOfManyDocument<T> {
-    const included: Array<JSONAPIResourceObject> = []
+  ): ManyResourceDocument<T, {}> {
+    const included: Array<ResourceObject> = []
     const data = mockData.map((item: MockResource<T>) =>
       this.resolveMockResource(url, item, included),
     )
@@ -120,14 +119,14 @@ export class MockResourceRepository<T extends ResourceFormatter> {
       links: {
         self: url.href,
       },
-    }
+    } as any
   }
 
   private resolveOfOneMockDocument<T extends ResourceFormatter>(
     url: URL,
     mockData: MockResource<T> | ReadonlyArray<MockResource<T>>,
-  ): JSONAPISuccessOfOneDocument<T> {
-    const included: Array<JSONAPIResourceObject> = []
+  ): OneResourceDocument<T, any> {
+    const included: Array<ResourceObject> = []
     const data = this.resolveMockResource(url, mockData as any, included)
     return {
       data,
@@ -135,20 +134,20 @@ export class MockResourceRepository<T extends ResourceFormatter> {
       links: {
         self: url.href,
       },
-    }
+    } as any
   }
 
   private resolveMockResource<T extends ResourceFormatter>(
     url: URL,
     mock: MockResource<T>,
-    included: Array<JSONAPIResourceObject>,
-  ): JSONAPIResourceObject<T> {
+    included: Array<ResourceObject>,
+  ): ResourceObject<T> {
     const includedResource = included.find((item) => item.type === mock.type && item.id === mock.id)
     if (includedResource) {
       return includedResource
     }
 
-    const resource: JSONAPIResourceObject<T> = {
+    const resource: ResourceObject<T> = {
       type: mock.type,
       id: mock.id,
       attributes: {},

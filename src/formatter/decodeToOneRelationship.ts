@@ -1,14 +1,13 @@
 import { isSome } from 'isntnt'
 import { RelationshipFieldType, ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../error'
-import {
-  JSONAPIResourceObject,
+import type {
   ResourceFieldsQuery,
   ResourceIncludeQuery,
   Resource,
   ResourceFieldName,
-  ResourceId,
 } from '../types'
+import type { ResourceObject, ResourceId } from '../types/jsonapi'
 import { EMPTY_OBJECT } from '../data/constants'
 import { RelationshipField } from '../resource/field/relationship'
 import { ResourceIdentifier } from '../resource/identifier'
@@ -23,8 +22,8 @@ export type ToOneRelationshipData = Resource<any> | ResourceIdentifier<any> | nu
 export const decodeToOneRelationship = (
   field: RelationshipField<ResourceFormatter, RelationshipFieldType.ToOne, any>,
   fieldName: ResourceFieldName,
-  resourceObject: JSONAPIResourceObject<any>,
-  included: ReadonlyArray<JSONAPIResourceObject>,
+  resourceObject: ResourceObject<any>,
+  included: ReadonlyArray<ResourceObject>,
   baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
@@ -72,7 +71,7 @@ export const decodeToOneRelationship = (
 export const decodeToOneRelationshipValue = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
-  resourceObject: JSONAPIResourceObject<any>,
+  resourceObject: ResourceObject<any>,
   pointer: ReadonlyArray<ResourceFieldName | ResourceId>,
 ): Validation<ToOneRelationshipData, ResourceValidationErrorObject> => {
   const formatters = field.getFormatters()

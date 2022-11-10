@@ -1,10 +1,6 @@
 import { ResourceValidationErrorObject } from '../error'
-import {
-  JSONAPIResourceObject,
-  ResourceFieldName,
-  ResourceFieldsQuery,
-  ResourceIncludeQuery,
-} from '../types'
+import type { ResourceFieldName, ResourceFieldsQuery, ResourceIncludeQuery } from '../types'
+import type { ResourceObject } from '../types/jsonapi'
 import { RelationshipField } from '../resource/field/relationship'
 import {
   decodeToOneRelationship,
@@ -24,8 +20,8 @@ export type RelationshipData = ToOneRelationshipData | ToManyRelationshipData
 export const decodeRelationship = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
-  resourceObject: JSONAPIResourceObject<any>,
-  included: ReadonlyArray<JSONAPIResourceObject>,
+  resourceObject: ResourceObject<any>,
+  included: ReadonlyArray<ResourceObject>,
   baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,
@@ -45,7 +41,7 @@ export const decodeRelationship = (
 export const decodeRelationshipValue = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
-  resourceObject: JSONAPIResourceObject<any>,
+  resourceObject: ResourceObject<any>,
   pointer: ReadonlyArray<string>,
 ): Validation<RelationshipData, ResourceValidationErrorObject> =>
   (field.isToOneRelationshipField() ? decodeToOneRelationshipValue : decodeToManyRelationshipValue)(

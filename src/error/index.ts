@@ -1,6 +1,5 @@
 import { isString, isSome } from 'isntnt'
-
-import { JSONAPIErrorObject, JSONAPIMetaObject } from '../types'
+import type { ErrorObject, MetaObject } from '../types/jsonapi'
 import { isContent } from '../util/predicates'
 
 export type ErrorObjectPointer = ReadonlyArray<string>
@@ -15,14 +14,14 @@ export type ResourceDocumentErrorObject = {
     pointer: ErrorObjectPointer
     parameter: string | null
   }
-  meta: JSONAPIMetaObject
+  meta: MetaObject
 }
 
 export class ResourceDocumentError extends Error {
   readonly actual: unknown
   readonly details: ReadonlyArray<ResourceDocumentErrorObject>
 
-  constructor(message: string, value: unknown, errors: ReadonlyArray<JSONAPIErrorObject>) {
+  constructor(message: string, value: unknown, errors: ReadonlyArray<ErrorObject>) {
     super(message)
     this.actual = value
     this.details = errors.map(createResourceDocumentErrorObject)
@@ -32,7 +31,7 @@ export class ResourceDocumentError extends Error {
 
 /** @hidden */
 export const createResourceDocumentErrorObject = (
-  error: JSONAPIErrorObject,
+  error: ErrorObject,
 ): ResourceDocumentErrorObject => {
   return {
     id: isContent(error.id) ? String(error.id) : null,

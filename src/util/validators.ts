@@ -1,10 +1,9 @@
 import { either, isString, isObject, isArray, and, instance } from 'isntnt'
-
 import { ResourceField } from '../resource/field'
 import { Type, StaticType } from './type'
-import { ResourceIdentifierKey } from '../types'
+import type { ResourceIdentifierKey } from '../types'
 import { isURLString, isResourceType, isResourceIdentifierKey } from './predicates'
-import { ResourceIdentifier } from '../resource/identifier'
+import type { ResourceIdentifier } from '../resource/identifier'
 
 /** @hidden */
 export const array = Type.is('an array', isArray)

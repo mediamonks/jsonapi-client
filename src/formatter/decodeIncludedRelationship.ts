@@ -1,13 +1,13 @@
 import { EMPTY_OBJECT } from '../data/constants'
 import { ValidationErrorMessage } from '../data/enum'
 import { createValidationErrorObject, ResourceValidationErrorObject } from '../error'
-import {
+import type {
   Resource,
   ResourceIncludeQuery,
   ResourceFieldsQuery,
-  JSONAPIResourceObject,
   ResourceFieldName,
 } from '../types'
+import type { ResourceObject } from '../types/jsonapi'
 import { RelationshipField } from '../resource/field/relationship'
 import { ResourceIdentifier } from '../resource/identifier'
 import { decodeResourceObject } from './decodeResourceObject'
@@ -18,7 +18,7 @@ export const decodeIncludedRelationship = (
   field: RelationshipField<any, any, any>,
   fieldName: ResourceFieldName,
   resourceIdentifier: ResourceIdentifier<any>,
-  included: ReadonlyArray<JSONAPIResourceObject>,
+  included: ReadonlyArray<ResourceObject>,
   baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery<any>,
   includeFilter: ResourceIncludeQuery<any>,

@@ -1,12 +1,12 @@
 import { isArray, isUndefined, isNull } from 'isntnt'
-
 import { ResourceFieldFlag, ValidationErrorMessage } from '../data/enum'
 import {
   createValidationErrorObject,
   ResourceValidationError,
   ResourceValidationErrorObject,
 } from '../error'
-import type { ResourceFields, ResourcePatchData, JSONAPIResourceObject } from '../types'
+import type { ResourceFields, ResourcePatchData } from '../types'
+import type { ResourceObject } from '../types/jsonapi'
 import { resourceTypeNotFoundDetail, onResourceOfTypeMessage } from '../util/formatting'
 import { resourceIdentifier, resourcePatchData } from '../util/validators'
 import type { ResourceFormatter } from '../formatter'
@@ -14,7 +14,7 @@ import type { ResourceFormatter } from '../formatter'
 export const encodeResourcePatchData = <T extends ResourceFormatter>(
   formatters: ReadonlyArray<T>,
   data: ResourcePatchData<T>,
-): { data: JSONAPIResourceObject } => {
+): { data: ResourceObject } => {
   if (!resourcePatchData.predicate(data)) {
     console.error(ValidationErrorMessage.InvalidResourcePatchData, data)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourcePatchData, data, [])
@@ -34,7 +34,7 @@ export const encodeResourcePatchData = <T extends ResourceFormatter>(
   }
 
   const errors: Array<ResourceValidationErrorObject> = []
-  const body: JSONAPIResourceObject = {
+  const body: ResourceObject = {
     type: data.type,
     id: data.id,
   }

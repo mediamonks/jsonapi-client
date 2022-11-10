@@ -1,22 +1,22 @@
-import {
+import type {
   ResourceFields,
-  ResourceId,
-  ResourceType,
   ResourceCreateData,
-  JSONAPIResourceObject,
   ResourcePatchData,
-  JSONAPIResourceCreateObject,
   ResourceFieldName,
   RelationshipFieldName,
   AttributeFieldName,
   ResourceFieldsFilterLimited,
   ResourceIncludeFilter,
-  JSONAPIMetaObject,
-  JSONAPILinksObject,
   WithMeta,
-  META_ACCESSOR,
-  LINKS_ACCESSOR,
 } from './types'
+import type {
+  ResourceId,
+  ResourceObject,
+  ResourceCreateObject,
+  ResourceType,
+  MetaObject,
+  ResourceDocumentLinks,
+} from './types/jsonapi'
 import { resourceType } from './util/validators'
 import { parseResourceFields } from './formatter/parseResourceFields'
 import { ResourceIdentifier } from './resource/identifier'
@@ -30,7 +30,8 @@ import {
   DecodeResourceIdentifierEvent,
   EventEmitter,
 } from './event/EventEmitter'
-import { Nullable } from 'isntnt'
+import type { Nullable } from 'isntnt'
+import { LINKS_ACCESSOR, META_ACCESSOR } from './data/constants'
 
 export type ResourceFormatterEvent<T extends ResourceFormatter> =
   | DecodeResourceIdentifierEvent<T>
@@ -66,13 +67,13 @@ export class ResourceFormatter<
 
   createResourcePostDocument(
     data: ResourceCreateData<ResourceFormatter<T, U>>,
-  ): { data: JSONAPIResourceCreateObject<ResourceFormatter<T, U>> } {
+  ): { data: ResourceCreateObject<ResourceFormatter<T, U>> } {
     return encodeResourceCreateData([this], data)
   }
 
   createResourcePatchDocument(
     data: ResourcePatchData<ResourceFormatter<T, U>>,
-  ): { data: JSONAPIResourceObject<ResourceFormatter<T, U>> } {
+  ): { data: ResourceObject<ResourceFormatter<T, U>> } {
     return encodeResourcePatchData([this], data)
   }
 
@@ -112,13 +113,13 @@ export class ResourceFormatter<
   }
 }
 
-export const getDocumentMeta = <T extends JSONAPIMetaObject = JSONAPIMetaObject>(
+export const getDocumentMeta = <T extends MetaObject = MetaObject>(
   data: WithMeta<any>,
 ): Nullable<Partial<T>> => {
   return Object.hasOwnProperty.call(data, META_ACCESSOR) ? data[META_ACCESSOR] : null
 }
 
-export const getDocumentLinks = <T extends JSONAPILinksObject = JSONAPILinksObject>(
+export const getDocumentLinks = <T extends ResourceDocumentLinks = ResourceDocumentLinks>(
   data: WithMeta<any>,
 ): Nullable<Partial<T>> => {
   return Object.hasOwnProperty.call(data, LINKS_ACCESSOR) ? data[LINKS_ACCESSOR] : null

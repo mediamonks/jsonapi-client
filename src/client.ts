@@ -1,5 +1,4 @@
 import { SerializableObject, isString, isObject, isSome, isNone } from 'isntnt'
-
 import {
   AbsolutePathRoot,
   ImplicitInclude,
@@ -8,13 +7,14 @@ import {
   ValidationErrorMessage,
 } from './data/enum'
 import { ResourceFormatter } from './formatter'
-import { JSONAPIDocument, ResourcePath } from './types'
+import type { ResourcePath } from './types'
 import { Endpoint } from './client/endpoint'
 import { Type } from './util/type'
 import { jsonapiFailureDocument, jsonapiSuccessDocument, urlString, url } from './util/validators'
 import { reflect, windowFetch } from './util/helpers'
 import { ResourceDocumentError } from './error'
 import { InternalErrorCode, JSONAPIRequestMethod, JSON_API_MIME_TYPE } from './data/constants'
+import { ResourceDocument } from './types/jsonapi'
 
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
@@ -72,9 +72,7 @@ export class Client<T extends Partial<ClientSetup>> {
     url: URL,
     method: U,
     body?: SerializableObject,
-  ): Promise<
-    U extends JSONAPIRequestMethod.Get ? JSONAPIDocument<any> : JSONAPIDocument<any> | null
-  > {
+  ): Promise<U extends JSONAPIRequestMethod.Get ? ResourceDocument : ResourceDocument | null> {
     return this.beforeRequest(url, method, body).then((request) =>
       this.setup.fetchAdapter!(request).then((response) => this.afterRequest(response, request)),
     ) as any
@@ -119,7 +117,7 @@ export class Client<T extends Partial<ClientSetup>> {
   protected async afterRequest(
     response: Response,
     request: Request,
-  ): Promise<JSONAPIDocument<any> | null> {
+  ): Promise<ResourceDocument<any> | null> {
     const afterRequestResponse = await this.setup.afterRequest!(response)
     const data = await afterRequestResponse.json()
 
@@ -142,7 +140,7 @@ export class Client<T extends Partial<ClientSetup>> {
       throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
     }
 
-    return data as JSONAPIDocument<any>
+    return data as ResourceDocument<any>
   }
 
   toString(): string {

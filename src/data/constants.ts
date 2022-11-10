@@ -58,3 +58,6 @@ export enum InternalErrorCode {
   InvalidClientSetupAfterRequestType,
   InvalidClientSetupFetchAdapterType,
 }
+
+export const LINKS_ACCESSOR = Symbol.for('Links')
+export const META_ACCESSOR = Symbol.for('Meta')

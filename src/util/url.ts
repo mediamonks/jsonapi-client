@@ -1,14 +1,8 @@
 import { isArray, isObject, isSome, or, isSerializableNumber, and, isString, isTrue } from 'isntnt'
 import { Endpoint } from '../client/endpoint'
-
 import { EMPTY_ARRAY, EMPTY_OBJECT } from '../data/constants'
-import {
-  ResourceFilter,
-  JSONAPISearchParams,
-  ResourceIncludeQuery,
-  ResourceQueryParams,
-  JSONAPISortParamValue,
-} from '../types'
+import type { ResourceFilter, ResourceIncludeQuery, ResourceQueryParams } from '../types'
+import type { SearchParams, SortParamValue } from '../types/jsonapi'
 
 type URLSearchParamEntry = [string, string]
 
@@ -23,7 +17,7 @@ export const createURL = (
   endpoint: Endpoint<any, any>,
   path: ReadonlyArray<string> = EMPTY_ARRAY,
   resourceFilter: ResourceFilter<any> = EMPTY_OBJECT,
-  searchParams: JSONAPISearchParams = EMPTY_OBJECT,
+  searchParams: SearchParams = EMPTY_OBJECT,
 ): URL =>
   parseSearchParams(resourceFilter, searchParams).reduce((url, [name, value]) => {
     url.searchParams.append(name, value)
@@ -49,7 +43,7 @@ const searchParamEntryComparator = (
 /** @hidden */
 export const parseSearchParams = (
   resourceFilter: ResourceQueryParams,
-  searchParams: JSONAPISearchParams,
+  searchParams: SearchParams,
 ): ReadonlyArray<URLSearchParamEntry> => {
   return [
     ...Object.entries(resourceFilter)
@@ -107,7 +101,7 @@ export const parseIncludeParam = (
   isSome(value) ? parseArrayParam('include', parseIncludeParamValue([], value)) : []
 
 /** @hidden */
-export const parseSortParam = (value: JSONAPISortParamValue): ReadonlyArray<URLSearchParamEntry> =>
+export const parseSortParam = (value: SortParamValue): ReadonlyArray<URLSearchParamEntry> =>
   isArray(value) ? parseArrayParam('sort', value) : []
 
 /** @hidden */

@@ -1,20 +1,24 @@
-import {
+import type {
   SerializableArray,
   SerializablePrimitive,
   SerializableObject,
   Intersect,
-  Serializable,
   Predicate,
   Nullable,
-  Maybe,
 } from 'isntnt'
-
-import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from './data/enum'
-import { ResourceField } from './resource/field'
-import { AttributeField } from './resource/field/attribute'
-import { RelationshipField } from './resource/field/relationship'
-import { ResourceFormatter } from './formatter'
-import { ResourceIdentifier } from './resource/identifier'
+import { RelationshipFieldType, ResourceFieldFlag, ResourceFieldRule } from '../data/enum'
+import { ResourceField } from '../resource/field'
+import { AttributeField } from '../resource/field/attribute'
+import { RelationshipField } from '../resource/field/relationship'
+import { ResourceFormatter } from '../formatter'
+import type {
+  ResourceType,
+  ResourceId,
+  MetaObject,
+  ResourceDocumentLinks,
+  ResourceIdentifierObject,
+} from './jsonapi'
+import type { LINKS_ACCESSOR, META_ACCESSOR } from '../data/constants'
 
 // Util
 
@@ -26,8 +30,8 @@ export type ReadonlyRecord<K extends keyof any, T> = {
 }
 
 // Resource
-export type ResourceType = string
-export type ResourceId = string
+// export type ResourceType = string
+// export type ResourceId = string
 
 export type ResourcePath = string
 
@@ -80,7 +84,7 @@ export type ResourcePatchData<T extends ResourceFormatter> = T extends ResourceF
     }[R]
   : never
 
-type BaseNaiveIncludedResource<T extends ResourceFormatter> = ResourceIdentifier<T['type']> &
+type BaseNaiveIncludedResource<T extends ResourceFormatter> = ResourceIdentifierObject<T['type']> &
   {
     [P in ResourceFieldNameWithFlag<
       T['fields'],
@@ -89,8 +93,8 @@ type BaseNaiveIncludedResource<T extends ResourceFormatter> = ResourceIdentifier
       ? R
       : T['fields'][P] extends RelationshipField<infer R, infer S, any>
       ? S extends 'to-one'
-        ? Nullable<ResourceIdentifier<R['type']>>
-        : ReadonlyArray<ResourceIdentifier<R['type']>>
+        ? Nullable<ResourceIdentifierObject<R['type']>>
+        : ReadonlyArray<ResourceIdentifierObject<R['type']>>
       : never
   }
 
@@ -109,8 +113,8 @@ type BaseNaiveResource<T extends ResourceFormatter<any, any>> = {
     ? R
     : T['fields'][P] extends RelationshipField<infer R, infer S, any>
     ? S extends 'to-one'
-      ? Nullable<ResourceIdentifier<R['type']>> | Nullable<NaiveResource<R>>
-      : ReadonlyArray<ResourceIdentifier<R['type']>> | ReadonlyArray<NaiveResource<R>>
+      ? Nullable<ResourceIdentifierObject<R['type']>> | Nullable<NaiveResource<R>>
+      : ReadonlyArray<ResourceIdentifierObject<R['type']>> | ReadonlyArray<NaiveResource<R>>
     : never
 }
 
@@ -312,9 +316,12 @@ export type AttributeFieldPatchValue<
     : never
   : never
 
-export type AttributeFieldName<T extends ResourceFormatter<any, any>> = {
-  [P in keyof T['fields']]: T['fields'][P] extends AttributeField<any, any, any> ? P : never
-}[keyof T['fields']]
+export type AttributeFieldName<T extends ResourceFormatter<any, any>> = Extract<
+  {
+    [P in keyof T['fields']]: T['fields'][P] extends AttributeField<any, any, any> ? P : never
+  }[keyof T['fields']],
+  ResourceFieldName
+>
 
 export type AttributeFieldNameWithFlag<
   T extends ResourceFormatter<any, any>,
@@ -351,7 +358,7 @@ export type ToOneRelationshipCreateData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PostOptional | ResourceFieldFlag.PostRequired
-    ? ResourceIdentifier<R['type']>
+    ? ResourceIdentifierObject<R['type']>
     : never
   : never
 
@@ -359,7 +366,7 @@ export type ToManyRelationshipCreateData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
-    ? Array<ResourceIdentifier<R['type']>>
+    ? ReadonlyArray<ResourceIdentifierObject<R['type']>>
     : never
   : never
 
@@ -377,9 +384,9 @@ export type ToOneRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional
-    ? Nullable<ResourceIdentifier<R['type']>>
+    ? Nullable<ResourceIdentifierObject<R['type']>>
     : S extends ResourceFieldFlag.PatchRequired
-    ? ResourceIdentifier<R['type']>
+    ? ResourceIdentifierObject<R['type']>
     : never
   : never
 
@@ -387,7 +394,7 @@ export type ToManyRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
-    ? ReadonlyArray<ResourceIdentifier<R['type']>>
+    ? ReadonlyArray<ResourceIdentifierObject<R['type']>>
     : never
   : never
 
@@ -400,14 +407,17 @@ export type RelationshipFieldResourceIdentifier<
 > = T extends RelationshipField<infer R, any, any>
   ? Nullable<
       {
-        [P in R['type']]: ResourceIdentifier<P>
+        [P in R['type']]: ResourceIdentifierObject<P>
       }[R['type']]
     >
   : never
 
-export type RelationshipFieldName<T extends ResourceFormatter<any, any>> = {
-  [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<any, any, any> ? P : never
-}[keyof T['fields']]
+export type RelationshipFieldName<T extends ResourceFormatter<any, any>> = Extract<
+  {
+    [P in keyof T['fields']]: T['fields'][P] extends RelationshipField<any, any, any> ? P : never
+  }[keyof T['fields']],
+  ResourceFieldName
+>
 
 export type RelationshipFieldNameWithFlag<
   T extends ResourceFormatter<any, any>,
@@ -459,215 +469,6 @@ export type ToManyRelationshipFieldFromFactory<
   : never
 
 // JSONAPI
-/**
- * JSONAPI-Client supports version 1.0 only
- * {@link https://jsonapi.org/faq/#what-is-the-meaning-of-json-apis-version|JSON:API Reference}
- */
-export type JSONAPIVersion = '1.0'
-
-type BaseJSONAPIDocument<T extends JSONAPILinksObject | JSONAPIPaginationLinks> = {
-  meta?: JSONAPIMetaObject
-  links?: T
-  jsonapi?: {
-    version?: JSONAPIVersion
-  }
-}
-
-/**
- * {@link https://jsonapi.org/format/#document-structure|JSON:API Reference}
- */
-export type JSONAPIDocument<T extends ResourceFormatter = any> =
-  | JSONAPISuccessDocument<T>
-  | JSONAPIFailureDocument
-
-export type JSONAPISuccessOfManyDocument<
-  T extends ResourceFormatter = any
-> = BaseJSONAPIDocument<JSONAPIPaginationLinks> & {
-  data: Array<JSONAPIResourceObject<T>>
-  included?: Array<JSONAPIResourceObject<ResourceRelatedResources<T>>>
-}
-
-export type JSONAPISuccessOfOneDocument<
-  T extends ResourceFormatter = any
-> = BaseJSONAPIDocument<JSONAPILinksObject> & {
-  data: JSONAPIResourceObject<T>
-  included?: Array<JSONAPIResourceObject<ResourceRelatedResources<T>>>
-}
-
-export type JSONAPISuccessDocument<T extends ResourceFormatter = any> =
-  | JSONAPISuccessOfManyDocument<T>
-  | JSONAPISuccessOfOneDocument<T>
-
-export type JSONAPIFailureDocument = BaseJSONAPIDocument<any> & {
-  errors: Array<JSONAPIErrorObject>
-}
-
-/**
- * {@link https://jsonapi.org/format/#document-resource-objects|JSON:API Reference}
- */
-export type JSONAPIResourceObject<T extends ResourceFormatter = any> = {
-  type: T['type']
-  id: ResourceId
-  attributes?: JSONAPIResourceObjectAttributes<T['fields']>
-  relationships?: JSONAPIResourceObjectRelationships<T['fields']>
-  links?: JSONAPILinksObject
-  meta?: JSONAPIMetaObject
-}
-
-/**
- * {@link https://jsonapi.org/format/#crud-creating|JSON:API Reference}
- */
-export type JSONAPIResourceCreateObject<T extends ResourceFormatter = any> = {
-  type: T['type']
-  id?: ResourceId
-  attributes?: JSONAPIResourceObjectAttributes<T['fields']>
-  relationships?: JSONAPIResourceObjectRelationships<T['fields']>
-  links?: JSONAPILinksObject
-  meta?: JSONAPIMetaObject
-}
-
-/**
- * {@link https://jsonapi.org/format/#document-resource-object-attributes|JSON:API Reference}
- */
-export type JSONAPIResourceObjectAttributes<T extends ResourceFormatter<any, any> = any> = {
-  [P in AttributeFieldName<T>]?: RawAttributeFieldValue<T[P]>
-}
-
-/**
- * {@link https://jsonapi.org/format/#document-resource-object-relationships|JSON:API Reference}
- */
-export type JSONAPIRelationshipData<
-  T extends RelationshipField<any, any, any> = any
-> = T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
-  ? Nullable<RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }>
-  : ReadonlyArray<RelationshipFieldResourceIdentifier<T> & { meta?: JSONAPIMetaObject }>
-
-/**
- * {@link https://jsonapi.org/format/#document-resource-object-relationships|JSON:API Reference}
- */
-export type JSONAPIResourceObjectRelationships<T extends ResourceFormatter<any, any> = any> = {
-  [P in RelationshipFieldName<T>]?: {
-    data?: JSONAPIRelationshipData<T[P]>
-    links?: JSONAPIResourceLinks
-    meta?: JSONAPIMetaObject
-  }
-}
-
-/**
- * {@link https://jsonapi.org/format/#document-jsonapi-object|JSON:API Reference}
- */
-export type JSONAPIObject = JSONAPIMetaObject & {
-  version?: JSONAPIVersion
-}
-
-/**
- * {@link https://jsonapi.org/format/#document-meta|JSON:API Reference}
- */
-export type JSONAPIMetaObject = SerializableObject
-
-/**
- * {@link https://jsonapi.org/format/#document-links|JSON:API Reference}
- */
-export type JSONAPILink =
-  | string
-  | {
-      href?: string
-      meta?: JSONAPIMetaObject
-    }
-
-/**
- * {@link https://jsonapi.org/format/#document-links|JSON:API Reference}
- */
-export type JSONAPILinksObject = {
-  [P in 'self' | 'related']?: JSONAPILink
-}
-
-/**
- * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
- */
-export type JSONAPIPaginationLinks = JSONAPILinksObject &
-  {
-    [P in 'first' | 'prev' | 'next' | 'last']?: Nullable<JSONAPILink>
-  }
-
-/**
- * {@link https://jsonapi.org/format/#document-resource-object-links|JSON:API Reference}
- */
-export type JSONAPIResourceLinks = {
-  [P in 'self']?: JSONAPILink
-}
-
-/**
- * {@link https://jsonapi.org/format/#error-objects|JSON:API Reference}
- */
-export type JSONAPIErrorLinks = {
-  [P in 'about']?: JSONAPILink
-}
-
-/**
- * {@link https://jsonapi.org/format/#error-objects|JSON:API Reference}
- */
-export type JSONAPIErrorObject = {
-  id?: string
-  links?: JSONAPIErrorLinks
-  status?: string
-  code?: string
-  title?: string
-  detail?: string
-  meta?: JSONAPIMetaObject
-  source?: {
-    pointer?: string
-    parameter?: string
-  }
-}
-
-export type SearchParamValue =
-  | SerializablePrimitive
-  | ReadonlyArray<SerializablePrimitive>
-  | {
-      [name: string]: SearchParamValue
-    }
-
-type BaseSearchParams = {
-  [name: string]: SearchParamValue
-} & JSONAPIPageParam &
-  JSONAPISortParam &
-  JSONAPIFilterParam & {
-    fields?: never
-    include?: never
-  }
-
-/**
- * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
- */
-export type JSONAPISearchParams<T extends BaseSearchParams = BaseSearchParams> = T
-
-export type JSONAPIPageParamValue = Maybe<string | number> | Record<string, string | number>
-
-/**
- * {@link https://jsonapi.org/format/#fetching-pagination|JSON:API Reference}
- */
-export interface JSONAPIPageParam<T extends JSONAPIPageParamValue = JSONAPIPageParamValue> {
-  page?: Maybe<T>
-}
-
-export type JSONAPISortParamValue = ReadonlyArray<string>
-
-/**
- * {@link https://jsonapi.org/format/#fetching-sorting|JSON:API Reference}
- */
-export interface JSONAPISortParam {
-  sort?: ReadonlyArray<string>
-}
-
-export type JSONAPIFilterParamValue = Maybe<string> | Record<string, Serializable>
-
-/**
- * {@link https://jsonapi.org/format/#fetching-filtering|JSON:API Reference}
- */
-export interface JSONAPIFilterParam<T extends JSONAPIFilterParamValue = JSONAPIFilterParamValue> {
-  filter?: Maybe<T>
-}
 
 // Experimental
 type ReadableFieldFlag = ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
@@ -819,12 +620,9 @@ type BaseFilteredResource<
     : never
 }
 
-export const LINKS_ACCESSOR = Symbol.for('Links')
-export const META_ACCESSOR = Symbol.for('Meta')
-
 export type WithMeta<T extends NaiveResource<any> | ReadonlyArray<NaiveResource<any>>> = T & {
-  [META_ACCESSOR]: JSONAPIMetaObject | null
-  [LINKS_ACCESSOR]: JSONAPILinksObject | null
+  [META_ACCESSOR]: MetaObject | null
+  [LINKS_ACCESSOR]: ResourceDocumentLinks | null
 }
 
 export type Resource<

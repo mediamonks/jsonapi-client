@@ -1,17 +1,15 @@
-import {
-  JSONAPIResourceObject,
-  JSONAPIDocument,
-  JSONAPIMetaObject,
-  JSONAPILinksObject,
-  JSONAPIPaginationLinks,
-} from '../types'
-import { ResourceIdentifier } from '../resource/identifier'
+import type {
+  ResourceObject,
+  ResourceDocument,
+  MetaObject,
+  ResourceDocumentLinks,
+  PaginationLinks,
+  ResourceIdentifierObject,
+} from '../types/jsonapi'
 
-type ContextKey = ResourceIdentifier<any> | ReadonlyArray<ResourceIdentifier<any>>
+type ContextKey = ResourceIdentifierObject | ReadonlyArray<ResourceIdentifierObject>
 
-type ContextData =
-  | Pick<JSONAPIDocument, 'meta' | 'links'>
-  | Pick<JSONAPIResourceObject, 'meta' | 'links'>
+type ContextData = Pick<ResourceDocument, 'meta' | 'links'> | Pick<ResourceObject, 'meta' | 'links'>
 
 type ContextMap = WeakMap<ContextKey, ContextData>
 
@@ -30,10 +28,10 @@ export const createContextStore = () => {
         meta,
       }
     },
-    getLinks(key: ContextKey): JSONAPILinksObject | JSONAPIPaginationLinks {
+    getLinks(key: ContextKey): ResourceDocumentLinks | PaginationLinks {
       return this.get(key).links
     },
-    getMeta(key: ContextKey): JSONAPIMetaObject {
+    getMeta(key: ContextKey): MetaObject {
       return this.get(key).meta
     },
   }

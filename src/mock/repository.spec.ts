@@ -22,14 +22,6 @@ describe('MockResourceRepository', () => {
   })
 
   describe('getOne', () => {
-    it('returns null for a resource not found', () => {
-      const id = `NON_EXISTING_ID`
-      const url = new URL(`http://example.com/api/path-a/${id}`)
-      const x = repositoryA.getOne(url, id)
-
-      expect(x).toBe(null)
-    })
-
     it('returns a resource for a resource found by id', () => {
       const id = `0`
       const url = new URL(`http://example.com/api/path-a/${id}`)

@@ -1,14 +1,13 @@
 import { ErrorMessage, ValidationErrorMessage, ResourceFieldFlag } from '../data/enum'
 import { ResourceValidationErrorObject, createValidationErrorObject } from '../error'
 import {
-  JSONAPIResourceObject,
   ResourceFieldsQuery,
   ResourceIncludeQuery,
   ResourceFields,
   ResourceFieldName,
-  ResourceId,
   NaiveResource,
 } from '../types'
+import type { ResourceObject, ResourceId } from '../types/jsonapi'
 import { resourceTypeNotFoundDetail } from '../util/formatting'
 import { failure, success, Validation } from '../util/validation'
 import { resourceObject } from '../util/validators'
@@ -33,8 +32,8 @@ import { cloneResource, createBaseResource } from '../util/resource'
  */
 export const decodeResourceObject = <T extends ResourceFormatter>(
   formatters: ReadonlyArray<T>,
-  resource: JSONAPIResourceObject,
-  included: ReadonlyArray<JSONAPIResourceObject>,
+  resource: ResourceObject,
+  included: ReadonlyArray<ResourceObject>,
   baseIncludedResourceMap: BaseIncludedResourceMap,
   fieldsFilter: ResourceFieldsQuery,
   includeFilter: ResourceIncludeQuery,

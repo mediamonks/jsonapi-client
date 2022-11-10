@@ -5,18 +5,9 @@ import {
   ResourceValidationErrorObject,
   ResourceValidationError,
 } from '../error'
-import {
-  JSONAPIDocument,
-  Resource,
-  ResourceFilterLimited,
-  ResourceId,
-  ResourceType,
-  META_ACCESSOR,
-  LINKS_ACCESSOR,
-  NaiveResource,
-  WithMeta,
-} from '../types'
-import { EMPTY_OBJECT, __DEV__ } from '../data/constants'
+import type { Resource, ResourceFilterLimited, NaiveResource, WithMeta } from '../types'
+import type { ResourceId, ResourceType, ResourceDocument, ErrorObject } from '../types/jsonapi'
+import { EMPTY_OBJECT, LINKS_ACCESSOR, META_ACCESSOR, __DEV__ } from '../data/constants'
 import { decodeResourceObject } from './decodeResourceObject'
 import type { ResourceFormatter } from '../formatter'
 import { jsonapiDocument } from '../util/validators'
@@ -26,7 +17,7 @@ export type BaseIncludedResourceMap = Record<ResourceType, Map<ResourceId, Resou
 /** @hidden */
 export const decodeDocument = <T extends ResourceFormatter>(
   formatters: ReadonlyArray<T>,
-  document: JSONAPIDocument<T>,
+  document: ResourceDocument<T>,
   filter: ResourceFilterLimited<T> = EMPTY_OBJECT,
 ): WithMeta<NaiveResource<T>> => {
   if (!jsonapiDocument.predicate(document)) {
@@ -39,7 +30,7 @@ export const decodeDocument = <T extends ResourceFormatter>(
     throw new ResourceDocumentError(
       ValidationErrorMessage.JSONAPIDocumentWithErrors,
       document,
-      document.errors,
+      document.errors as ReadonlyArray<ErrorObject>,
     )
   }
 
@@ -85,11 +76,11 @@ export const decodeDocument = <T extends ResourceFormatter>(
         writable: false,
         value: links,
       },
-    })
+    }) as any
   } else {
     const [data, errors] = decodeResourceObject(
       formatters,
-      document.data,
+      document.data as any,
       included,
       baseIncludedResourceMap,
       filter.fields || (EMPTY_OBJECT as any),
@@ -117,6 +108,6 @@ export const decodeDocument = <T extends ResourceFormatter>(
         writable: false,
         value: meta,
       },
-    })
+    }) as any
   }
 }
