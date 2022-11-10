@@ -6,12 +6,12 @@
   "author": "Nathan Uphoff",
   "license": "MIT",
   "scripts": {
-    "start": "yarn && yarn watch",
+    "start": "npm install && npm run watch",
     "watch": "tsc -w -d --skipLibCheck",
     "build": "rimraf dist && tsc -d --skipLibCheck",
     "test": "NODE_ENV=development jest",
     "test:ci": "NODE_ENV=development jest",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "npm run build"
   },
   "private": false,
   "bugs": {
