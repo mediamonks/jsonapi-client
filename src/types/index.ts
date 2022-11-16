@@ -19,6 +19,7 @@ import type {
   ResourceIdentifierObject,
 } from './jsonapi'
 import type { LINKS_ACCESSOR, META_ACCESSOR } from '../data/constants'
+import { ResourceIdentifier } from '../resource/identifier'
 
 // Util
 
@@ -358,7 +359,7 @@ export type ToOneRelationshipCreateData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PostOptional | ResourceFieldFlag.PostRequired
-    ? ResourceIdentifierObject<R['type']>
+    ? ResourceIdentifier<R['type']>
     : never
   : never
 
@@ -366,7 +367,7 @@ export type ToManyRelationshipCreateData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
-    ? ReadonlyArray<ResourceIdentifierObject<R['type']>>
+    ? ReadonlyArray<ResourceIdentifier<R['type']>>
     : never
   : never
 
@@ -384,9 +385,9 @@ export type ToOneRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToOne, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional
-    ? Nullable<ResourceIdentifierObject<R['type']>>
+    ? Nullable<ResourceIdentifier<R['type']>>
     : S extends ResourceFieldFlag.PatchRequired
-    ? ResourceIdentifierObject<R['type']>
+    ? ResourceIdentifier<R['type']>
     : never
   : never
 
@@ -394,7 +395,7 @@ export type ToManyRelationshipPatchData<
   T extends RelationshipField<any, RelationshipFieldType.ToMany, any>
 > = T extends RelationshipField<infer R, any, infer S>
   ? S extends ResourceFieldFlag.PatchOptional | ResourceFieldFlag.PatchRequired
-    ? ReadonlyArray<ResourceIdentifierObject<R['type']>>
+    ? ReadonlyArray<ResourceIdentifier<R['type']>>
     : never
   : never
 

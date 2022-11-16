@@ -71,7 +71,7 @@ export class Client<T extends Partial<ClientSetup>> {
   async request<U extends JSONAPIRequestMethod = JSONAPIRequestMethod.Get>(
     url: URL,
     method: U,
-    body?: SerializableObject,
+    body?: unknown,
   ): Promise<U extends JSONAPIRequestMethod.Get ? ResourceDocument : ResourceDocument | null> {
     return this.beforeRequest(url, method, body).then((request) =>
       this.setup.fetchAdapter!(request).then((response) => this.afterRequest(response, request)),
@@ -81,7 +81,7 @@ export class Client<T extends Partial<ClientSetup>> {
   protected async beforeRequest(
     initialUrl: URL,
     method: JSONAPIRequestMethod,
-    body?: SerializableObject,
+    body?: unknown,
   ): Promise<Request> {
     return Promise.all([
       Promise.resolve(this.setup.beforeRequestURL!(initialUrl)),
