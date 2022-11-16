@@ -131,6 +131,10 @@ export class Client<T extends Partial<ClientSetup>> {
       throw new ResourceDocumentError(afterRequestResponse.statusText, data, data.errors as any)
     }
 
+    if (request.method === JSONAPIRequestMethod.Delete) {
+      return null
+    }
+
     if (isNone(data) && request.method !== JSONAPIRequestMethod.Get) {
       return null
     }
