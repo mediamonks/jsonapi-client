@@ -21,12 +21,10 @@ export const decodeDocument = <T extends ResourceFormatter>(
   filter: ResourceFilterLimited<T> = EMPTY_OBJECT,
 ): WithMeta<NaiveResource<T>> => {
   if (!jsonapiDocument.predicate(document)) {
-    console.error(ValidationErrorMessage.InvalidResourceDocument, document)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceDocument, document, [])
   }
 
   if ('errors' in document) {
-    console.error(ValidationErrorMessage.JSONAPIDocumentWithErrors, document)
     throw new ResourceDocumentError(
       ValidationErrorMessage.JSONAPIDocumentWithErrors,
       document,
@@ -56,8 +54,6 @@ export const decodeDocument = <T extends ResourceFormatter>(
     })
 
     if (errors.length) {
-      console.error(ValidationErrorMessage.InvalidResourceDocument, errors)
-
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,
@@ -89,7 +85,6 @@ export const decodeDocument = <T extends ResourceFormatter>(
     )
 
     if (errors.length) {
-      console.error(ValidationErrorMessage.InvalidResourceDocument, errors)
       throw new ResourceValidationError(
         ValidationErrorMessage.InvalidResourceDocument,
         document,

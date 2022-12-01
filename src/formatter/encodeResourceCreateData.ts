@@ -16,13 +16,11 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
   data: ResourceCreateData<T>,
 ): { data: ResourceCreateObject<T> } => {
   if (!resourceCreateData.predicate(data)) {
-    console.error(ValidationErrorMessage.InvalidResourceCreateData, data)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceCreateData, data, [])
   }
 
   const formatter = formatters.find((formatter) => formatter.type === data.type)
   if (!formatter) {
-    console.error(ValidationErrorMessage.InvalidResourceCreateData, data)
     throw new ResourceValidationError(ValidationErrorMessage.InvalidResourceCreateData, data, [
       createValidationErrorObject(
         ValidationErrorMessage.InvalidResourceType,
@@ -186,7 +184,6 @@ export const encodeResourceCreateData = <T extends ResourceFormatter>(
   })
 
   if (errors.length) {
-    console.error(ValidationErrorMessage.InvalidResourceCreateData, errors)
     throw new ResourceValidationError(
       ValidationErrorMessage.InvalidResourceCreateData,
       data,

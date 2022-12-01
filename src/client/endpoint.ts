@@ -173,7 +173,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   ): Promise<OneResourceDocument<U, V>> {
     const url = this.createURL([id], resourceFilter as any, searchParams)
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-    return decodeDocument([this.formatter], document, resourceFilter) as any
+    return decodeDocument([this.formatter], document as any, resourceFilter) as any
   }
 
   async getMany<V extends ResourceFilterLimited<U>>(
@@ -182,7 +182,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   ): Promise<ManyResourceDocument<U, V>> {
     const url = this.createURL([], resourceFilter as any, searchParams)
     const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-    return decodeDocument([this.formatter], document, resourceFilter) as any
+    return decodeDocument([this.formatter], document as any, resourceFilter) as any
   }
 
   getToOne<
@@ -237,7 +237,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
     return async (id: ResourceId) => {
       const url = this.createURL([id, fieldPath], resourceFilter as any)
       const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-      return decodeDocument(fieldFormatters, document, resourceFilter) as any
+      return decodeDocument(fieldFormatters, document as any, resourceFilter) as any
     }
   }
 
@@ -258,7 +258,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
       const url = this.createURL([id, fieldPath], resourceFilter as any, searchParams as any)
 
       const document = await this.client.request(url, JSONAPIRequestMethod.Get)
-      return decodeDocument(fieldFormatters, document, resourceFilter) as any
+      return decodeDocument(fieldFormatters, document as any, resourceFilter) as any
     }
   }
 

@@ -260,15 +260,18 @@ describe('Client', () => {
       const client = new Client(MOCK_URL)
 
       try {
-        await (client as any).afterRequest({
-          ok: false,
-          statusText: '<statusText>',
-          async json() {
-            return {
-              errors: [],
-            }
+        await (client as any).afterRequest(
+          {
+            ok: false,
+            statusText: '<statusText>',
+            async json() {
+              return {
+                errors: [],
+              }
+            },
           },
-        })
+          {},
+        )
       } catch (error) {
         expect(error).toBeInstanceOf(ResourceDocumentError)
         expect(error.message).toBe('<statusText>')
@@ -279,12 +282,15 @@ describe('Client', () => {
       const client = new Client(MOCK_URL)
 
       try {
-        await (client as any).afterRequest({
-          ok: false,
-          async json() {
-            return {} // invalid data
+        await (client as any).afterRequest(
+          {
+            ok: false,
+            async json() {
+              return {} // invalid data
+            },
           },
-        })
+          {},
+        )
       } catch (error) {
         expect(error).toBeInstanceOf(ResourceDocumentError)
         expect(error.message).toBe('Invalid JSON:API document')

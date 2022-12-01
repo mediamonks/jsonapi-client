@@ -1,4 +1,4 @@
-import { SerializableObject, isString, isObject, isSome, isNone } from 'isntnt'
+import { isString, isObject, isSome, isNone } from 'isntnt'
 import {
   AbsolutePathRoot,
   ImplicitInclude,
@@ -68,14 +68,15 @@ export class Client<T extends Partial<ClientSetup>> {
     return new Endpoint(this, path, formatter)
   }
 
-  async request<U extends JSONAPIRequestMethod = JSONAPIRequestMethod.Get>(
+  async request(
     url: URL,
-    method: U,
+    method: JSONAPIRequestMethod,
     body?: unknown,
-  ): Promise<U extends JSONAPIRequestMethod.Get ? ResourceDocument : ResourceDocument | null> {
-    return this.beforeRequest(url, method, body).then((request) =>
-      this.setup.fetchAdapter!(request).then((response) => this.afterRequest(response, request)),
-    ) as any
+  ): Promise<ResourceDocument | null> {
+    const request = await this.beforeRequest(url, method, body)
+    const response = await this.setup.fetchAdapter!(request)
+
+    return this.afterRequest(response, request)
   }
 
   protected async beforeRequest(
@@ -119,20 +120,19 @@ export class Client<T extends Partial<ClientSetup>> {
     request: Request,
   ): Promise<ResourceDocument<any> | null> {
     const afterRequestResponse = await this.setup.afterRequest!(response)
+
+    if (request.method === JSONAPIRequestMethod.Delete) {
+      return null
+    }
+
     const data = await afterRequestResponse.json()
 
     if (!afterRequestResponse.ok) {
       if (!jsonapiFailureDocument.predicate(data)) {
-        console.error(ValidationErrorMessage.InvalidResourceDocument, data)
         throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
       }
 
-      console.error(afterRequestResponse.statusText, data)
       throw new ResourceDocumentError(afterRequestResponse.statusText, data, data.errors as any)
-    }
-
-    if (request.method === JSONAPIRequestMethod.Delete) {
-      return null
     }
 
     if (isNone(data) && request.method !== JSONAPIRequestMethod.Get) {
@@ -140,7 +140,6 @@ export class Client<T extends Partial<ClientSetup>> {
     }
 
     if (!jsonapiSuccessDocument.predicate(data)) {
-      console.error(ValidationErrorMessage.InvalidResourceDocument, data)
       throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
     }
 
