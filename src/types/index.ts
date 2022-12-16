@@ -302,8 +302,8 @@ export type RawAttributeFieldValue<
 export type AttributeFieldCreateValue<
   T extends AttributeField<any, any, any>
 > = T extends AttributeField<infer R, any, infer S>
-  ? S extends ResourceFieldFlag.PostOptional | ResourceFieldFlag.PostRequired
-    ? R
+  ? S extends WritableFieldFlag
+    ? R | (S extends ResourceFieldFlag.PostOptional ? null : never)
     : never
   : never
 
@@ -347,9 +347,9 @@ export type AttributeFieldValidator<T> = {
 // Relationships
 export type RelationshipCreateData<
   T extends RelationshipField<any, any, any>
-> = T extends RelationshipField<any, infer R, any>
+> = T extends RelationshipField<any, infer R, infer S>
   ? R extends RelationshipFieldType.ToOne
-    ? ToOneRelationshipCreateData<T>
+    ? ToOneRelationshipCreateData<T> | (S extends ResourceFieldFlag.PostOptional ? null : never)
     : R extends RelationshipFieldType.ToMany
     ? ToManyRelationshipCreateData<T>
     : never
@@ -473,6 +473,7 @@ export type ToManyRelationshipFieldFromFactory<
 
 // Experimental
 type ReadableFieldFlag = ResourceFieldFlag.GetOptional | ResourceFieldFlag.GetRequired
+type WritableFieldFlag = ResourceFieldFlag.PostOptional | ResourceFieldFlag.PostRequired
 
 type BaseResourceFieldNameOfFlag<
   T extends ResourceFormatter<any, any>,
