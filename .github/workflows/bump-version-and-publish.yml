@@ -42,7 +42,7 @@ jobs:
       - name: bump version
         if: ${{ github.event.inputs.version != 'keep-current' }}
         run: |
-          npm run test
+          npm run test:ci
           npm run build
           npm version ${{ github.event.inputs.version }} --no-git-tag-version --preid ${{ github.event.inputs.prereleaseid }}
           git add .
