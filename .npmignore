@@ -7,7 +7,6 @@
 .editorconfig
 .node-version
 .nvmrc
-.prettierrc
 .travis.yml
 jest.config.js
 /logs
