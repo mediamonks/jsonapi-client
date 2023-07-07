@@ -1,30 +1,30 @@
-import 'babel-polyfill'
+import 'babel-polyfill';
 
-import JSONAPI, { FilteredResource } from '../../src'
+import JSONAPI, { FilteredResource } from '../../src';
 
-import Country from './resources/Country'
+import Country from './resources/Country';
 
-const url = new URL(`https://content-yog-slb-production.ovpobs.tv/api/`)
+const url = new URL(`https://content-yog-slb-production.ovpobs.tv/api/`);
 
 const client = JSONAPI.client(url, {
   createPageQuery(page: number) {
     return {
       offset: page - 1,
       limit: 50,
-    }
+    };
   },
-})
+});
 
-const countries = client.endpoint(Country)
+const countries = client.endpoint(Country);
 
 type C = FilteredResource<
   Country,
   {
     fields: {
-      [Country.type]: ['isoName', 'participants', 'organisation']
-    }
+      [Country.type]: ['isoName', 'participants', 'organisation'];
+    };
   }
->
+>;
 
 countries
   .getMany(null, {
@@ -33,4 +33,4 @@ countries
     } as const,
   })
   .then((result) => console.log(result.data))
-  .catch(console.warn)
+  .catch(console.warn);

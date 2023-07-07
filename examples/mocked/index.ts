@@ -1,40 +1,40 @@
-import 'babel-polyfill'
-import { isString, isNumber, tuple, Static } from 'isntnt'
+import 'babel-polyfill';
+import { isString, isNumber, tuple, Static } from 'isntnt';
 
-import JSONAPI, { Attribute, Relationship, FilteredResource, ResourcePatchValues } from '../../src'
+import JSONAPI, { Attribute, Relationship, FilteredResource, ResourcePatchValues } from '../../src';
 
 export class Person extends JSONAPI.resource('person')<Person> {
-  @Attribute.required(isString) name!: string
-  @Attribute.optional(isNumber) age!: number
-  @Relationship.toOne(() => Country) country!: Country | null
-  @Relationship.toOne(() => City) city!: City | null
+  @Attribute.required(isString) name!: string;
+  @Attribute.optional(isNumber) age!: number;
+  @Relationship.toOne(() => Country) country!: Country | null;
+  @Relationship.toOne(() => City) city!: City | null;
 }
 
-type LatLong = Static<typeof isLatLong>
-const isLatLong = tuple(isNumber, isNumber)
+type LatLong = Static<typeof isLatLong>;
+const isLatLong = tuple(isNumber, isNumber);
 
 export class City extends JSONAPI.resource('city')<City> {
-  @Attribute.required(isString) name!: string
-  @Attribute.required(isLatLong) latLong!: LatLong
-  @Relationship.toOne(() => Country) country!: Country | null
+  @Attribute.required(isString) name!: string;
+  @Attribute.required(isLatLong) latLong!: LatLong;
+  @Relationship.toOne(() => Country) country!: Country | null;
 }
 
 export class Country extends JSONAPI.resource('country')<Country> {
-  @Attribute.required(isString) name!: string
-  @Relationship.toMany(() => Person) citizens!: Person[]
-  @Relationship.toMany(() => City) cities!: City[]
+  @Attribute.required(isString) name!: string;
+  @Relationship.toMany(() => Person) citizens!: Person[];
+  @Relationship.toMany(() => City) cities!: City[];
 }
 
-const url = new URL('https://example.com/api/')
+const url = new URL('https://example.com/api/');
 
 const api = JSONAPI.client(url, {
   createPageQuery(page: number) {
     return {
       number: page,
-    }
+    };
   },
   fetchAdapter(url: string) {
-    console.log(url)
+    console.log(url);
     return Promise.resolve({
       ok: true,
       status: 200,
@@ -72,19 +72,19 @@ const api = JSONAPI.client(url, {
               },
             },
           ],
-        })
+        });
       },
-    }) as any
+    }) as any;
   },
   parseErrorObject() {
     return {
       test: 'aha',
-    }
+    };
   },
-})
+});
 
-const people = api.endpoint(Person)
-const countries = api.endpoint(Country)
+const people = api.endpoint(Person);
+const countries = api.endpoint(Country);
 
 1 &&
   people
@@ -99,25 +99,25 @@ const countries = api.endpoint(Country)
       },
     })
     .then((response) => {
-      console.log('to-one', response)
-    })
+      console.log('to-one', response);
+    });
 
 type Fx = FilteredResource<
   Country,
   {
     fields: {
-      person: ['name']
-      city: ['name']
-    }
+      person: ['name'];
+      city: ['name'];
+    };
     include: {
-      cities: null
-    }
+      cities: null;
+    };
   }
->
+>;
 
-type X = JSONAPI.Document<Country>
+type X = JSONAPI.Document<Country>;
 
-const x: X = {} as any
+const x: X = {} as any;
 
 1 &&
   countries
@@ -131,8 +131,8 @@ const x: X = {} as any
       },
     })
     .then((result) => {
-      console.log('one', result)
-    })
+      console.log('one', result);
+    });
 
 0 &&
   people
@@ -159,6 +159,6 @@ const x: X = {} as any
       },
     )
     .then((q) => {
-      console.log('many', q)
+      console.log('many', q);
     })
-    .catch(console.warn)
+    .catch(console.warn);

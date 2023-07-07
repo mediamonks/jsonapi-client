@@ -4,11 +4,14 @@ Object.assign(global, {
     append() {}
   },
   Request: class MockRequest {
-    constructor(public url: string, public options: any) {}
+    constructor(
+      public url: string,
+      public options: any,
+    ) {}
   },
-})
+});
 
-export const url = new URL('https://www.example.com/api')
+export const url = new URL('https://www.example.com/api');
 
 export const rawPostResource = {
   data: {
@@ -48,7 +51,7 @@ export const rawPostResource = {
       },
     },
   ],
-}
+};
 export const data = {
   Post: {
     p1: {
@@ -94,4 +97,4 @@ export const data = {
       },
     },
   },
-}
+};

@@ -1,5 +1,5 @@
-import dedent from 'dedent'
-import { at, isArray, isNone, isUndefined, SerializableObject } from 'isntnt'
+import dedent from 'dedent';
+import { at, isArray, isNone, isUndefined, SerializableObject } from 'isntnt';
 
 import {
   __DEV__,
@@ -7,11 +7,11 @@ import {
   DebugErrorCode,
   ResourceDocumentKey,
   EMPTY_ARRAY,
-} from '../constants/data'
-import { keys, createEmptyObject, HTTPRequestMethod } from '../utils/data'
+} from '../constants/data';
+import { keys, createEmptyObject, HTTPRequestMethod } from '../utils/data';
 
-import { JSONAPIError } from './Error'
-import { Client, ClientSetup, ClientSearchParameters } from './Client'
+import { JSONAPIError } from './Error';
+import { Client, ClientSetup, ClientSearchParameters } from './Client';
 import {
   AnyResource,
   ResourceConstructor,
@@ -22,32 +22,32 @@ import {
   ResourcePatchValues,
   ResourceParameters,
   FilteredResource,
-} from './Resource'
-import { EntityResult, CollectionResult } from './Result'
+} from './Resource';
+import { EntityResult, CollectionResult } from './Result';
 import {
   parseJSONAPIParameters,
   JSONAPISearchParameters,
   JSONAPIResourceParameters,
-} from '../utils/url'
+} from '../utils/url';
 
-const isToManyResponse = at(ResourceDocumentKey.DATA, isArray)
+const isToManyResponse = at(ResourceDocumentKey.DATA, isArray);
 
 export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
-  readonly client: Client<S>
-  readonly Resource: ResourceConstructor<R>
+  readonly client: Client<S>;
+  readonly Resource: ResourceConstructor<R>;
 
   constructor(client: Client<S>, Resource: ResourceConstructor<R>) {
-    this.client = client
-    this.Resource = Resource
+    this.client = client;
+    this.Resource = Resource;
   }
 
   async create(
     values: ResourceCreateValues<R>,
   ): Promise<EntityResult<FilteredResource<R, {}>, SerializableObject>> {
-    const url = this.toURL()
+    const url = this.toURL();
 
     if (isUndefined(values.type)) {
-      ;(values as any).type = this.Resource.type
+      (values as any).type = this.Resource.type;
     }
     return new Promise((resolve, reject) => {
       const result = this.client.controller.encodeResource(
@@ -55,10 +55,10 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
         values as AnyResource,
         keys(this.Resource.fields),
         [],
-      )
+      );
 
       if (result.isRejected()) {
-        reject(result.value)
+        reject(result.value);
       }
 
       return result.map(async (data: any) => {
@@ -66,7 +66,7 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
           .handleRequest(url, HTTPRequestMethod.POST, data)
           .then((result) => {
             if (result.isSuccess()) {
-              const response = result.value
+              const response = result.value;
               // TODO: handle 204 No Content response
               if (ResourceDocumentKey.DATA in response) {
                 const result = this.client.controller.decodeResource(
@@ -76,31 +76,31 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
                   {},
                   {},
                   [],
-                )
+                );
                 if (result.isSuccess()) {
-                  return resolve(new EntityResult(result.value, response.meta) as any)
+                  return resolve(new EntityResult(result.value, response.meta) as any);
                 } else {
-                  return reject(result.value)
+                  return reject(result.value);
                 }
               } else {
                 if (__DEV__) {
-                  console.warn(`[Endpoint#create] Unsupported "No Content" response`)
+                  console.warn(`[Endpoint#create] Unsupported "No Content" response`);
                 }
-                resolve(new EntityResult(data, {} as any))
+                resolve(new EntityResult(data, {} as any));
               }
             } else {
-              reject(result.value)
+              reject(result.value);
             }
-          })
-      })
-    })
+          });
+      });
+    });
   }
 
   async patch(id: ResourceId, values: ResourcePatchValues<R>): Promise<any> {
-    const url = new URL(`${this}/${id}`)
+    const url = new URL(`${this}/${id}`);
 
     if (isUndefined(values[ResourceDocumentKey.ID])) {
-      ;(values as any)[ResourceDocumentKey.ID] = id
+      (values as any)[ResourceDocumentKey.ID] = id;
     }
     return new Promise((resolve, reject) => {
       this.client.controller
@@ -115,26 +115,26 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
             .handleRequest(url, HTTPRequestMethod.PATCH, data)
             .then((result) => {
               if (result.isSuccess()) {
-                resolve(result.value)
+                resolve(result.value);
               } else {
-                reject(result.value)
+                reject(result.value);
               }
-            })
-        })
-    })
+            });
+        });
+    });
   }
 
   async delete(id: ResourceId) {
-    const url = new URL(`${this}/${id}`)
+    const url = new URL(`${this}/${id}`);
     return new Promise((resolve, reject) =>
       this.client.controller.handleRequest(url, HTTPRequestMethod.DELETE).then((result) => {
         if (result.isSuccess()) {
-          resolve(result.value)
+          resolve(result.value);
         } else {
-          reject(result.value)
+          reject(result.value);
         }
       }),
-    )
+    );
   }
 
   /**
@@ -148,7 +148,7 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     id: ResourceId,
     resourceParameters: F | null = null,
   ): Promise<EntityResult<FilteredResource<R, F>, SerializableObject>> {
-    return this.fetchEntity(this.Resource, resourceParameters || EMPTY_OBJECT, [id])
+    return this.fetchEntity(this.Resource, resourceParameters || EMPTY_OBJECT, [id]);
   }
 
   /**
@@ -161,35 +161,35 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
    */
   async getToOneRelationship<
     T extends ResourceToOneRelationshipNames<R>,
-    F extends ResourceParameters<Extract<R[T], AnyResource>>
+    F extends ResourceParameters<Extract<R[T], AnyResource>>,
   >(
     id: ResourceId,
     fieldName: T,
     resourceParameters: F | null = null,
   ): Promise<EntityResult<FilteredResource<Extract<R[T], AnyResource>, F>, SerializableObject>> {
-    const field = this.Resource.fields[fieldName]
+    const field = this.Resource.fields[fieldName];
     if (isNone(field)) {
       if (__DEV__) {
         throw new Error(
           dedent`[Endpoint{${this.Resource.path}}#getToOneRelationship] Field "${fieldName}" does not exist on Resource of type "${this.Resource.type}`,
-        )
+        );
       }
-      throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any)
+      throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any);
     }
     if (!field.isToOneRelationship()) {
       if (__DEV__) {
         throw new Error(
           dedent`[Endpoint{${this.Resource.path}}#getToOneRelationship] Field "${fieldName}" is not a to-one relationship on Resource of type "${this.Resource.type}"`,
-        )
+        );
       }
-      throw new Error(DebugErrorCode.FIELD_OF_WRONG_TYPE as any)
+      throw new Error(DebugErrorCode.FIELD_OF_WRONG_TYPE as any);
     }
-    const RelationshipResource = field.getResource()
+    const RelationshipResource = field.getResource();
     return this.fetchEntity(RelationshipResource, resourceParameters || EMPTY_OBJECT, [
       id,
       // TODO: Figure out why types are messed up
       (this.client.setup.transformRelationshipForURL as any)(fieldName),
-    ])
+    ]);
   }
 
   /**
@@ -208,7 +208,7 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
       queryParameters || EMPTY_OBJECT,
       resourceParameters || EMPTY_OBJECT,
       EMPTY_ARRAY,
-    )
+    );
   }
 
   /**
@@ -223,38 +223,38 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
   async getToManyRelationship<
     T extends ResourceToManyRelationshipNames<R>,
     F extends ResourceParameters<R[T][any]>,
-    Q extends ClientSearchParameters<S>
+    Q extends ClientSearchParameters<S>,
   >(
     id: ResourceId,
     fieldName: T,
     queryParameters: Q | null = null, // TODO: type query ('object') correctly
     resourceParameters: F | null = null,
   ): Promise<CollectionResult<FilteredResource<R[T][any], F>, SerializableObject>> {
-    const field = this.Resource.fields[fieldName]
+    const field = this.Resource.fields[fieldName];
     if (isNone(field)) {
       if (__DEV__) {
         throw new Error(
           dedent`[Endpoint{${this.Resource.path}}#getToManyRelationShip] Field "${fieldName}" does not exist on Resource of type "${this.Resource.type}`,
-        )
+        );
       }
-      throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any)
+      throw new Error(DebugErrorCode.FIELD_DOES_NOT_EXIST as any);
     }
     if (!field.isToManyRelationship()) {
       if (__DEV__) {
         throw new Error(
           dedent`[Endpoint{${this.Resource.path}}#getToManyRelationShip] Field "${fieldName}" is not a to-many relationship on Resource of type "${this.Resource.type}"`,
-        )
+        );
       }
-      throw new Error(DebugErrorCode.FIELD_OF_WRONG_TYPE as any)
+      throw new Error(DebugErrorCode.FIELD_OF_WRONG_TYPE as any);
     }
-    const RelationshipResource = field.getResource()
+    const RelationshipResource = field.getResource();
     return this.fetchCollection(
       RelationshipResource,
       queryParameters || EMPTY_OBJECT,
       resourceParameters || EMPTY_OBJECT,
       // TODO: Figure out why types are messed up
       [id, (this.client.setup.transformRelationshipForURL as any)(fieldName)],
-    )
+    );
   }
 
   private async fetchEntity(
@@ -262,12 +262,12 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     resourceParameters: JSONAPIResourceParameters,
     path: ReadonlyArray<string>,
   ): Promise<EntityResult<any, any>> {
-    const url = new URL([this, ...path].join('/'))
+    const url = new URL([this, ...path].join('/'));
     parseJSONAPIParameters(this.client, resourceParameters || EMPTY_OBJECT).forEach(
       ([name, value]) => {
-        url.searchParams.append(name, value)
+        url.searchParams.append(name, value);
       },
-    )
+    );
 
     return new Promise(async (resolve, reject) => {
       this.client.controller.handleRequest(url, HTTPRequestMethod.GET).then((request) => {
@@ -280,15 +280,15 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
             resourceParameters.include || EMPTY_OBJECT,
             EMPTY_ARRAY,
           ),
-        )
+        );
 
         if (result.isSuccess()) {
-          resolve(new EntityResult(result.value, request.value.meta || createEmptyObject()) as any)
+          resolve(new EntityResult(result.value, request.value.meta || createEmptyObject()) as any);
         } else {
-          reject(result.value)
+          reject(result.value);
         }
-      })
-    })
+      });
+    });
   }
 
   private async fetchCollection(
@@ -297,22 +297,22 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     resourceFilter: ResourceParameters<any>,
     path: ReadonlyArray<string>,
   ): Promise<CollectionResult<any, any>> {
-    const url = new URL([this, ...path].join('/'))
+    const url = new URL([this, ...path].join('/'));
     parseJSONAPIParameters(this.client, { ...query, ...resourceFilter }).forEach(
       ([name, value]) => {
-        url.searchParams.append(name, value)
+        url.searchParams.append(name, value);
       },
-    )
+    );
 
     return new Promise((resolve, reject) => {
       this.client.controller.handleRequest(url, HTTPRequestMethod.GET).then((result) => {
         if (result.isRejected()) {
-          return reject(result.value)
+          return reject(result.value);
         }
 
         result.map((response) => {
-          const errors: Array<JSONAPIError<any>> = []
-          const values: Array<AnyResource> = []
+          const errors: Array<JSONAPIError<any>> = [];
+          const values: Array<AnyResource> = [];
 
           if (isToManyResponse(response)) {
             response.data.forEach((resource: any) => {
@@ -323,37 +323,37 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
                 resourceFilter.fields || EMPTY_OBJECT,
                 resourceFilter.include || EMPTY_OBJECT,
                 [Resource.type, resource.id],
-              )
+              );
 
               if (result.isSuccess()) {
-                values.push(result.value as any)
+                values.push(result.value as any);
               } else {
-                errors.push(...(result.value as any))
+                errors.push(...(result.value as any));
               }
-            })
+            });
           } else if (__DEV__) {
             throw new Error(
               dedent`[Endpoint{${this.Resource.path}}#fetchCollection] Invalid to-many response, data must be an Array`,
-            )
+            );
           }
 
           if (errors.length) {
-            reject(errors)
+            reject(errors);
           } else {
-            resolve(new CollectionResult(values as Array<any>, response.meta || {}))
+            resolve(new CollectionResult(values as Array<any>, response.meta || {}));
           }
-        })
-      })
-    })
+        });
+      });
+    });
   }
 
   toString(): string {
-    return String(this.toURL())
+    return String(this.toURL());
   }
 
   toURL(): URL {
-    const apiUrl = String(this.client).replace(/\/*$/, '/') // ensure trailing slash
-    return new URL(this.Resource.path, apiUrl)
+    const apiUrl = String(this.client).replace(/\/*$/, '/'); // ensure trailing slash
+    return new URL(this.Resource.path, apiUrl);
   }
 
   // LEGACY
@@ -362,9 +362,9 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     resourceParameters: F | null = null,
   ): Promise<EntityResult<FilteredResource<R, F>, SerializableObject>> {
     if (__DEV__) {
-      console.warn(dedent`Endpoint#get is deprecated, use Endpoint#getOne instead`)
+      console.warn(dedent`Endpoint#get is deprecated, use Endpoint#getOne instead`);
     }
-    return this.getOne<F>(id, resourceParameters)
+    return this.getOne<F>(id, resourceParameters);
   }
 
   async fetch<F extends ResourceParameters<R>, Q extends ClientSearchParameters<S>>(
@@ -372,16 +372,16 @@ export class Endpoint<R extends AnyResource, S extends Partial<ClientSetup>> {
     resourceParameters: F | null = null,
   ): Promise<CollectionResult<FilteredResource<R, F>, SerializableObject>> {
     if (__DEV__) {
-      console.warn(dedent`Endpoint#fetch is deprecated, use Endpoint#getMany instead`)
+      console.warn(dedent`Endpoint#fetch is deprecated, use Endpoint#getMany instead`);
     }
-    return this.getMany<F, Q>(queryParameters, resourceParameters)
+    return this.getMany<F, Q>(queryParameters, resourceParameters);
   }
 }
 
 export type EndpointResource<T extends Endpoint<any, any>> = T extends Endpoint<infer R, any>
   ? R
-  : never
+  : never;
 
 export type EndpointSetup<T extends Endpoint<any, any>> = T extends Endpoint<any, infer R>
   ? R
-  : never
+  : never;
