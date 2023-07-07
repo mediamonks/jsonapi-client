@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@types/dedent": "^0.7.0",
-    "dedent": "^0.7.0",
+    "dedent": "^1.0.0",
     "isntnt": "^1.2.5",
     "jest-diff": "^24.9.0"
   },
