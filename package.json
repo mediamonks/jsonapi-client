@@ -15,7 +15,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "private": false,
   "bugs": {
     "url": "https://github.com/mediamonks/jsonapi-client/issues"
   },
