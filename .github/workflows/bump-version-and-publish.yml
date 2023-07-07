@@ -1,0 +1,59 @@
+name: Bump version, Tag & Publish
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver type of new version'
+        required: true
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+          - prerelease
+          - keep-current
+      prereleaseid:
+        description: 'Prerelease id (rc)'
+        default: ''
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v3
+        with:
+          ssh-key: ${{secrets.DEPLOY_KEY}}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+
+      - name: Setup Git
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
+      - name: bump version
+        if: ${{ github.event.inputs.version != 'keep-current' }}
+        run: |
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version --preid ${{ github.event.inputs.prereleaseid }}
+          git add .
+          git commit -m "v$(npm pkg get version | tr -d '"')"
+          git tag $(npm pkg get version | tr -d '"') -m "v$(npm pkg get version | tr -d '"')"
+
+      - name: publish
+        run: |
+          npm config set //registry.npmjs.org/:_authToken ${NPM_TOKEN}
+          npm publish --provenance
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Push latest version
+        if: ${{ github.event.inputs.version != 'keep-current' }}
+        run: git push origin main --follow-tags
