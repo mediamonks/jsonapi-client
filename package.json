@@ -10,8 +10,10 @@
     "build": "rimraf dist && tsc -d --skipLibCheck",
     "test": "NODE_ENV=development jest --watch --coverage",
     "test:ci": "NODE_ENV=development jest",
+    "format": "prettier --write \"**/*.{js,ts,scss,json}\"",
     "prepublishOnly": "yarn build"
   },
+  "prettier": "@mediamonks/prettier-config",
   "publishConfig": {
     "access": "public"
   },
@@ -29,10 +31,11 @@
     "jest-diff": "^24.9.0"
   },
   "devDependencies": {
+    "@mediamonks/prettier-config": "^1.0.1",
     "@types/jest": "^24.9.0",
     "@types/node": "^12.12.30",
     "jest": "^24.9.0",
-    "prettier": "^1.19.1",
+    "prettier": "^3.0.0",
     "ts-jest": "^24.3.0",
     "typescript": "^3.8.3"
   }
