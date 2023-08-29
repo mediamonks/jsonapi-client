@@ -1,25 +1,25 @@
-import { isString, isObject, isSome, isNone } from 'isntnt'
+import { isObject, isSome, isString } from 'isntnt'
+import { Endpoint } from './client/endpoint'
+import { InternalErrorCode, JSONAPIRequestMethod, JSON_API_MIME_TYPE } from './data/constants'
 import {
   AbsolutePathRoot,
   ImplicitInclude,
-  RelationshipFieldData,
+  RelationshipFieldDataType,
   RelationshipFieldLinks,
   ValidationErrorMessage,
 } from './data/enum'
-import { ResourceFormatter } from './formatter'
-import type { ResourcePath } from './types'
-import { Endpoint } from './client/endpoint'
-import { Type } from './util/type'
-import { jsonapiFailureDocument, jsonapiSuccessDocument, urlString, url } from './util/validators'
-import { reflect, windowFetch } from './util/helpers'
 import { ResourceDocumentError } from './error'
-import { InternalErrorCode, JSONAPIRequestMethod, JSON_API_MIME_TYPE } from './data/constants'
-import { ResourceDocument } from './types/jsonapi'
+import type { ResourceFormatter } from './formatter'
+import type { ResourcePath } from './types'
+import type { ResourceDocument } from './types/jsonapi'
+import { reflect, windowFetch } from './util/helpers'
+import { Type } from './util/type'
+import { jsonapiFailureDocument, jsonapiSuccessDocument, url, urlString } from './util/validators'
 
 export type DefaultClientSetup = ClientSetup & {
   absolutePathRoot: AbsolutePathRoot.Domain
   implicitIncludes: ImplicitInclude.None
-  relationshipFieldData: RelationshipFieldData.None
+  relationshipFieldData: RelationshipFieldDataType.None
   relationshipFieldLinks: RelationshipFieldLinks.None
 }
 
@@ -29,7 +29,7 @@ export type DefaultClientSetup = ClientSetup & {
 export const DEFAULT_CLIENT_SETUP: DefaultClientSetup = {
   absolutePathRoot: AbsolutePathRoot.Domain,
   implicitIncludes: ImplicitInclude.None,
-  relationshipFieldData: RelationshipFieldData.None,
+  relationshipFieldData: RelationshipFieldDataType.None,
   relationshipFieldLinks: RelationshipFieldLinks.None,
   transformRelationshipPath: reflect,
   beforeRequestURL: reflect,
@@ -42,7 +42,7 @@ export const DEFAULT_CLIENT_SETUP: DefaultClientSetup = {
 export type ClientSetup = {
   absolutePathRoot: AbsolutePathRoot
   implicitIncludes: ImplicitInclude
-  relationshipFieldData: RelationshipFieldData
+  relationshipFieldData: RelationshipFieldDataType
   relationshipFieldLinks: RelationshipFieldLinks
   transformRelationshipPath(path: string, formatter: ResourceFormatter<any, any>): string
   beforeRequest(request: Request): Request | Promise<Request>
@@ -53,7 +53,9 @@ export type ClientSetup = {
 }
 
 export type ClientSetupWithDefaults<T extends Partial<ClientSetup>> = {
-  [P in keyof DefaultClientSetup]: P extends keyof T ? T[P] : DefaultClientSetup[P]
+  [P in keyof DefaultClientSetup]: P extends keyof T
+    ? Exclude<T[P], undefined>
+    : DefaultClientSetup[P]
 }
 export class Client<T extends Partial<ClientSetup>> {
   readonly url: URL
@@ -74,7 +76,7 @@ export class Client<T extends Partial<ClientSetup>> {
     body?: unknown,
   ): Promise<ResourceDocument | null> {
     const request = await this.beforeRequest(url, method, body)
-    const response = await this.setup.fetchAdapter!(request)
+    const response = await this.setup.fetchAdapter(request)
 
     return this.afterRequest(response, request)
   }
@@ -85,9 +87,9 @@ export class Client<T extends Partial<ClientSetup>> {
     body?: unknown,
   ): Promise<Request> {
     return Promise.all([
-      Promise.resolve(this.setup.beforeRequestURL!(initialUrl)),
+      Promise.resolve(this.setup.beforeRequestURL(initialUrl)),
       Promise.resolve(
-        this.setup.beforeRequestHeaders!(
+        this.setup.beforeRequestHeaders(
           new Headers(
             (isSome(body) ? ['Accept', 'Content-Type'] : ['Accept']).map((name) => [
               name,
@@ -97,7 +99,7 @@ export class Client<T extends Partial<ClientSetup>> {
         ),
       ),
     ]).then(([url, headers]) =>
-      this.setup.beforeRequest!(
+      this.setup.beforeRequest(
         new Request(
           url.href,
           isSome(body)
@@ -119,13 +121,26 @@ export class Client<T extends Partial<ClientSetup>> {
     response: Response,
     request: Request,
   ): Promise<ResourceDocument<any> | null> {
-    const afterRequestResponse = await this.setup.afterRequest!(response)
+    const afterRequestResponse = await this.setup.afterRequest(response)
 
-    if (request.method === JSONAPIRequestMethod.Delete) {
+    if (
+      request.method === JSONAPIRequestMethod.Delete ||
+      request.method === JSONAPIRequestMethod.Patch ||
+      response.status === 204
+    ) {
       return null
     }
 
-    const data = await afterRequestResponse.json()
+    if (request.method === JSONAPIRequestMethod.Post && response.status === 202) {
+      return null
+    }
+
+    let data: unknown
+    try {
+      data = await afterRequestResponse.json()
+    } catch {
+      throw new ResourceDocumentError(ValidationErrorMessage.InvalidResourceDocument, data, [])
+    }
 
     if (!afterRequestResponse.ok) {
       if (!jsonapiFailureDocument.predicate(data)) {
@@ -133,10 +148,6 @@ export class Client<T extends Partial<ClientSetup>> {
       }
 
       throw new ResourceDocumentError(afterRequestResponse.statusText, data, data.errors as any)
-    }
-
-    if (isNone(data) && request.method !== JSONAPIRequestMethod.Get) {
-      return null
     }
 
     if (!jsonapiSuccessDocument.predicate(data)) {
@@ -169,7 +180,7 @@ const clientSetup: Type<ClientSetup> = Type.shape('a valid client setup object',
   implicitIncludes: Type.either(...Object.values(ImplicitInclude)).withCode(
     createJSONAPIErrorCode(InternalErrorCode.InvalidClientSetupImplicitIncludesType),
   ),
-  relationshipFieldData: Type.either(...Object.values(RelationshipFieldData)).withCode(
+  relationshipFieldData: Type.either(...Object.values(RelationshipFieldDataType)).withCode(
     createJSONAPIErrorCode(InternalErrorCode.InvalidClientSetupInitialRelationshipDataType),
   ),
   relationshipFieldLinks: Type.either(...Object.values(RelationshipFieldLinks)).withCode(

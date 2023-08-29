@@ -1,4 +1,10 @@
-import { Attribute, Relationship, ResourceFormatter } from '../src'
+import {
+  Attribute,
+  Relationship,
+  ResourceFieldsFilter,
+  FlatIncludedResourceFormatters,
+  ResourceFormatter,
+} from '../src'
 import { string } from '../src/util/validators'
 
 export type FormatterA = ResourceFormatter<
@@ -30,3 +36,7 @@ export const formatterB: FormatterB = new ResourceFormatter('b', {
   requiredString: Attribute.required(string),
   toOneA: Relationship.toOne(() => formatterA),
 })
+
+type FooBar = FlatIncludedResourceFormatters<FormatterA>
+
+type AFaf = ResourceFieldsFilter<FormatterA>

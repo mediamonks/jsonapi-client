@@ -6,7 +6,6 @@ import { AttributeField } from '../resource/field/attribute'
 import { MetaObject, ResourceObject } from '../types/jsonapi'
 import { reflect } from '../util/helpers'
 import { ManyResourceDocument, OneResourceDocument, ResourceFields } from '../types'
-import { doc } from 'prettier'
 
 export type MockResource<
   T extends ResourceFormatter,

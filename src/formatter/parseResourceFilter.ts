@@ -122,7 +122,7 @@ export const assertIncludeFilterAndGetNestedFormatters = (
       )
 
       const childIncludeParam = Object.hasOwnProperty.call(includeFilter, fieldName)
-        ? includeFilter[fieldName as keyof typeof includeFilter]!
+        ? includeFilter[fieldName]!
         : null
 
       return assertIncludeFilterAndGetNestedFormatters(

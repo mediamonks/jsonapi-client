@@ -53,14 +53,19 @@ export type ResourceDocument<T extends ResourceFormatter = any> =
   | DataResourceDocument<T>
   | ErrorResourceDocument
 
-export type ManyResourceDocument<
+type ManyResourceDocument<
   T extends ResourceFormatter = any
 > = BaseDataResourceDocument<PaginationLinks> & {
   data: ReadonlyArray<ResourceObject<T>>
   included?: ReadonlyArray<ResourceObject<ResourceRelatedResources<T>>>
 }
 
-export type OneResourceDocument<
+// TODO rename
+export type JSONAPISuccessOfManyDocument<
+  T extends ResourceFormatter = any
+> = ManyResourceDocument<T>
+
+type OneResourceDocument<
   T extends ResourceFormatter = any
 > = BaseDataResourceDocument<ResourceDocumentLinks> & {
   data: ResourceObject<T>
@@ -165,6 +170,11 @@ export interface JsonApiObject extends SerializableObject {
 export interface MetaObject extends SerializableObject {}
 
 /**
+ * @deprecated use `MetaObject` instead
+ */
+export type JSONAPIMetaObject = MetaObject
+
+/**
  * {@link https://jsonapi.org/format/#document-links|JSON:API Reference}
  */
 export type Link = string | LinkObject
@@ -251,6 +261,11 @@ type BaseSearchParams = {
  * {@link https://jsonapi.org/format/#fetching|JSON:API Reference}
  */
 export type SearchParams<T extends BaseSearchParams = BaseSearchParams> = T
+
+/**
+ * @deprecated use `SearchParams` instead
+ */
+export type JSONAPISearchParams<T extends BaseSearchParams = BaseSearchParams> = T
 
 export type PageParamValue = Maybe<string | number> | Record<string, string | number>
 

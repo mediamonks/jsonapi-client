@@ -6,7 +6,9 @@ export type MockFetchSetup = {
 }
 
 export const createMockFetch = ({ repositories, latency = 0 }: MockFetchSetup) => {
-  return async (info: RequestInfo): Promise<Response> => {
+  return async function mockFetch(info: RequestInfo): Promise<Response> {
+    await sleep(typeof latency === 'function' ? latency() : latency)
+
     const url = new URL((info as Request).url)
     const [path, id] = url.pathname.split('/').filter(Boolean)
 
@@ -18,38 +20,35 @@ export const createMockFetch = ({ repositories, latency = 0 }: MockFetchSetup) =
       : null
 
     const ok = result != null
-    return new Promise((resolve) => {
-      setTimeout(
-        () => {
-          resolve(
-            ok
-              ? ({
-                  ok,
-                  json() {
-                    return Promise.resolve(result)
-                  },
-                } as any)
-              : {
-                  ok,
-                  statusText: 'Not Found',
-                  json() {
-                    return Promise.resolve({
-                      errors: [
-                        {
-                          title: 'Not Found',
-                          detail:
-                            id != null
-                              ? `Resource at "${path}" with id "${id}" not found in mocks`
-                              : `Path "${path}" does not exist in mocks`,
-                        },
-                      ],
-                    })
-                  },
-                },
-          )
-        },
-        typeof latency === 'function' ? latency() : latency,
-      )
-    })
+
+    const statusText = ok ? 'Success' : 'Not Found'
+
+    const data = ok
+      ? result
+      : {
+          errors: [
+            {
+              title: 'Not Found',
+              detail:
+                id != null
+                  ? `Resource at "${path}" with id "${id}" not found in mocks`
+                  : `Path "${path}" does not exist in mocks`,
+            },
+          ],
+        }
+
+    return {
+      ok,
+      statusText,
+      async json() {
+        return data
+      },
+    } as Response
   }
+}
+
+async function sleep(duration: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, duration)
+  })
 }

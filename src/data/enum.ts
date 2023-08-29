@@ -10,7 +10,7 @@ export enum ImplicitInclude {
   PrimaryRelationships = 'primary-relationships',
 }
 
-export enum RelationshipFieldData {
+export enum RelationshipFieldDataType {
   None = 'none',
   ResourceIdentifiers = 'resource-identifiers',
 }

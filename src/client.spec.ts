@@ -218,12 +218,12 @@ describe('Client', () => {
       expect(result).toBe(null)
     })
 
-    it('must return null if a POST response data is empty', async () => {
+    it('must return null if a POST response status is 202 accepted', async () => {
       const client = new Client(MOCK_URL)
       const result = await (client as any).afterRequest(
         {
           ok: true,
-          status: 200,
+          status: 202,
           async json() {},
         },
         {

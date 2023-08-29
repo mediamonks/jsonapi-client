@@ -18,6 +18,7 @@ export type ResourceDocumentErrorObject = {
 }
 
 export class ResourceDocumentError extends Error {
+  readonly name = 'ResourceDocumentError'
   readonly actual: unknown
   readonly details: ReadonlyArray<ResourceDocumentErrorObject>
 

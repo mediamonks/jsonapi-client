@@ -648,3 +648,41 @@ export type ManyResourceDocument<
   T extends ResourceFormatter<any, any>,
   U extends ResourceFilterLimited<T>
 > = WithMeta<ReadonlyArray<Resource<T, U>>>
+
+export type ResourceFieldsFilter<
+  Formatter extends ResourceFormatter<any, any>
+> = BaseResourceFieldsFilter<FlatIncludedResourceFormatters<Formatter>>
+
+type BaseResourceFieldsFilter<Formatter extends ResourceFormatter<any, any>> = {
+  [Type in Formatter['type']]?: ReadonlyArray<
+    keyof Extract<Formatter, { type: Type }>['fields']
+    // ReadableResourceFieldName<Extract<Formatter, { type: Type }>>
+  >
+}
+
+export type FlatIncludedResourceFormatters<Formatter extends ResourceFormatter<any, any>> = {
+  [Type in Formatter['type']]: BaseFlatIncludedResourceFormatters<
+    Extract<Formatter, { type: Type }>,
+    never
+  >
+}[Formatter['type']]
+
+type BaseFlatIncludedResourceFormatters<
+  Formatter extends ResourceFormatter<any, any>,
+  ProcessedResourceType
+> = Formatter['type'] extends ProcessedResourceType
+  ? never
+  :
+      | Formatter
+      | {
+          [FieldName in keyof Formatter['fields']]: Formatter['fields'][FieldName] extends RelationshipField<
+            infer RelatedFormatter,
+            any,
+            any
+          >
+            ? BaseFlatIncludedResourceFormatters<
+                RelatedFormatter,
+                ProcessedResourceType | Formatter['type']
+              >
+            : never
+        }[keyof Formatter['fields']]

@@ -41,7 +41,7 @@ describe('Endpoint', () => {
       })
     })
 
-    it('must attempt to format the POST body if the response is 204', async () => {
+    it('must return undefined if the response is 204', async () => {
       const client = new Client(MOCK_URL, {
         async fetchAdapter() {
           return {
@@ -60,14 +60,7 @@ describe('Endpoint', () => {
         requiredString: 'foo',
       })
 
-      expect(resource).toEqual({
-        id: 'foo',
-        type: 'a',
-        requiredString: 'foo',
-        optionalString: null,
-        toOneB: null,
-        toManyA: [],
-      })
+      expect(resource).toEqual(undefined)
     })
   })
 

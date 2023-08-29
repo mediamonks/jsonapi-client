@@ -1,6 +1,6 @@
 {
   "name": "@mediamonks/jsonapi-client",
-  "version": "3.0.0-beta.16",
+  "version": "3.0.0-beta.17",
   "description": "TypeScript JSON:API formatter and client with type safe sparse fieldsets and compound documents",
   "main": "dist/index.js",
   "author": "Nathan Uphoff",
@@ -31,6 +31,6 @@
     "node-fetch": "2.6.7",
     "prettier": "^2.2.1",
     "ts-jest": "^26.5.2",
-    "typescript": "^4.8.4"
+    "typescript": "^5.2.2"
   }
 }

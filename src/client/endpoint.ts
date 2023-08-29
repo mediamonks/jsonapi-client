@@ -48,16 +48,13 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
    * Create a resource
    * @param data The data for the resource you want to create, resource id is optional
    */
-  async create(values: ResourceCreateData<U>): Promise<OneResourceDocument<U, {}>> {
+  async create(values: ResourceCreateData<U>): Promise<OneResourceDocument<U, {}> | undefined> {
     const url = this.createURL()
     const body = encodeResourceCreateData([this.formatter], values)
     const document = await this.client.request(url, JSONAPIRequestMethod.Post, body)
 
     if (!document) {
-      // Retrieved response with 204 status, see https://jsonapi.org/format/#crud-creating-responses-204
-      // TODO: Should filter out all non-readable fields to prevent parse errors
-      // TODO: Should throw custom error message if a 204 returns non-200 data (an id, or missing non-writable fields)
-      console.info('Retrieved 204 response, data formatting might break')
+      return
     }
 
     return decodeDocument([this.formatter], document || (body as any)) as any
@@ -70,6 +67,7 @@ export class Endpoint<T extends Client<any>, U extends ResourceFormatter> extend
   async update(data: ResourcePatchData<U>): Promise<void> {
     const body = encodeResourcePatchData([this.formatter], data)
     const url = this.createURL([body.data.id])
+
     await this.client.request(url, JSONAPIRequestMethod.Patch, body as any)
   }
 
