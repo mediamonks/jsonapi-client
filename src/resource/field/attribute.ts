@@ -23,8 +23,6 @@ const defaultAttributeFormatter: AttributeValueFormatter<any, any> = {
 
 type AnyGuard<T, U = never> = Extract<T extends never ? 1 : 0, 1> extends never ? T : U
 
-type Y = AnyGuard<any>
-
 export const createAttributeFieldFactory = <T extends ResourceFieldFactoryRules>(...rules: T) => <
   U extends AttributeValue,
   V = U

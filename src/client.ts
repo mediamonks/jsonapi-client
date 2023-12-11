@@ -124,14 +124,15 @@ export class Client<T extends Partial<ClientSetup>> {
     const afterRequestResponse = await this.setup.afterRequest(response)
 
     if (
-      request.method === JSONAPIRequestMethod.Delete ||
-      request.method === JSONAPIRequestMethod.Patch ||
-      response.status === 204
+      afterRequestResponse.ok &&
+      (request.method === JSONAPIRequestMethod.Delete ||
+        request.method === JSONAPIRequestMethod.Patch ||
+        afterRequestResponse.status === 204)
     ) {
       return null
     }
 
-    if (request.method === JSONAPIRequestMethod.Post && response.status === 202) {
+    if (request.method === JSONAPIRequestMethod.Post && afterRequestResponse.status === 202) {
       return null
     }
 
